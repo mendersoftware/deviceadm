@@ -32,7 +32,7 @@ func main() {
 
 	flag.Parse()
 
-	_, err := HandleConfigFile(configPath)
+	conf, err := HandleConfigFile(configPath)
 	if err != nil {
 		log.Fatalf("error loading configuration: %s", err)
 	}
@@ -40,8 +40,7 @@ func main() {
 	log.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
-	for {
-	}
+	log.Fatal(RunServer(conf))
 }
 
 func HandleConfigFile(filePath string) (config.ConfigReader, error) {
