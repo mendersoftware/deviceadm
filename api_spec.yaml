@@ -1,0 +1,250 @@
+swagger: '2.0'
+
+info:
+  version: "0.1.0"
+  title: Admission Service API
+
+basePath: /api/0.1.0
+
+paths:
+  /devices:
+    get:
+      description: Gets `Device` objects.
+      parameters:
+        - name: status
+          in: query
+          description: Filters devices by admission status (pending, accepted, rejected)
+          required: false
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+        - name: page
+          in: query
+          description: Starting page
+          required: false
+          type: number
+          format: integer
+          default: 1
+        - name: per_page
+          in: query
+          description: Number of results per page
+          required: false
+          type: number
+          format: integer
+          default: 10
+      responses:
+        200:
+          description: Successful response
+          schema:
+            title: ListOfRequests
+            type: array
+            items:
+              $ref: '#/definitions/Device'
+          headers:
+            Link:
+              type: string
+              description: Standard header, we support 'first', 'next', and 'prev'.
+        202:
+          description: No Content
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+    post:
+      description: Adds new device for admission
+      parameters:
+        - name: Device
+          in: body
+          description: New device for admission
+          required: true
+          schema:
+            $ref: '#/definitions/NewDevice'
+      responses:
+        201:
+          description: New device for admission created
+          headers:
+            Location:
+              type: string
+              description: URI for the new created resource.
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+  /devices/{id}:
+    get:
+      description: Gets device
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier
+          required: true
+          type: string
+      responses:
+        200:
+          description: Device
+          schema:
+            $ref: "#/definitions/Device"
+        404:
+          description: Not Found
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+    put:
+      description: Updates device
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier
+          required: true
+          type: string
+        - name: Device
+          in: body
+          description: Device resource
+          schema:
+            $ref: "#/definitions/Device"
+      responses:
+        200:
+          description: Device updated
+          schema:
+            $ref: "#/definitions/Device"
+        404:
+          description: Not Found
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+  /devices/{id}/status:
+    get:
+      description: Checks admission status for the device
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier
+          required: true
+          type: string
+      responses:
+        200:
+          description: Admission status of the device
+          schema:
+            $ref: "#/definitions/Status"
+        404:
+          description: Not Found
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+definitions:
+  SimpleError:
+    description: Simple error descriptor
+    type: object
+    properties:
+      error:
+        description: Description of error
+        type: string
+  NewDevice:
+    description: New device for admission process
+    type: object
+    required:
+      - id
+      - device_identity
+      - key
+    properties:
+      id:
+        description: Hash created based on the device identity data
+        type: string
+      device_identity:
+        description: Device identity data
+        type: string
+      key:
+        description: Device public key
+        type: string
+  Device:
+    description: Device
+    type: object
+    required:
+      - id
+      - status
+      - attributes
+    properties:
+      id:
+        description: Hash created based on the device identity data
+        type: string
+      device_identity:
+        description: Identity data
+        type: string
+      key:
+        description: Device public key
+        type: string
+      status:
+        description: Status of the admission process for the device
+        type: string
+        enum:
+          - pending
+          - accepted
+          - rejected
+      attributes:
+          $ref: "#/definitions/Attributes"
+  Status:
+    description: Admission status of the device
+    type: object
+    properties:
+      status:
+        type: string
+        enum:
+          - pending
+          - accepted
+          - rejected
+    required:
+      - status
+  Attributes:
+    description: |
+      Human readable attributes of the device.
+      Attributes can have more or different properties then defined here.
+    type: object
+    properties:
+      mac_address:
+        description: Device MAC address
+        type: string
+        example: "aa:bb:cc:dd:00:11"
+      SKU:
+        description: Stock keeping unit
+        type: string
+        example: "My Device 1"
+      SN:
+        description: Serial Number
+        type: string
+        example: "13132313"
+      
