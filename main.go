@@ -14,13 +14,59 @@
 package main
 
 import (
+	"flag"
+	"github.com/mendersoftware/artifacts/config"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"log"
 )
 
 func main() {
+	var configPath string
+	var printVersion bool
+	flag.StringVar(&configPath, "config",
+		"config.yaml",
+		"Configuration file path. Supports JSON, TOML, YAML and HCL formatted configs.")
+	flag.BoolVar(&printVersion, "version",
+		false, "Show version")
+
+	flag.Parse()
+
+	_, err := HandleConfigFile(configPath)
+	if err != nil {
+		log.Fatalf("error loading configuration: %s", err)
+	}
+
 	log.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
 	for {
+	}
+}
+
+func HandleConfigFile(filePath string) (config.ConfigReader, error) {
+
+	c := viper.New()
+	c.SetConfigFile(filePath)
+
+	// Set default values for config
+	SetDefaultConfigs(c, configDefaults)
+
+	// Find and read the config file
+	if err := c.ReadInConfig(); err != nil {
+		return nil, errors.Wrap(err, "failed to read configuration")
+	}
+
+	// Validate config
+	if err := config.ValidateConfig(c, configValidators...); err != nil {
+		return nil, errors.Wrap(err, "failed to validate configuration")
+	}
+
+	return c, nil
+}
+
+func SetDefaultConfigs(config *viper.Viper, defaults []ConfigDefault) {
+	for _, def := range defaults {
+		config.SetDefault(def.key, def.value)
 	}
 }
