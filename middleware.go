@@ -14,14 +14,12 @@
 package main
 
 import (
-	// Make it clear that this is distinct from the mender logging.
-	golog "log"
-
+	"fmt"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/artifacts/config"
-	"github.com/mendersoftware/artifacts/handlers"
 )
 
 const (
@@ -29,52 +27,66 @@ const (
 	EnvDev  = "dev"
 )
 
-var DefaultDevStack = []rest.Middleware{
+var (
+	DefaultDevStack = []rest.Middleware{
 
-	// logging
-	&rest.AccessLogApacheMiddleware{},
-	&rest.TimerMiddleware{},
-	&rest.RecorderMiddleware{},
+		// logging
+		&rest.AccessLogApacheMiddleware{},
+		&rest.TimerMiddleware{},
+		&rest.RecorderMiddleware{},
 
-	// catches the panic errors that occur with stack trace
-	&rest.RecoverMiddleware{
-		EnableResponseStackTrace: true,
-	},
+		// catches the panic errors that occur with stack trace
+		&rest.RecoverMiddleware{
+			EnableResponseStackTrace: true,
+		},
 
-	// json pretty print
-	&rest.JsonIndentMiddleware{},
+		// json pretty print
+		&rest.JsonIndentMiddleware{},
 
-	// verifies the request Content-Type header
-	// The expected Content-Type is 'application/json'
-	// if the content is non-null
-	&rest.ContentTypeCheckerMiddleware{},
-}
+		// verifies the request Content-Type header
+		// The expected Content-Type is 'application/json'
+		// if the content is non-null
+		&rest.ContentTypeCheckerMiddleware{},
+	}
 
-var DefaultProdStack = []rest.Middleware{
+	DefaultProdStack = []rest.Middleware{
 
-	// logging
-	&rest.AccessLogJsonMiddleware{
-		// No prefix or other fields, entire output is JSON encoded and could break it.
-		Logger: golog.New(os.Stdout, "", 0),
-	},
-	&rest.TimerMiddleware{},
-	&rest.RecorderMiddleware{},
+		// logging
+		&rest.AccessLogJsonMiddleware{
+			// No prefix or other fields, entire output is JSON encoded and could break it.
+			Logger: log.New(os.Stderr, "", 0),
+		},
+		&rest.TimerMiddleware{},
+		&rest.RecorderMiddleware{},
 
-	// catches the panic errorsx
-	&rest.RecoverMiddleware{},
+		// catches the panic errorsx
+		&rest.RecoverMiddleware{},
 
-	// response compression
-	&rest.GzipMiddleware{},
+		// response compression
+		&rest.GzipMiddleware{},
 
-	// verifies the request Content-Type header
-	// The expected Content-Type is 'application/json'
-	// if the content is non-null
-	&rest.ContentTypeCheckerMiddleware{},
-}
+		// verifies the request Content-Type header
+		// The expected Content-Type is 'application/json'
+		// if the content is non-null
+		&rest.ContentTypeCheckerMiddleware{},
+	}
 
-func SetupMiddleware(c config.ConfigReader, api *rest.Api) {
+	middlewareMap = map[string][]rest.Middleware{
+		EnvProd: DefaultProdStack,
+		EnvDev:  DefaultDevStack,
+	}
+)
 
-	api.Use(DefaultDevStack...)
+func SetupMiddleware(api *rest.Api, mwtype string) error {
+
+	log.Printf("setting up %s middleware", mwtype)
+
+	mwstack, ok := middlewareMap[mwtype]
+	if ok != true {
+		return fmt.Errorf("incorrect middleware type: %s", mwtype)
+	}
+
+	api.Use(mwstack...)
 
 	api.Use(&rest.CorsMiddleware{
 		RejectNonCorsRequests: false,
@@ -93,27 +105,29 @@ func SetupMiddleware(c config.ConfigReader, api *rest.Api) {
 
 		// Allowed headers
 		AllowedMethods: []string{
-			handlers.HttpMethodGet,
-			handlers.HttpMethodPost,
-			handlers.HttpMethodPut,
-			handlers.HttpMethodDelete,
-			handlers.HttpMethodOptions,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
 		},
 
 		// Allowed heardes
 		AllowedHeaders: []string{
-			handlers.HttpHeaderAllow,
-			handlers.HttpHeaderContentType,
-			handlers.HttpHeaderOrigin,
-			handlers.HttpHeaderAuthorization,
-			handlers.HttpHeaderAcceptEncoding,
-			handlers.HttpHeaderAccessControlRequestHeaders,
-			handlers.HttpHeaderAccessControlRequestMethod,
+			"Allow",
+			"Content-Type",
+			"Origin",
+			"Authorization",
+			"Accept-Encoding",
+			"Access-Control-Request-Headers",
+			"Header-Access-Control-Request",
 		},
 
 		// Headers that can be exposed to JS
 		AccessControlExposeHeaders: []string{
-			handlers.HttpHeaderLocation,
+			"Location",
 		},
 	})
+
+	return nil
 }
