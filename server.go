@@ -14,14 +14,23 @@
 package main
 
 import (
+	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/config"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 )
 
 func RunServer(c config.Reader) error {
-	addr := c.GetString(SettingListen)
 
+	api := rest.NewApi()
+
+	if err := SetupMiddleware(api, c.GetString(SettingMiddleware)); err != nil {
+		return errors.Wrap(err, "failed to setup middleware")
+	}
+
+	addr := c.GetString(SettingListen)
 	log.Printf("listening on %s", addr)
-	return http.ListenAndServe(addr, nil)
+
+	return http.ListenAndServe(addr, api.MakeHandler())
 }
