@@ -15,7 +15,7 @@ package config
 
 import "time"
 
-type ConfigReader interface {
+type Reader interface {
 	Get(key string) interface{}
 	GetBool(key string) bool
 	GetFloat64(key string) float64
@@ -29,10 +29,24 @@ type ConfigReader interface {
 	IsSet(key string) bool
 }
 
-type Validator func(c ConfigReader) error
+type Writer interface {
+	SetDefault(key string, val interface{})
+}
+
+type Handler interface {
+	Reader
+	Writer
+}
+
+type Default struct {
+	Key   string
+	Value interface{}
+}
+
+type Validator func(c Reader) error
 
 // ValidateConfig validates conifg accroding to provided validators.
-func ValidateConfig(c ConfigReader, validators ...Validator) error {
+func ValidateConfig(c Reader, validators ...Validator) error {
 
 	for _, validator := range validators {
 		err := validator(c)
@@ -42,4 +56,10 @@ func ValidateConfig(c ConfigReader, validators ...Validator) error {
 	}
 
 	return nil
+}
+
+func SetDefaults(c Writer, defaults []Default) {
+	for _, def := range defaults {
+		c.SetDefault(def.Key, def.Value)
+	}
 }

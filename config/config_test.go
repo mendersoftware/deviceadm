@@ -33,22 +33,57 @@ func (m *MockConfigReader) GetTime(key string) time.Time                    { re
 func (m *MockConfigReader) GetDuration(key string) time.Duration            { return time.Second }
 func (m *MockConfigReader) IsSet(key string) bool                           { return true }
 
+type MockConfigWriter struct {
+	vals map[string]interface{}
+}
+
+func (m *MockConfigWriter) SetDefault(key string, val interface{}) {
+	m.vals[key] = val
+}
+
+func NewMockWriter() *MockConfigWriter {
+	return &MockConfigWriter{
+		make(map[string]interface{}),
+	}
+}
+
 func TestValidateConfig(t *testing.T) {
 
 	err := errors.New("test error")
 
 	testList := []struct {
 		out        error
-		c          ConfigReader
+		c          Reader
 		validators []Validator
 	}{
 		{nil, &MockConfigReader{}, []Validator{}},
-		{err, &MockConfigReader{}, []Validator{func(c ConfigReader) error { return err }}},
+		{err, &MockConfigReader{}, []Validator{func(c Reader) error { return err }}},
 	}
 
 	for _, test := range testList {
 		if ValidateConfig(test.c, test.validators...) != test.out {
 			t.FailNow()
 		}
+	}
+}
+
+func TestSetDefaultConfigs(t *testing.T) {
+	defaults := []Default{
+		{"foo", "bar"},
+		{"baz", 1},
+	}
+
+	c := NewMockWriter()
+
+	SetDefaults(c, defaults)
+
+	val_foo, ok := c.vals["foo"]
+	if ok != true || val_foo != "bar" {
+		t.FailNow()
+	}
+
+	val_baz, ok := c.vals["baz"]
+	if ok != true || val_baz != 1 {
+		t.FailNow()
 	}
 }
