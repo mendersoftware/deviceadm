@@ -14,7 +14,7 @@
 package main
 
 import (
-	"github.com/mendersoftware/artifacts/config"
+	"github.com/mendersoftware/deviceadm/config"
 )
 
 const (
@@ -22,14 +22,9 @@ const (
 	SettingListenDefault = ":8080"
 )
 
-type ConfigDefault struct {
-	key   string
-	value interface{}
-}
-
 var (
 	configValidators = []config.Validator{}
-	configDefaults   = []ConfigDefault{
+	configDefaults   = []config.Default{
 		{SettingListen, SettingListenDefault},
 	}
 )

@@ -13,10 +13,7 @@
 //    limitations under the License.
 package main
 
-import (
-	"github.com/spf13/viper"
-	"testing"
-)
+import "testing"
 
 func TestHandleConfigFile(t *testing.T) {
 
@@ -31,24 +28,3 @@ func TestHandleConfigFile(t *testing.T) {
 
 }
 
-func TestSetDefaultConfigs(t *testing.T) {
-	defaults := []ConfigDefault{
-		{"foo", "bar"},
-		{"baz", 1},
-	}
-
-	c := viper.New()
-
-	SetDefaultConfigs(c, defaults)
-
-	val_foo := c.GetString("foo")
-	val_baz := c.GetInt("baz")
-
-	if val_foo != "bar" {
-		t.FailNow()
-	}
-
-	if val_baz != 1 {
-		t.FailNow()
-	}
-}

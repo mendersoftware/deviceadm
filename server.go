@@ -14,12 +14,12 @@
 package main
 
 import (
-	"github.com/mendersoftware/artifacts/config"
+	"github.com/mendersoftware/deviceadm/config"
 	"log"
 	"net/http"
 )
 
-func RunServer(c config.ConfigReader) error {
+func RunServer(c config.Reader) error {
 	addr := c.GetString(SettingListen)
 
 	log.Printf("listening on %s", addr)

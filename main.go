@@ -15,7 +15,7 @@ package main
 
 import (
 	"flag"
-	"github.com/mendersoftware/artifacts/config"
+	"github.com/mendersoftware/deviceadm/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"log"
@@ -43,13 +43,13 @@ func main() {
 	log.Fatal(RunServer(conf))
 }
 
-func HandleConfigFile(filePath string) (config.ConfigReader, error) {
+func HandleConfigFile(filePath string) (config.Handler, error) {
 
 	c := viper.New()
 	c.SetConfigFile(filePath)
 
 	// Set default values for config
-	SetDefaultConfigs(c, configDefaults)
+	config.SetDefaults(c, configDefaults)
 
 	// Find and read the config file
 	if err := c.ReadInConfig(); err != nil {
@@ -64,8 +64,3 @@ func HandleConfigFile(filePath string) (config.ConfigReader, error) {
 	return c, nil
 }
 
-func SetDefaultConfigs(config *viper.Viper, defaults []ConfigDefault) {
-	for _, def := range defaults {
-		config.SetDefault(def.key, def.value)
-	}
-}
