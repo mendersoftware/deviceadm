@@ -97,7 +97,7 @@ before_script:
     - ./check_license.sh
 
     # Test if all new commits are signed-off
-    - ./check_signed_off.sh
+    - ./check_signed_off.sh ${TRAVIS_COMMIT_RANGE}
 
     # Perform static code analysys
     - go vet `go list ./...`
