@@ -63,4 +63,3 @@ func HandleConfigFile(filePath string) (config.Handler, error) {
 
 	return c, nil
 }
-
