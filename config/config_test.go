@@ -41,6 +41,10 @@ func (m *MockConfigWriter) SetDefault(key string, val interface{}) {
 	m.vals[key] = val
 }
 
+func (m *MockConfigWriter) Set(key string, val interface{}) {
+	m.vals[key] = val
+}
+
 func NewMockWriter() *MockConfigWriter {
 	return &MockConfigWriter{
 		make(map[string]interface{}),

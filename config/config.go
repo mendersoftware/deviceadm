@@ -31,6 +31,7 @@ type Reader interface {
 
 type Writer interface {
 	SetDefault(key string, val interface{})
+	Set(key string, val interface{})
 }
 
 type Handler interface {
