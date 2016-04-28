@@ -13,17 +13,15 @@
 //    limitations under the License.
 package main
 
-import "testing"
+import (
+	"github.com/mendersoftware/deviceadm/config"
+	"log"
+	"net/http"
+)
 
-func TestHandleConfigFile(t *testing.T) {
+func RunServer(c config.Reader) error {
+	addr := c.GetString(SettingListen)
 
-	if _, err := HandleConfigFile(""); err == nil {
-		t.FailNow()
-	}
-
-	// Depends on default config being avaiable and correct (which is nice!)
-	if _, err := HandleConfigFile("config.yaml"); err != nil {
-		t.FailNow()
-	}
-
+	log.Printf("listening on %s", addr)
+	return http.ListenAndServe(addr, nil)
 }

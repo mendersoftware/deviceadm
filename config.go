@@ -13,17 +13,18 @@
 //    limitations under the License.
 package main
 
-import "testing"
+import (
+	"github.com/mendersoftware/deviceadm/config"
+)
 
-func TestHandleConfigFile(t *testing.T) {
+const (
+	SettingListen        = "listen"
+	SettingListenDefault = ":8080"
+)
 
-	if _, err := HandleConfigFile(""); err == nil {
-		t.FailNow()
+var (
+	configValidators = []config.Validator{}
+	configDefaults   = []config.Default{
+		{SettingListen, SettingListenDefault},
 	}
-
-	// Depends on default config being avaiable and correct (which is nice!)
-	if _, err := HandleConfigFile("config.yaml"); err != nil {
-		t.FailNow()
-	}
-
-}
+)
