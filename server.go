@@ -29,6 +29,13 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "failed to setup middleware")
 	}
 
+	devadm, err := MakeDevAdmApp()
+	if err != nil {
+		return errors.Wrap(err, "failed to create app")
+	}
+
+	api.SetApp(devadm)
+
 	addr := c.GetString(SettingListen)
 	log.Printf("listening on %s", addr)
 
