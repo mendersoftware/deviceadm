@@ -59,7 +59,7 @@ var (
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
 
-		// catches the panic errorsx
+		// catches the panic errors
 		&rest.RecoverMiddleware{},
 
 		// response compression
@@ -97,7 +97,7 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 			return true
 		},
 
-		// Preflight request cache lenght
+		// Preflight request cache length
 		AccessControlMaxAge: 60,
 
 		// Allow authentication requests
@@ -112,7 +112,7 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 			http.MethodOptions,
 		},
 
-		// Allowed heardes
+		// Allowed headers
 		AllowedHeaders: []string{
 			"Allow",
 			"Content-Type",
