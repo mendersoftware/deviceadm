@@ -15,18 +15,65 @@ package main
 
 import (
 	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/pkg/errors"
+	"net/http"
 )
+
+type HttpOptionsGenerator func(methods []string) rest.HandlerFunc
+
+func AllowHeaderOptionsGenerator(methods []string) rest.HandlerFunc {
+	// return a dummy handler for now
+	return func(w rest.ResponseWriter, r *rest.Request) {
+		for _, m := range methods {
+			w.Header().Add("Allow", m)
+		}
+	}
+}
 
 // create rest.App instance with routing set up for Device Admision
 // Service
 func MakeDevAdmApp() (rest.App, error) {
+	routes := []*rest.Route{}
+
 	app, err := rest.MakeRouter(
-	// setup routing
+		// augment routes with OPTIONS handler
+		AutogenOptionsRoutes(routes, AllowHeaderOptionsGenerator)...,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create router")
 	}
 
 	return app, nil
+}
+
+func supportsMethod(method string, methods []string) bool {
+	return utils.ContainsString(method, methods)
+}
+
+// Automatically add OPTIONS method support for each defined route,
+// only if there's no OPTIONS handler for that route yet
+func AutogenOptionsRoutes(routes []*rest.Route, gen HttpOptionsGenerator) []*rest.Route {
+
+	methodGroups := make(map[string][]string, len(routes))
+
+	for _, route := range routes {
+		methods, ok := methodGroups[route.PathExp]
+		if !ok {
+			methods = make([]string, 0, 0)
+		}
+
+		methodGroups[route.PathExp] = append(methods, route.HttpMethod)
+	}
+
+	options := make([]*rest.Route, 0, len(methodGroups))
+	for route, methods := range methodGroups {
+		// skip if there's a handler for OPTIONS already
+		if supportsMethod(http.MethodOptions, methods) == false {
+			options = append(options,
+				rest.Options(route, gen(methods)))
+		}
+	}
+
+	return append(routes, options...)
 }
