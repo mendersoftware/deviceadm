@@ -15,29 +15,28 @@ package main
 
 import (
 	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/config"
-	"github.com/pkg/errors"
-	"log"
-	"net/http"
+	"testing"
 )
 
-func RunServer(c config.Reader) error {
+func TestSetupMiddleware(t *testing.T) {
 
-	api := rest.NewApi()
-
-	if err := SetupMiddleware(api, c.GetString(SettingMiddleware)); err != nil {
-		return errors.Wrap(err, "failed to setup middleware")
+	var tdata = []struct {
+		mwtype string
+		experr bool
+	}{
+		{"foo", true},
+		{EnvProd, false},
+		{EnvDev, false},
 	}
 
-	devadm, err := MakeDevAdmApp()
-	if err != nil {
-		return errors.Wrap(err, "failed to create app")
+	for _, td := range tdata {
+		api := rest.NewApi()
+
+		err := SetupMiddleware(api, td.mwtype)
+		if err != nil && td.experr == false {
+			t.Errorf("dod not expect error: %s", err)
+		} else if err == nil && td.experr == true {
+			t.Errorf("expected error, got none")
+		}
 	}
-
-	api.SetApp(devadm)
-
-	addr := c.GetString(SettingListen)
-	log.Printf("listening on %s", addr)
-
-	return http.ListenAndServe(addr, api.MakeHandler())
 }

@@ -11,33 +11,17 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package utils
 
-import (
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/config"
-	"github.com/pkg/errors"
-	"log"
-	"net/http"
-)
+import "testing"
 
-func RunServer(c config.Reader) error {
+func TestContainsString(t *testing.T) {
 
-	api := rest.NewApi()
-
-	if err := SetupMiddleware(api, c.GetString(SettingMiddleware)); err != nil {
-		return errors.Wrap(err, "failed to setup middleware")
+	if ContainsString("foo", []string{"foo", "bar", "baz"}) == false {
+		t.Errorf("string not found")
 	}
 
-	devadm, err := MakeDevAdmApp()
-	if err != nil {
-		return errors.Wrap(err, "failed to create app")
+	if ContainsString("foo", []string{"bar", "baz"}) == true {
+		t.Errorf("string found, expected not found")
 	}
-
-	api.SetApp(devadm)
-
-	addr := c.GetString(SettingListen)
-	log.Printf("listening on %s", addr)
-
-	return http.ListenAndServe(addr, api.MakeHandler())
 }

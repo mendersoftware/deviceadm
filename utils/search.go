@@ -11,33 +11,16 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package utils
 
-import (
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/config"
-	"github.com/pkg/errors"
-	"log"
-	"net/http"
-)
+// Check if string is presnt in an array. Would use interface{} but
+// whatever.
+func ContainsString(val string, vals []string) bool {
 
-func RunServer(c config.Reader) error {
-
-	api := rest.NewApi()
-
-	if err := SetupMiddleware(api, c.GetString(SettingMiddleware)); err != nil {
-		return errors.Wrap(err, "failed to setup middleware")
+	for _, v := range vals {
+		if val == v {
+			return true
+		}
 	}
-
-	devadm, err := MakeDevAdmApp()
-	if err != nil {
-		return errors.Wrap(err, "failed to create app")
-	}
-
-	api.SetApp(devadm)
-
-	addr := c.GetString(SettingListen)
-	log.Printf("listening on %s", addr)
-
-	return http.ListenAndServe(addr, api.MakeHandler())
+	return false
 }

@@ -24,17 +24,26 @@ import (
 func main() {
 	var configPath string
 	var printVersion bool
+	var devSetup bool
+
 	flag.StringVar(&configPath, "config",
 		"config.yaml",
 		"Configuration file path. Supports JSON, TOML, YAML and HCL formatted configs.")
 	flag.BoolVar(&printVersion, "version",
 		false, "Show version")
+	flag.BoolVar(&devSetup, "dev",
+		false, "Use development setup")
 
 	flag.Parse()
 
 	conf, err := HandleConfigFile(configPath)
 	if err != nil {
 		log.Fatalf("error loading configuration: %s", err)
+	}
+
+	if devSetup == true {
+		log.Printf("setting up development configuration")
+		conf.Set(SettingMiddleware, EnvDev)
 	}
 
 	log.Printf("Device Admission Service, version %s starting up",
