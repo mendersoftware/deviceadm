@@ -9,12 +9,22 @@
 			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
 		},
 		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0-16-gcd7d1bb",
+			"Rev": "cd7d1bbe41066b6c1f19780f895901052150a575"
+		},
+		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest",
 			"Comment": "v3.2.0-11-g2af9d00",
 			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest/test",
+			"Comment": "v3.2.0-11-g2af9d00",
+			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
+		},
+		{
+			"ImportPath": "github.com/ant0ine/go-json-rest/rest/trie",
 			"Comment": "v3.2.0-11-g2af9d00",
 			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
 		},
@@ -56,6 +66,10 @@
 		{
 			"ImportPath": "github.com/spf13/viper",
 			"Rev": "e37b56e207dda4d79b9defe0548e960658ee8b6b"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "f64b50fbea64174967a8882830d621a18ee1548e"
 		},
 		{
 			"ImportPath": "gopkg.in/fsnotify.v1",
