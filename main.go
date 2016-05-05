@@ -16,15 +16,16 @@ package main
 import (
 	"flag"
 	"github.com/mendersoftware/deviceadm/config"
+	"github.com/mendersoftware/deviceadm/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"log"
 )
 
 func main() {
 	var configPath string
 	var printVersion bool
 	var devSetup bool
+	var debug bool
 
 	flag.StringVar(&configPath, "config",
 		"config.yaml",
@@ -33,23 +34,29 @@ func main() {
 		false, "Show version")
 	flag.BoolVar(&devSetup, "dev",
 		false, "Use development setup")
+	flag.BoolVar(&debug, "debug",
+		false, "Enable debug logging")
 
 	flag.Parse()
 
+	log.Setup(debug)
+
+	l := log.New("main")
+
 	conf, err := HandleConfigFile(configPath)
 	if err != nil {
-		log.Fatalf("error loading configuration: %s", err)
+		l.Fatalf("error loading configuration: %s", err)
 	}
 
 	if devSetup == true {
-		log.Printf("setting up development configuration")
+		l.Infof("setting up development configuration")
 		conf.Set(SettingMiddleware, EnvDev)
 	}
 
-	log.Printf("Device Admission Service, version %s starting up",
+	l.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
-	log.Fatal(RunServer(conf))
+	l.Fatal(RunServer(conf))
 }
 
 func HandleConfigFile(filePath string) (config.Handler, error) {
