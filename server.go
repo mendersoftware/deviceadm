@@ -16,12 +16,14 @@ package main
 import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/config"
+	"github.com/mendersoftware/deviceadm/log"
 	"github.com/pkg/errors"
-	"log"
 	"net/http"
 )
 
 func RunServer(c config.Reader) error {
+
+	l := log.New("server")
 
 	api := rest.NewApi()
 
@@ -37,7 +39,7 @@ func RunServer(c config.Reader) error {
 	api.SetApp(devadm)
 
 	addr := c.GetString(SettingListen)
-	log.Printf("listening on %s", addr)
+	l.Printf("listening on %s", addr)
 
 	return http.ListenAndServe(addr, api.MakeHandler())
 }
