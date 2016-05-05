@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/ant0ine/go-json-rest/rest"
+	dlog "github.com/mendersoftware/deviceadm/log"
 )
 
 const (
@@ -79,7 +80,9 @@ var (
 
 func SetupMiddleware(api *rest.Api, mwtype string) error {
 
-	log.Printf("setting up %s middleware", mwtype)
+	l := dlog.New("middleware")
+
+	l.Infof("setting up %s middleware", mwtype)
 
 	mwstack, ok := middlewareMap[mwtype]
 	if ok != true {
