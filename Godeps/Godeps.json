@@ -29,6 +29,10 @@
 			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
 		},
 		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
 			"ImportPath": "github.com/kr/pretty",
 			"Comment": "go.weekly.2011-12-22-27-ge6ac2fc",
 			"Rev": "e6ac2fc51e89a3249e82157fa0bb7a18ef9dd5bb"
@@ -52,6 +56,10 @@
 			"Rev": "7efa461bd31efbfc388ecbedfc3feaf129eeed80"
 		},
 		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
 			"ImportPath": "github.com/spf13/cast",
 			"Rev": "ee815aaf958c707ad07547cd62150d973710f747"
 		},
@@ -66,6 +74,11 @@
 		{
 			"ImportPath": "github.com/spf13/viper",
 			"Rev": "e37b56e207dda4d79b9defe0548e960658ee8b6b"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.3-16-g6cb3b85",
+			"Rev": "6cb3b85ef5a0efef77caef88363ec4d4b5c0976d"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
