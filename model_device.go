@@ -17,9 +17,20 @@ type DeviceID string
 
 // Device wrapper
 type Device struct {
-	ID DeviceID
-	// device status
-	Status uint
+	//system-generated device ID
+	ID DeviceID `json:"id"`
+
+	//blob of encrypted identity attributes
+	DeviceIdentity string `json:"device_identity"`
+
+	//device's public key
+	Key string `json:"key"`
+
+	//admission status('accepted', 'rejected', 'pending')
+	Status string `json:"status"`
+
+	//decoded, human-readable identity attribute set
+	Attributes map[string]string `json:"attributes"`
 }
 
 func (did DeviceID) String() string {
