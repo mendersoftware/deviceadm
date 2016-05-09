@@ -27,6 +27,12 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 		return nil, errors.Wrap(err, "failed to setup middleware")
 	}
 
+	//this will override the framework's error resp to the desired one:
+	// {"error": "msg"}
+	// instead of:
+	// {"Error": "msg"}
+	rest.ErrorFieldName = "error"
+
 	return api, nil
 }
 

@@ -15,7 +15,9 @@ package main
 
 import (
 	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/pkg/errors"
+	"net/http"
 )
 
 type DevAdmHandlers struct {
@@ -55,6 +57,38 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 }
 
 func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
+	page, perPage, err := utils.ParsePagination(r)
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	status, err := utils.ParseQueryParmStr(r, utils.StatusName, false, utils.DevStatuses)
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//get one extra device to see if there's a 'next' page
+	devs, err := d.DevAdm.ListDevices(int((page-1)*perPage), int(perPage+1), status)
+	if err != nil {
+		rest.Error(w, "failed to list devices", http.StatusInternalServerError)
+		return
+	}
+
+	len := len(devs)
+	hasNext := false
+	if uint64(len) > perPage {
+		hasNext = true
+		len = int(perPage)
+	}
+
+	links := utils.MakePageLinkHdrs(r, page, perPage, hasNext)
+
+	for _, l := range links {
+		w.Header().Add("Link", l)
+	}
+	w.WriteJson(devs[:len])
 }
 
 func (d *DevAdmHandlers) AddDevice(w rest.ResponseWriter, r *rest.Request) {
