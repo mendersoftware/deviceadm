@@ -26,6 +26,7 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 	if err := SetupMiddleware(api, stacktype); err != nil {
 		return nil, errors.Wrap(err, "failed to setup middleware")
 	}
+
 	return api, nil
 }
 
@@ -33,7 +34,12 @@ func RunServer(c config.Reader) error {
 
 	l := log.New("server")
 
-	devadm := NewDevAdm()
+	d, err := NewDataStoreMongo(c.GetString(SettingDb))
+	if err != nil {
+		return errors.Wrap(err, "database connection failed")
+	}
+
+	devadm := NewDevAdm(d)
 
 	api, err := SetupAPI(c.GetString(SettingMiddleware))
 	if err != nil {

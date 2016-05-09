@@ -19,25 +19,30 @@ import (
 
 // this device admission service interface
 type DevAdmApp interface {
-	ListDevices() []Device
-	AddDevice(d Device) error
+	ListDevices(skip int, limit int, status string) ([]Device, error)
+	AddDevice(d *Device) error
 	GetDevice(id DeviceID) *Device
-	UpdateDevice(id DeviceID, d Device) error
+	UpdateDevice(id DeviceID, d *Device) error
 }
 
-func NewDevAdm() DevAdmApp {
-	return &DevAdm{}
+func NewDevAdm(d DataStore) DevAdmApp {
+	return &DevAdm{db: d}
 }
 
 type DevAdm struct {
-	// nothing
+	db DataStore
 }
 
-func (d *DevAdm) ListDevices() []Device {
-	return []Device{}
+func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
+	devs, err := d.db.GetDevices(skip, limit, status)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch devices")
+	}
+
+	return devs, nil
 }
 
-func (d *DevAdm) AddDevice(dev Device) error {
+func (d *DevAdm) AddDevice(dev *Device) error {
 	return errors.New("not implemented")
 }
 
@@ -45,6 +50,6 @@ func (d *DevAdm) GetDevice(id DeviceID) *Device {
 	return nil
 }
 
-func (d *DevAdm) UpdateDevice(id DeviceID, dev Device) error {
+func (d *DevAdm) UpdateDevice(id DeviceID, dev *Device) error {
 	return errors.New("not implemented")
 }
