@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/mendersoftware/deviceadm",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v61",
+	"GodepVersion": "v65",
 	"Deps": [
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
@@ -15,18 +15,18 @@
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest",
-			"Comment": "v3.2.0-11-g2af9d00",
-			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
+			"Comment": "v3.3.1-5-gcfd0da1",
+			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest/test",
-			"Comment": "v3.2.0-11-g2af9d00",
-			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
+			"Comment": "v3.3.1-5-gcfd0da1",
+			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest/trie",
-			"Comment": "v3.2.0-11-g2af9d00",
-			"Rev": "2af9d0034afcd83101abb1945f2a65ddbd563719"
+			"Comment": "v3.3.1-5-gcfd0da1",
+			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -88,6 +88,26 @@
 			"ImportPath": "gopkg.in/fsnotify.v1",
 			"Comment": "v1.2.5",
 			"Rev": "2cdd39bd6129c6a49c74fb07fb9d77ba1271c572"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2",
+			"Comment": "r2016.02.04-1-gb6e2fa3",
+			"Rev": "b6e2fa371e64216a45e61072a96d4e3859f169da"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/bson",
+			"Comment": "r2016.02.04-1-gb6e2fa3",
+			"Rev": "b6e2fa371e64216a45e61072a96d4e3859f169da"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/internal/sasl",
+			"Comment": "r2016.02.04-1-gb6e2fa3",
+			"Rev": "b6e2fa371e64216a45e61072a96d4e3859f169da"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/internal/scram",
+			"Comment": "r2016.02.04-1-gb6e2fa3",
+			"Rev": "b6e2fa371e64216a45e61072a96d4e3859f169da"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
