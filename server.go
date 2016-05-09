@@ -21,22 +21,32 @@ import (
 	"net/http"
 )
 
+func SetupAPI(stacktype string) (*rest.Api, error) {
+	api := rest.NewApi()
+	if err := SetupMiddleware(api, stacktype); err != nil {
+		return nil, errors.Wrap(err, "failed to setup middleware")
+	}
+	return api, nil
+}
+
 func RunServer(c config.Reader) error {
 
 	l := log.New("server")
 
-	api := rest.NewApi()
+	devadm := NewDevAdm()
 
-	if err := SetupMiddleware(api, c.GetString(SettingMiddleware)); err != nil {
-		return errors.Wrap(err, "failed to setup middleware")
-	}
-
-	devadm, err := MakeDevAdmApp()
+	api, err := SetupAPI(c.GetString(SettingMiddleware))
 	if err != nil {
-		return errors.Wrap(err, "failed to create app")
+		return errors.Wrap(err, "API setup failed")
 	}
 
-	api.SetApp(devadm)
+	devadmapi := NewDevAdmApiHandlers(devadm)
+
+	apph, err := devadmapi.GetApp()
+	if err != nil {
+		return errors.Wrap(err, "device admission API handlers setup failed")
+	}
+	api.SetApp(apph)
 
 	addr := c.GetString(SettingListen)
 	l.Printf("listening on %s", addr)

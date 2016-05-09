@@ -16,7 +16,6 @@ package main
 import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/utils"
-	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -29,22 +28,6 @@ func AllowHeaderOptionsGenerator(methods []string) rest.HandlerFunc {
 			w.Header().Add("Allow", m)
 		}
 	}
-}
-
-// create rest.App instance with routing set up for Device Admision
-// Service
-func MakeDevAdmApp() (rest.App, error) {
-	routes := []*rest.Route{}
-
-	app, err := rest.MakeRouter(
-		// augment routes with OPTIONS handler
-		AutogenOptionsRoutes(routes, AllowHeaderOptionsGenerator)...,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create router")
-	}
-
-	return app, nil
 }
 
 func supportsMethod(method string, methods []string) bool {
