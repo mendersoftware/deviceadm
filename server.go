@@ -44,7 +44,7 @@ func RunServer(c config.Reader) error {
 
 	apph, err := devadmapi.GetApp()
 	if err != nil {
-		return errors.Wrap(err, "Device Admission API handlers setup failed")
+		return errors.Wrap(err, "device admission API handlers setup failed")
 	}
 	api.SetApp(apph)
 
