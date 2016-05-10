@@ -143,12 +143,15 @@ func TestAutogenOptionHeaders(t *testing.T) {
 		http.MethodPut,
 	}
 
-	rh := rest.ResourceHandler{}
-	rh.SetRoutes(
+	api := rest.NewApi()
+	api.Use(rest.DefaultDevStack...)
+	router, _ := rest.MakeRouter(
 		rest.Options("/test", AllowHeaderOptionsGenerator(suppmeth)),
 	)
 
-	rec := rtest.RunRequest(t, &rh,
+	api.SetApp(router)
+
+	rec := rtest.RunRequest(t, api.MakeHandler(),
 		rtest.MakeSimpleRequest(http.MethodOptions,
 			"http://1.2.3.4/test", nil))
 
