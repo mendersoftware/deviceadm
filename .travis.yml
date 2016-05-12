@@ -106,6 +106,8 @@ before_script:
     # Fail builds when the cyclomatic complexity reaches 15 or more
     - gocyclo -over 15 `find . -iname '*.go' | grep -v 'Godeps' | grep -v /vendor/ | grep -v '_test.go'`
 
+    - sleep 15
+
 script:
     # go list supply import paths for all sub directories.
     # Exclude Godeps directory, we don't want to run tests and coverage for all dependencies every time,
