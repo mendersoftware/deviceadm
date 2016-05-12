@@ -21,3 +21,7 @@ type Device struct {
 	// device status
 	Status uint
 }
+
+func (did DeviceID) String() string {
+	return string(did)
+}
