@@ -93,6 +93,10 @@ func parseDevs(dataset string) ([]Device, error) {
 
 // test funcs
 func TestMongoGetDevices(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevices in short mode.")
+	}
+
 	d, err := getDb()
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -191,6 +195,9 @@ func TestMongoGetDevices(t *testing.T) {
 }
 
 func TestFailedConn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevices in short mode.")
+	}
 	_, err := NewDataStoreMongo("invalid:27017")
 	assert.NotNil(t, err)
 }
