@@ -46,6 +46,10 @@ paths:
             Link:
               type: string
               description: Standard header, we support 'first', 'next', and 'prev'.
+        400:
+          description: Invalid parameters
+          schema:
+            $ref: "#/definitions/SimpleError"
         202:
           description: No Content
         500:
@@ -247,4 +251,3 @@ definitions:
         description: Serial Number
         type: string
         example: "13132313"
-      

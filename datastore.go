@@ -11,28 +11,9 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 package main
 
-import (
-	"github.com/mendersoftware/deviceadm/config"
-)
-
-const (
-	SettingListen        = "listen"
-	SettingListenDefault = ":8080"
-
-	SettingMiddleware        = "middleware"
-	SettingMiddlewareDefault = EnvProd
-
-	SettingDb        = "mongo"
-	SettingDbDefault = "mongo-device-adm:27017"
-)
-
-var (
-	configValidators = []config.Validator{}
-	configDefaults   = []config.Default{
-		{SettingListen, SettingListenDefault},
-		{SettingMiddleware, SettingMiddlewareDefault},
-		{SettingDb, SettingDbDefault},
-	}
-)
+type DataStore interface {
+	GetDevices(skip, limit int, status string) ([]Device, error)
+}

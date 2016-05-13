@@ -1,0 +1,32 @@
+[
+    {
+        "id":"0001",
+        "device_identity":"0001-id",
+        "key":"0001-key",
+        "status":"pending",
+        "attributes":{
+            "mac":"0001-mac",
+            "sn":"0001-sn"
+        }
+    },
+    {
+        "id":"0002",
+        "device_identity":"0002-id",
+        "key":"0002-key",
+        "status":"accepted",
+        "attributes":{
+            "mac":"0002-mac",
+            "sn":"0002-sn"
+        }
+    },
+    {
+        "id":"0003",
+        "device_identity":"0003-id",
+        "key":"0003-key",
+        "status":"accepted",
+        "attributes":{
+            "mac":"0003-mac",
+            "sn":"0003-sn"
+        }
+    }
+]

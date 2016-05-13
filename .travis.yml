@@ -1,10 +1,15 @@
 language: go
 
+# related to mongodb as per:
+# https://github.com/travis-ci/travis-ci/issues/5948
+group: edge
+
 # Forces travis to use VM insted container, required to be able to build containers.
 sudo: required
 
 services:
     - docker
+    - mongodb
 
 # Golang version matrix
 go:
@@ -104,6 +109,8 @@ before_script:
 
     # Fail builds when the cyclomatic complexity reaches 15 or more
     - gocyclo -over 15 `find . -iname '*.go' | grep -v 'Godeps' | grep -v /vendor/ | grep -v '_test.go'`
+
+    - sleep 15
 
 script:
     # go list supply import paths for all sub directories.

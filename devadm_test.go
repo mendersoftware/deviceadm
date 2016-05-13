@@ -14,32 +14,88 @@
 package main
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func devadmForTest() DevAdmApp {
-	return &DevAdm{}
+//mock db with interface methods as fields
+//allows monkey patching the methods without
+//redefining the struct for each case
+type TestDataStore struct {
+	MockGetDevices func(skip, limit int, status string) ([]Device, error)
 }
 
-func TestListDevices(t *testing.T) {
-	d := devadmForTest()
+func (ds *TestDataStore) GetDevices(skip, limit int, status string) ([]Device, error) {
+	return ds.MockGetDevices(skip, limit, status)
+}
 
-	l := d.ListDevices()
+//mock db methods for multiple cases
+func getDevicesErr(skip, limit int, status string) ([]Device, error) {
+	return nil, errors.New("test error")
+}
+
+func getDevicesEmpty(skip, limit int, status string) ([]Device, error) {
+	return []Device{}, nil
+}
+
+func getDevices(skip, limit int, status string) ([]Device, error) {
+	ret := []Device{
+		Device{},
+		Device{},
+		Device{},
+	}
+	return ret, nil
+}
+
+func devadmForTest(d DataStore) DevAdmApp {
+	return &DevAdm{db: d}
+}
+
+func TestListDevicesEmpty(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevices: getDevicesEmpty,
+	}
+
+	d := devadmForTest(db)
+
+	l, _ := d.ListDevices(0, 1, "")
 	assert.Len(t, l, 0)
 }
 
-func TestAddDevice(t *testing.T) {
-	d := devadmForTest()
+func TestListDevices(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevices: getDevices,
+	}
 
-	err := d.AddDevice(Device{})
+	d := devadmForTest(db)
+
+	l, _ := d.ListDevices(0, 1, "")
+	assert.Len(t, l, 3)
+}
+
+func TestListDevicesErr(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevices: getDevicesErr,
+	}
+
+	d := devadmForTest(db)
+
+	_, err := d.ListDevices(0, 1, "")
+	assert.NotNil(t, err)
+}
+
+func TestAddDevice(t *testing.T) {
+	d := devadmForTest(nil)
+
+	err := d.AddDevice(&Device{})
 
 	assert.Error(t, err)
 	// check error type?
 }
 
 func TestGetDevice(t *testing.T) {
-	d := devadmForTest()
+	d := devadmForTest(nil)
 
 	dev := d.GetDevice("foo")
 
@@ -47,17 +103,16 @@ func TestGetDevice(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	d := devadmForTest()
+	d := devadmForTest(nil)
 
-	err := d.UpdateDevice("foo", Device{})
+	err := d.UpdateDevice("foo", &Device{})
 
 	assert.Error(t, err)
 	// check error type?
 }
 
 func TestNewDevAdm(t *testing.T) {
-
-	d := NewDevAdm()
+	d := NewDevAdm(&TestDataStore{})
 
 	assert.NotNil(t, d)
 }
