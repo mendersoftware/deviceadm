@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func TestDevAdmClientUrl(t *testing.T) {
+func TestDevAuthClientUrl(t *testing.T) {
 	da := NewDevAuthClient(DevAuthClientConfig{
 		UpdateUrl: "http://devauth:9999/api/v0.0.1/devices/{id}",
 	})
@@ -42,7 +42,7 @@ func newMockServer(status int) *httptest.Server {
 
 }
 
-func TestDevAdmClientReqSuccess(t *testing.T) {
+func TestDevAuthClientReqSuccess(t *testing.T) {
 	s := newMockServer(200)
 	defer s.Close()
 
@@ -57,7 +57,7 @@ func TestDevAdmClientReqSuccess(t *testing.T) {
 	assert.NoError(t, err, "expected no errors")
 }
 
-func TestDevAdmClientReqFail(t *testing.T) {
+func TestDevAuthClientReqFail(t *testing.T) {
 	s := newMockServer(400)
 	defer s.Close()
 
@@ -72,7 +72,7 @@ func TestDevAdmClientReqFail(t *testing.T) {
 	assert.NoError(t, err, "expected an error")
 }
 
-func TestDevAdmClientReqUrl(t *testing.T) {
+func TestDevAuthClientReqUrl(t *testing.T) {
 	var urlPath string
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +99,7 @@ func TestDevAdmClientReqUrl(t *testing.T) {
 	assert.NoError(t, err, "expected no errors")
 }
 
-func TestDevAdmClientReqNoHost(t *testing.T) {
+func TestDevAuthClientReqNoHost(t *testing.T) {
 	c := NewDevAuthClient(DevAuthClientConfig{
 		UpdateUrl: "http://somehost:1234/devices/{id}",
 	})
@@ -112,7 +112,7 @@ func TestDevAdmClientReqNoHost(t *testing.T) {
 	assert.Error(t, err, "expected an error")
 }
 
-func TestDevAdmClientTImeout(t *testing.T) {
+func TestDevAuthClientTImeout(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
