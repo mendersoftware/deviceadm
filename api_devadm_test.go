@@ -28,6 +28,7 @@ import (
 
 type MockDevAdm struct {
 	mockListDevices func(skip int, limit int, status string) ([]Device, error)
+	mockGetDevice   func(id DeviceID) (*Device, error)
 }
 
 func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -38,8 +39,8 @@ func (mda *MockDevAdm) AddDevice(dev *Device) error {
 	return errors.New("not implemented")
 }
 
-func (mda *MockDevAdm) GetDevice(id DeviceID) *Device {
-	return nil
+func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
+	return mda.mockGetDevice(id)
 }
 
 func (mda *MockDevAdm) UpdateDevice(id DeviceID, dev *Device) error {
@@ -207,6 +208,83 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		for _, h := range testCase.outHdrs {
 			assert.Equal(t, h, ExtractHeader("Link", h, recorded))
 		}
+	}
+}
+
+func TestApiDevAdmGetDevice(t *testing.T) {
+	devs := map[string]struct {
+		dev *Device
+		err error
+	}{
+		"foo": {
+			&Device{
+				ID:             "foo",
+				Key:            "foobar",
+				Status:         "accepted",
+				DeviceIdentity: "deadcafe",
+			},
+			nil,
+		},
+		"bar": {
+			nil,
+			errors.New("internal error"),
+		},
+	}
+
+	devadm := MockDevAdm{
+		mockGetDevice: func(id DeviceID) (*Device, error) {
+			d, ok := devs[id.String()]
+			if ok == false {
+				return nil, ErrDevNotFound
+			}
+			if d.err != nil {
+				return nil, d.err
+			}
+			return d.dev, nil
+		},
+	}
+
+	handlers := NewDevAdmApiHandlers(&devadm)
+	assert.NotNil(t, handlers)
+
+	app, err := handlers.GetApp()
+	assert.NotNil(t, app)
+	assert.NoError(t, err)
+
+	api := rest.NewApi()
+	api.SetApp(app)
+
+	// enforce specific field naming in errors returned by API
+	rest.ErrorFieldName = "error"
+
+	apih := api.MakeHandler()
+
+	tcases := []struct {
+		req  *http.Request
+		code int
+		body string
+	}{
+		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/foo", nil),
+			200,
+			ToJson(devs["foo"].dev),
+		},
+		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/bar", nil),
+			500,
+			RestError(devs["bar"].err.Error()),
+		},
+		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz", nil),
+			404,
+			RestError(ErrDevNotFound.Error()),
+		},
+	}
+
+	for _, tc := range tcases {
+		recorded := test.RunRequest(t, apih, tc.req)
+		recorded.CodeIs(tc.code)
+		recorded.BodyIs(tc.body)
 	}
 }
 

@@ -95,6 +95,21 @@ func (d *DevAdmHandlers) AddDevice(w rest.ResponseWriter, r *rest.Request) {
 }
 
 func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
+	devid := r.PathParam("id")
+
+	dev, err := d.DevAdm.GetDevice(DeviceID(devid))
+
+	if dev == nil {
+		if err == ErrDevNotFound {
+			rest.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			rest.Error(w, "internal error",
+				http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteJson(dev)
 }
 
 func (d *DevAdmHandlers) UpdateDevice(w rest.ResponseWriter, r *rest.Request) {
