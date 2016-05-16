@@ -14,6 +14,18 @@
 
 package main
 
+import (
+	"errors"
+)
+
+var (
+	// device not found
+	ErrDevNotFound = errors.New("not found")
+)
+
 type DataStore interface {
 	GetDevices(skip, limit int, status string) ([]Device, error)
+	// find a device with given `id`, returns the device or nil,
+	// if device was not found, error is set to ErrDevNotFound
+	GetDevice(id DeviceID) (*Device, error)
 }
