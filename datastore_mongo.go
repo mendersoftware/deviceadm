@@ -77,3 +77,47 @@ func (db *DataStoreMongo) GetDevice(id DeviceID) (*Device, error) {
 
 	return &res, nil
 }
+
+// produce a Device wrapper suitable for passing in an Upsert() as
+// '$set' fields
+func genDeviceUpdate(dev *Device) *Device {
+	updev := Device{}
+
+	if dev.Status != "" {
+		updev.Status = dev.Status
+	}
+
+	if dev.Key != "" {
+		updev.Key = dev.Key
+	}
+
+	if dev.DeviceIdentity != "" {
+		updev.DeviceIdentity = dev.DeviceIdentity
+	}
+
+	// TODO: should attributes be merged?
+	if len(dev.Attributes) != 0 {
+		updev.Attributes = dev.Attributes
+	}
+
+	return &updev
+}
+
+//
+func (db *DataStoreMongo) PutDevice(dev *Device) error {
+	s := db.session.Copy()
+	defer s.Close()
+	c := s.DB(DbName).C(DbDevicesColl)
+
+	filter := bson.M{"id": dev.ID}
+
+	// use $set operator so that fields values are replaced
+	data := bson.M{"$set": genDeviceUpdate(dev)}
+
+	// does insert or update
+	_, err := c.Upsert(filter, data)
+	if err != nil {
+		return errors.Wrap(err, "failed to store device")
+	}
+	return nil
+}

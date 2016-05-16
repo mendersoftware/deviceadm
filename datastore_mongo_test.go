@@ -237,3 +237,76 @@ func TestMongoGetDevice(t *testing.T) {
 
 	wipe(d)
 }
+
+func TestMongoPutDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevice in short mode.")
+	}
+
+	d, err := getDb()
+	assert.NoError(t, err, "obtaining DB failed")
+
+	wipe(d)
+
+	_, err = d.GetDevice("")
+	assert.Error(t, err, "expected error")
+
+	// populate DB
+	err = setUp(d, allDevsInputSet)
+	assert.NoError(t, err, "failed to setup input data %s", allDevsInputSet)
+
+	// all dataset of all devices
+	devs, err := parseDevs(allDevsInputSet)
+	assert.NoError(t, err, "failed to parse expected devs %s", allDevsInputSet)
+
+	// insert all devices to DB
+	for _, dev := range devs {
+		err := d.PutDevice(&dev)
+		assert.NoError(t, err, "expected no error inserting to data store")
+	}
+
+	// get devices, one by one
+	for _, dev := range devs {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error")
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		t.Logf("stored dev: %+v", dbdev)
+
+		// obviously the found device should be identical
+		assert.True(t, reflect.DeepEqual(dev, *dbdev), "expected dev %+v to be equal to %+v",
+			dbdev, dev)
+
+		// modify device staus
+		ndev := Device{
+			Status: "accepted",
+			ID:     dbdev.ID,
+		}
+
+		// update device key
+		err = d.PutDevice(&ndev)
+		assert.NoError(t, err, "expected no error updating devices in DB")
+	}
+
+	// get devices, one by one, check if status is set to accepted
+	for _, dev := range devs {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error")
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		t.Logf("updated dev: %+v", dbdev)
+
+		assert.Equal(t, "accepted", dbdev.Status)
+		// other fields should be identical
+		assert.Equal(t, dev.ID, dbdev.ID)
+		assert.Equal(t, dev.DeviceIdentity, dbdev.DeviceIdentity)
+		assert.Equal(t, dev.Key, dbdev.Key)
+		assert.True(t, reflect.DeepEqual(dev.Attributes, dbdev.Attributes))
+	}
+
+	// wipe(d)
+}
