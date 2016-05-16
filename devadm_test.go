@@ -35,6 +35,10 @@ func (ds *TestDataStore) GetDevice(id DeviceID) (*Device, error) {
 	return ds.MockGetDevice(id)
 }
 
+func (ds *TestDataStore) PutDevice(dev *Device) error {
+	return errors.New("not implemented")
+}
+
 //mock db methods for multiple cases
 func getDevicesErr(skip, limit int, status string) ([]Device, error) {
 	return nil, errors.New("test error")
