@@ -44,9 +44,10 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 		rest.Post("/api/0.1.0/devices", d.AddDevice),
 
 		rest.Get("/api/0.1.0/devices/:id", d.GetDevice),
-		rest.Put("/api/0.1.0/devices/:id", d.UpdateDevice),
 
 		rest.Get("/api/0.1.0/devices/:id/status", d.GetDeviceStatus),
+		rest.Post("/api/0.1.0/devices/:id/accept", d.AcceptDevice),
+		rest.Post("/api/0.1.0/devices/:id/reject", d.RejectDevice),
 	}
 
 	routes = append(routes)
@@ -127,7 +128,49 @@ func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
 	}
 }
 
-func (d *DevAdmHandlers) UpdateDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) AcceptDevice(w rest.ResponseWriter, r *rest.Request) {
+	devid := r.PathParam("id")
+
+	var attrs DeviceAttributes
+
+	err := r.DecodeJsonPayload(&attrs)
+	if err != nil {
+		rest.Error(w,
+			errors.Wrap(err, "failed to decode attributes data").Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	if len(attrs) == 0 {
+		rest.Error(w, "no attributes provided", http.StatusBadRequest)
+		return
+	}
+
+	err = d.DevAdm.AcceptDevice(DeviceID(devid), attrs)
+	if err != nil {
+		code := http.StatusInternalServerError
+		if err == ErrDevNotFound {
+			code = http.StatusNotFound
+		}
+		rest.Error(w, err.Error(), code)
+		return
+
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (d *DevAdmHandlers) RejectDevice(w rest.ResponseWriter, r *rest.Request) {
+	devid := r.PathParam("id")
+
+	err := d.DevAdm.RejectDevice(DeviceID(devid))
+	if err != nil {
+		code := http.StatusInternalServerError
+		if err == ErrDevNotFound {
+			code = http.StatusNotFound
+		}
+		rest.Error(w, err.Error(), code)
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (d *DevAdmHandlers) GetDeviceStatus(w rest.ResponseWriter, r *rest.Request) {
