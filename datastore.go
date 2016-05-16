@@ -25,7 +25,18 @@ var (
 
 type DataStore interface {
 	GetDevices(skip, limit int, status string) ([]Device, error)
+
 	// find a device with given `id`, returns the device or nil,
 	// if device was not found, error is set to ErrDevNotFound
 	GetDevice(id DeviceID) (*Device, error)
+
+	// update or insert device into data store, only non-empty
+	// fields will be stored/updated, for instance, to update a
+	// status of device "foo":
+	//
+	// ds.PutDevice(&Device{
+	// 	ID: "foo",
+	// 	Status: "accepted",
+	// })
+	PutDevice(dev *Device) error
 }
