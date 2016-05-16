@@ -24,10 +24,15 @@ import (
 //redefining the struct for each case
 type TestDataStore struct {
 	MockGetDevices func(skip, limit int, status string) ([]Device, error)
+	MockGetDevice  func(id DeviceID) (*Device, error)
 }
 
 func (ds *TestDataStore) GetDevices(skip, limit int, status string) ([]Device, error) {
 	return ds.MockGetDevices(skip, limit, status)
+}
+
+func (ds *TestDataStore) GetDevice(id DeviceID) (*Device, error) {
+	return ds.MockGetDevice(id)
 }
 
 //mock db methods for multiple cases
@@ -94,12 +99,38 @@ func TestAddDevice(t *testing.T) {
 	// check error type?
 }
 
+func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
+	return func(did DeviceID) (*Device, error) {
+		if did == "" {
+			return nil, errors.New("unsupported device ID")
+		}
+
+		if did != id {
+			return nil, ErrDevNotFound
+		}
+		return &Device{ID: id}, nil
+	}
+}
+
 func TestGetDevice(t *testing.T) {
-	d := devadmForTest(nil)
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
 
-	dev := d.GetDevice("foo")
+	d := devadmForTest(db)
 
+	dev, err := d.GetDevice("foo")
+	assert.NotNil(t, dev)
+	assert.NoError(t, err)
+
+	dev, err = d.GetDevice("bar")
 	assert.Nil(t, dev)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
+
+	// invoke special case that generates error other than ErrDevNotFound
+	dev, err = d.GetDevice("")
+	assert.Nil(t, dev)
+	assert.Error(t, err)
 }
 
 func TestUpdateDevice(t *testing.T) {

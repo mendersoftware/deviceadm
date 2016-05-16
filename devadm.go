@@ -21,7 +21,7 @@ import (
 type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
 	AddDevice(d *Device) error
-	GetDevice(id DeviceID) *Device
+	GetDevice(id DeviceID) (*Device, error)
 	UpdateDevice(id DeviceID, d *Device) error
 }
 
@@ -46,8 +46,12 @@ func (d *DevAdm) AddDevice(dev *Device) error {
 	return errors.New("not implemented")
 }
 
-func (d *DevAdm) GetDevice(id DeviceID) *Device {
-	return nil
+func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
+	dev, err := d.db.GetDevice(id)
+	if err != nil {
+		return nil, err
+	}
+	return dev, nil
 }
 
 func (d *DevAdm) UpdateDevice(id DeviceID, dev *Device) error {
