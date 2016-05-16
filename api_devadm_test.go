@@ -270,12 +270,26 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 			ToJson(devs["foo"].dev),
 		},
 		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+			200,
+			ToJson(struct {
+				Status string `json:"status"`
+			}{
+				devs["foo"].dev.Status,
+			}),
+		},
+		{
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/bar", nil),
 			500,
 			RestError(devs["bar"].err.Error()),
 		},
 		{
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz", nil),
+			404,
+			RestError(ErrDevNotFound.Error()),
+		},
+		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz/status", nil),
 			404,
 			RestError(ErrDevNotFound.Error()),
 		},

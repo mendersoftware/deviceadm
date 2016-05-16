@@ -20,6 +20,13 @@ import (
 	"net/http"
 )
 
+// model of device status response at /devices/:id/status endpoint,
+// the response is a stripped down version of the device containing
+// only the status field
+type DevAdmApiStatusRsp struct {
+	Status string `json:"status"`
+}
+
 type DevAdmHandlers struct {
 	DevAdm DevAdmApp
 }
@@ -94,7 +101,7 @@ func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
 func (d *DevAdmHandlers) AddDevice(w rest.ResponseWriter, r *rest.Request) {
 }
 
-func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
 	devid := r.PathParam("id")
 
 	dev, err := d.DevAdm.GetDevice(DeviceID(devid))
@@ -106,14 +113,29 @@ func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
 			rest.Error(w, "internal error",
 				http.StatusInternalServerError)
 		}
-		return
+		return nil
 	}
 
-	w.WriteJson(dev)
+	return dev
+}
+
+func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
+	dev := d.getDeviceOrFail(w, r)
+
+	if dev != nil {
+		w.WriteJson(dev)
+	}
 }
 
 func (d *DevAdmHandlers) UpdateDevice(w rest.ResponseWriter, r *rest.Request) {
 }
 
 func (d *DevAdmHandlers) GetDeviceStatus(w rest.ResponseWriter, r *rest.Request) {
+	dev := d.getDeviceOrFail(w, r)
+
+	if dev != nil {
+		w.WriteJson(DevAdmApiStatusRsp{
+			dev.Status,
+		})
+	}
 }
