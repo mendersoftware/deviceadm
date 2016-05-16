@@ -57,7 +57,7 @@ func devadmForTest(d DataStore) DevAdmApp {
 	return &DevAdm{db: d}
 }
 
-func TestListDevicesEmpty(t *testing.T) {
+func TestDevAdmListDevicesEmpty(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevicesEmpty,
 	}
@@ -68,7 +68,7 @@ func TestListDevicesEmpty(t *testing.T) {
 	assert.Len(t, l, 0)
 }
 
-func TestListDevices(t *testing.T) {
+func TestDevAdmListDevices(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevices,
 	}
@@ -79,7 +79,7 @@ func TestListDevices(t *testing.T) {
 	assert.Len(t, l, 3)
 }
 
-func TestListDevicesErr(t *testing.T) {
+func TestDevAdmListDevicesErr(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevicesErr,
 	}
@@ -90,7 +90,7 @@ func TestListDevicesErr(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestAddDevice(t *testing.T) {
+func TestDevAdmAddDevice(t *testing.T) {
 	d := devadmForTest(nil)
 
 	err := d.AddDevice(&Device{})
@@ -112,7 +112,7 @@ func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
 	}
 }
 
-func TestGetDevice(t *testing.T) {
+func TestDevAdmGetDevice(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevice: makeGetDevice("foo"),
 	}
@@ -133,7 +133,7 @@ func TestGetDevice(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestUpdateDevice(t *testing.T) {
+func TestDevAdmUpdateDevice(t *testing.T) {
 	d := devadmForTest(nil)
 
 	err := d.UpdateDevice("foo", &Device{})
