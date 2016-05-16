@@ -88,7 +88,7 @@ func RestError(status string) string {
 	return string(msg)
 }
 
-func TestGetDevices(t *testing.T) {
+func TestApiDevAdmGetDevices(t *testing.T) {
 	testCases := []struct {
 		listDevicesNum  int
 		listDevicesErr  error
@@ -215,7 +215,7 @@ func TestNewDevAdmApiHandlers(t *testing.T) {
 	assert.NotNil(t, h)
 }
 
-func TestGetApp(t *testing.T) {
+func TestApiDevAdmGetApp(t *testing.T) {
 	h := NewDevAdmApiHandlers(&MockDevAdm{})
 	a, err := h.GetApp()
 	assert.NotNil(t, a)
