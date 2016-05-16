@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	testDataFolder = "testdata"
+	testDataFolder  = "testdata"
+	allDevsInputSet = "get_devices_input.json"
 )
 
 // these tests need a real instance of mongodb
@@ -192,6 +193,8 @@ func TestMongoGetDevices(t *testing.T) {
 			t.Fatalf("expected: %v\nhave: %v", expected, devs)
 		}
 	}
+
+	wipe(d)
 }
 
 func TestFailedConn(t *testing.T) {
@@ -200,4 +203,48 @@ func TestFailedConn(t *testing.T) {
 	}
 	_, err := NewDataStoreMongo("invalid:27017")
 	assert.NotNil(t, err)
+}
+
+func TestMongoGetDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevice in short mode.")
+	}
+
+	d, err := getDb()
+	assert.NoError(t, err, "obtaining DB failed")
+
+	wipe(d)
+
+	_, err = d.GetDevice("")
+	assert.Error(t, err, "expected error")
+
+	// populate DB
+	err = setUp(d, allDevsInputSet)
+	assert.NoError(t, err, "failed to setup input data %s, error: %s",
+		allDevsInputSet, err)
+
+	// we're going to go through all expected devices just for the
+	// sake of it
+	expected, err := parseDevs(allDevsInputSet)
+	assert.NoError(t, err, "failed to parse expected devs %s, error: %s",
+		allDevsInputSet, err)
+
+	for _, dev := range expected {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error, got %v", err)
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		// obviously the found device should be identical
+		assert.True(t, reflect.DeepEqual(dev, *dbdev), "expected dev %+v to be equal to %+v",
+			dbdev, dev)
+
+		// modify device ID by appending bogus string to it
+		dbdev, err = d.GetDevice(dev.ID + "-foobar")
+		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
+		assert.EqualError(t, err, ErrDevNotFound.Error(), "expected error")
+	}
+
+	wipe(d)
 }

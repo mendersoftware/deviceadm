@@ -56,3 +56,24 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, 
 
 	return res, nil
 }
+
+func (db *DataStoreMongo) GetDevice(id DeviceID) (*Device, error) {
+	s := db.session.Copy()
+	defer s.Close()
+	c := s.DB(DbName).C(DbDevicesColl)
+
+	filter := bson.M{"id": id}
+	res := Device{}
+
+	err := c.Find(filter).One(&res)
+
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, ErrDevNotFound
+		} else {
+			return nil, errors.Wrap(err, "failed to fetch device")
+		}
+	}
+
+	return &res, nil
+}
