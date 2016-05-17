@@ -110,24 +110,49 @@ paths:
               error: Detailed error message
           schema:
             $ref: "#/definitions/SimpleError"
-    put:
-      description: Updates device
+  /devices/{id}/accept:
+    post:
+      description: Accepts device into the system
       parameters:
         - name: id
           in: path
           description: Device identifier
           required: true
           type: string
-        - name: Device
+        - name: atrributes
           in: body
           description: Device resource
           schema:
-            $ref: "#/definitions/Device"
+            $ref: "#/definitions/Attributes"
       responses:
         200:
-          description: Device updated
+          description: Device accepted
+        404:
+          description: Not Found
+          examples:
+            application/json:
+              error: Detailed error message
           schema:
-            $ref: "#/definitions/Device"
+            $ref: "#/definitions/SimpleError"
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+  /devices/{id}/reject:
+    post:
+      description: Rejects the device
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier
+          required: true
+          type: string
+      responses:
+        200:
+          description: Device rejected
         404:
           description: Not Found
           examples:
