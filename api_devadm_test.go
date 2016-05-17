@@ -43,7 +43,11 @@ func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
 	return mda.mockGetDevice(id)
 }
 
-func (mda *MockDevAdm) UpdateDevice(id DeviceID, dev *Device) error {
+func (mda *MockDevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
+	return errors.New("not implemented")
+}
+
+func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
 	return errors.New("not implemented")
 }
 
