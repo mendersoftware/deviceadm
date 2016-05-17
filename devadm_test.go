@@ -25,6 +25,7 @@ import (
 type TestDataStore struct {
 	MockGetDevices func(skip, limit int, status string) ([]Device, error)
 	MockGetDevice  func(id DeviceID) (*Device, error)
+	MockPutDevice  func(dev *Device) error
 }
 
 func (ds *TestDataStore) GetDevices(skip, limit int, status string) ([]Device, error) {
@@ -36,7 +37,7 @@ func (ds *TestDataStore) GetDevice(id DeviceID) (*Device, error) {
 }
 
 func (ds *TestDataStore) PutDevice(dev *Device) error {
-	return errors.New("not implemented")
+	return ds.MockPutDevice(dev)
 }
 
 //mock db methods for multiple cases
@@ -55,6 +56,14 @@ func getDevices(skip, limit int, status string) ([]Device, error) {
 		Device{},
 	}
 	return ret, nil
+}
+
+func putDevice(dev *Device) error {
+	return nil
+}
+
+func putDeviceErr(dev *Device) error {
+	return errors.New("db connection failed")
 }
 
 func devadmForTest(d DataStore) DevAdmApp {
@@ -95,12 +104,27 @@ func TestDevAdmListDevicesErr(t *testing.T) {
 }
 
 func TestDevAdmAddDevice(t *testing.T) {
-	d := devadmForTest(nil)
+	db := &TestDataStore{
+		MockPutDevice: putDevice,
+	}
+	d := devadmForTest(db)
 
 	err := d.AddDevice(&Device{})
 
-	assert.Error(t, err)
-	// check error type?
+	assert.NoError(t, err)
+}
+
+func TestDevAdmAddDeviceErr(t *testing.T) {
+	db := &TestDataStore{
+		MockPutDevice: putDeviceErr,
+	}
+	d := devadmForTest(db)
+
+	err := d.AddDevice(&Device{})
+
+	if assert.Error(t, err) {
+		assert.EqualError(t, err, "failed to add device: db connection failed")
+	}
 }
 
 func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
