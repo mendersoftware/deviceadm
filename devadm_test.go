@@ -138,27 +138,46 @@ func TestDevAdmGetDevice(t *testing.T) {
 }
 
 func TestDevAdmAcceptDevice(t *testing.T) {
-	d := devadmForTest(nil)
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
+
+	d := devadmForTest(db)
 
 	err := d.AcceptDevice("foo", DeviceAttributes{
 		"attr": "val",
 	})
 
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to propagate")
 	// check error type?
+
+	err = d.AcceptDevice("bar", DeviceAttributes{
+		"attr": "val",
+	})
+	assert.Error(t, err)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
 }
 
 func TestDevAdmRejectDevice(t *testing.T) {
-	d := devadmForTest(nil)
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
+
+	d := devadmForTest(db)
 
 	err := d.RejectDevice("foo")
 
 	assert.Error(t, err)
-	// check error type?
+	assert.Contains(t, err.Error(), "failed to propagate")
+
+	err = d.RejectDevice("bar")
+	assert.Error(t, err)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
 }
 
 func TestNewDevAdm(t *testing.T) {
-	d := NewDevAdm(&TestDataStore{})
+	d := NewDevAdm(&TestDataStore{}, DevAuthClientConfig{})
 
 	assert.NotNil(t, d)
 }

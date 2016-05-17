@@ -59,10 +59,65 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 	return dev, nil
 }
 
+func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
+	// forward device state to auth service
+	cl := NewDevAuthClient(d.authclientconf)
+	err := cl.UpdateDevice(*dev)
+	if err != nil {
+		// no good if we cannot propagate device update
+		// further
+		return errors.New("failed to propagate device status update")
+	}
+	return nil
+}
+
 func (d *DevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
-	return errors.New("not implemented")
+
+	dev, err := d.db.GetDevice(id)
+	if err != nil {
+		return err
+	}
+
+	dev.Attributes = attrs
+	dev.Status = DevStatusAccepted
+
+	err = d.propagateDeviceUpdate(dev)
+	if err != nil {
+		return err
+	}
+
+	// update only status and attributes fields
+	err = d.db.PutDevice(&Device{
+		ID:         dev.ID,
+		Status:     DevStatusAccepted,
+		Attributes: attrs,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *DevAdm) RejectDevice(id DeviceID) error {
-	return errors.New("not implemented")
+	dev, err := d.db.GetDevice(id)
+	if err != nil {
+		return err
+	}
+
+	err = d.propagateDeviceUpdate(dev)
+	if err != nil {
+		return err
+	}
+
+	// update only status field
+	err = d.db.PutDevice(&Device{
+		ID:     dev.ID,
+		Status: DevStatusRejected,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
