@@ -26,12 +26,16 @@ type DevAdmApp interface {
 	RejectDevice(id DeviceID) error
 }
 
-func NewDevAdm(d DataStore) DevAdmApp {
-	return &DevAdm{db: d}
+func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
+	return &DevAdm{
+		db:             d,
+		authclientconf: authclientconf,
+	}
 }
 
 type DevAdm struct {
-	db DataStore
+	db             DataStore
+	authclientconf DevAuthClientConfig
 }
 
 func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {

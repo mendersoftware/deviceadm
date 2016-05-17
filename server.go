@@ -45,7 +45,9 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "database connection failed")
 	}
 
-	devadm := NewDevAdm(d)
+	devadm := NewDevAdm(d, DevAuthClientConfig{
+		UpdateUrl: c.GetString(SettingDevAuthUrl),
+	})
 
 	api, err := SetupAPI(c.GetString(SettingMiddleware))
 	if err != nil {
