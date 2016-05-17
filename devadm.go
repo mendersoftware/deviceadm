@@ -22,7 +22,8 @@ type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
 	AddDevice(d *Device) error
 	GetDevice(id DeviceID) (*Device, error)
-	UpdateDevice(id DeviceID, d *Device) error
+	AcceptDevice(id DeviceID, attrs DeviceAttributes) error
+	RejectDevice(id DeviceID) error
 }
 
 func NewDevAdm(d DataStore) DevAdmApp {
@@ -54,6 +55,10 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 	return dev, nil
 }
 
-func (d *DevAdm) UpdateDevice(id DeviceID, dev *Device) error {
+func (d *DevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
+	return errors.New("not implemented")
+}
+
+func (d *DevAdm) RejectDevice(id DeviceID) error {
 	return errors.New("not implemented")
 }

@@ -137,10 +137,21 @@ func TestDevAdmGetDevice(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestDevAdmUpdateDevice(t *testing.T) {
+func TestDevAdmAcceptDevice(t *testing.T) {
 	d := devadmForTest(nil)
 
-	err := d.UpdateDevice("foo", &Device{})
+	err := d.AcceptDevice("foo", DeviceAttributes{
+		"attr": "val",
+	})
+
+	assert.Error(t, err)
+	// check error type?
+}
+
+func TestDevAdmRejectDevice(t *testing.T) {
+	d := devadmForTest(nil)
+
+	err := d.RejectDevice("foo")
 
 	assert.Error(t, err)
 	// check error type?
