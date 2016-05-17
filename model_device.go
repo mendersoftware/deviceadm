@@ -18,6 +18,12 @@ type DeviceID string
 // wrapper for device attributes data
 type DeviceAttributes map[string]string
 
+const (
+	DevStatusAccepted = "accepted"
+	DevStatusRejected = "rejected"
+	DevStatusPending  = "pending"
+)
+
 // Device wrapper
 type Device struct {
 	//system-generated device ID
