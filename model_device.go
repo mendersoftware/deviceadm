@@ -15,6 +15,9 @@ package main
 
 type DeviceID string
 
+// wrapper for device attributes data
+type DeviceAttributes map[string]string
+
 // Device wrapper
 type Device struct {
 	//system-generated device ID
@@ -30,7 +33,7 @@ type Device struct {
 	Status string `json:"status" bson:",omitempty"`
 
 	//decoded, human-readable identity attribute set
-	Attributes map[string]string `json:"attributes" bson:",omitempty"`
+	Attributes DeviceAttributes `json:"attributes" bson:",omitempty"`
 }
 
 func (did DeviceID) String() string {
