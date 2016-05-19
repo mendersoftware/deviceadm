@@ -27,7 +27,10 @@ import (
 )
 
 type MockDevAdm struct {
-	mockListDevices func(skip int, limit int, status string) ([]Device, error)
+	mockListDevices  func(skip int, limit int, status string) ([]Device, error)
+	mockGetDevice    func(id DeviceID) (*Device, error)
+	mockAcceptDevice func(id DeviceID) error
+	mockRejectDevice func(id DeviceID) error
 }
 
 func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -38,12 +41,16 @@ func (mda *MockDevAdm) AddDevice(dev *Device) error {
 	return errors.New("not implemented")
 }
 
-func (mda *MockDevAdm) GetDevice(id DeviceID) *Device {
-	return nil
+func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
+	return mda.mockGetDevice(id)
 }
 
-func (mda *MockDevAdm) UpdateDevice(id DeviceID, dev *Device) error {
-	return errors.New("not implemented")
+func (mda *MockDevAdm) AcceptDevice(id DeviceID) error {
+	return mda.mockAcceptDevice(id)
+}
+
+func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
+	return mda.mockRejectDevice(id)
 }
 
 func mockListDevices(num int) []Device {
@@ -88,7 +95,7 @@ func RestError(status string) string {
 	return string(msg)
 }
 
-func TestGetDevices(t *testing.T) {
+func TestApiDevAdmGetDevices(t *testing.T) {
 	testCases := []struct {
 		listDevicesNum  int
 		listDevicesErr  error
@@ -192,7 +199,7 @@ func TestGetDevices(t *testing.T) {
 		}
 
 		handlers := DevAdmHandlers{&devadm}
-		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevices))
+		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevicesHandler))
 		assert.NoError(t, err)
 
 		api := rest.NewApi()
@@ -210,12 +217,217 @@ func TestGetDevices(t *testing.T) {
 	}
 }
 
+func makeMockApiHandler(t *testing.T, mocka *MockDevAdm) http.Handler {
+	handlers := NewDevAdmApiHandlers(mocka)
+	assert.NotNil(t, handlers)
+
+	app, err := handlers.GetApp()
+	assert.NotNil(t, app)
+	assert.NoError(t, err)
+
+	api := rest.NewApi()
+	api.SetApp(app)
+
+	return api.MakeHandler()
+}
+
+func TestApiDevAdmGetDevice(t *testing.T) {
+	devs := map[string]struct {
+		dev *Device
+		err error
+	}{
+		"foo": {
+			&Device{
+				ID:             "foo",
+				Key:            "foobar",
+				Status:         "accepted",
+				DeviceIdentity: "deadcafe",
+			},
+			nil,
+		},
+		"bar": {
+			nil,
+			errors.New("internal error"),
+		},
+	}
+
+	devadm := MockDevAdm{
+		mockGetDevice: func(id DeviceID) (*Device, error) {
+			d, ok := devs[id.String()]
+			if ok == false {
+				return nil, ErrDevNotFound
+			}
+			if d.err != nil {
+				return nil, d.err
+			}
+			return d.dev, nil
+		},
+	}
+
+	apih := makeMockApiHandler(t, &devadm)
+
+	// enforce specific field naming in errors returned by API
+	rest.ErrorFieldName = "error"
+
+	tcases := []struct {
+		req  *http.Request
+		code int
+		body string
+	}{
+		{
+			test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices/foo", nil),
+			200,
+			ToJson(devs["foo"].dev),
+		},
+		{
+			test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+			200,
+			ToJson(struct {
+				Status string `json:"status"`
+			}{
+				devs["foo"].dev.Status,
+			}),
+		},
+		{
+			test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices/bar", nil),
+			500,
+			RestError(devs["bar"].err.Error()),
+		},
+		{
+			test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices/baz", nil),
+			404,
+			RestError(ErrDevNotFound.Error()),
+		},
+		{
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz/status", nil),
+			404,
+			RestError(ErrDevNotFound.Error()),
+		},
+	}
+
+	for _, tc := range tcases {
+		recorded := test.RunRequest(t, apih, tc.req)
+		recorded.CodeIs(tc.code)
+		recorded.BodyIs(tc.body)
+	}
+}
+
+func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
+	devs := map[string]struct {
+		dev *Device
+		err error
+	}{
+		"foo": {
+			&Device{
+				ID:             "foo",
+				Key:            "foobar",
+				Status:         "accepted",
+				DeviceIdentity: "deadcafe",
+			},
+			nil,
+		},
+		"bar": {
+			nil,
+			errors.New("processing failed"),
+		},
+	}
+
+	mockaction := func(id DeviceID) error {
+		d, ok := devs[id.String()]
+		if ok == false {
+			return ErrDevNotFound
+		}
+		if d.err != nil {
+			return d.err
+		}
+		return nil
+	}
+	devadm := MockDevAdm{
+		mockAcceptDevice: mockaction,
+		mockRejectDevice: mockaction,
+	}
+
+	apih := makeMockApiHandler(t, &devadm)
+	// enforce specific field naming in errors returned by API
+	rest.ErrorFieldName = "error"
+
+	accstatus := DevAdmApiStatus{"accepted"}
+	rejstatus := DevAdmApiStatus{"rejected"}
+
+	tcases := []struct {
+		req     *http.Request
+		code    int
+		body    string
+		headers map[string]string
+	}{
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+			code: 400,
+			body: RestError("failed to decode status data: JSON payload is empty"),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				DevAdmApiStatus{"foo"}),
+			code: 400,
+			body: RestError("incorrect device status"),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				accstatus),
+			code: 303,
+			headers: map[string]string{
+				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
+			},
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/bar/status",
+				accstatus),
+			code: 500,
+			body: RestError(devs["bar"].err.Error()),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/baz/status",
+				accstatus),
+			code: 404,
+			body: RestError(ErrDevNotFound.Error()),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				rejstatus),
+			code: 303,
+			headers: map[string]string{
+				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
+			},
+		},
+	}
+
+	for _, tc := range tcases {
+		recorded := test.RunRequest(t, apih, tc.req)
+		recorded.CodeIs(tc.code)
+		recorded.BodyIs(tc.body)
+		for h, v := range tc.headers {
+			recorded.HeaderIs(h, v)
+		}
+	}
+
+}
+
 func TestNewDevAdmApiHandlers(t *testing.T) {
 	h := NewDevAdmApiHandlers(&MockDevAdm{})
 	assert.NotNil(t, h)
 }
 
-func TestGetApp(t *testing.T) {
+func TestApiDevAdmGetApp(t *testing.T) {
 	h := NewDevAdmApiHandlers(&MockDevAdm{})
 	a, err := h.GetApp()
 	assert.NotNil(t, a)

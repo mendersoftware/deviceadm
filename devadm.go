@@ -21,16 +21,21 @@ import (
 type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
 	AddDevice(d *Device) error
-	GetDevice(id DeviceID) *Device
-	UpdateDevice(id DeviceID, d *Device) error
+	GetDevice(id DeviceID) (*Device, error)
+	AcceptDevice(id DeviceID) error
+	RejectDevice(id DeviceID) error
 }
 
-func NewDevAdm(d DataStore) DevAdmApp {
-	return &DevAdm{db: d}
+func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
+	return &DevAdm{
+		db:             d,
+		authclientconf: authclientconf,
+	}
 }
 
 type DevAdm struct {
-	db DataStore
+	db             DataStore
+	authclientconf DevAuthClientConfig
 }
 
 func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -46,10 +51,55 @@ func (d *DevAdm) AddDevice(dev *Device) error {
 	return errors.New("not implemented")
 }
 
-func (d *DevAdm) GetDevice(id DeviceID) *Device {
+func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
+	dev, err := d.db.GetDevice(id)
+	if err != nil {
+		return nil, err
+	}
+	return dev, nil
+}
+
+func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
+	// forward device state to auth service
+	cl := NewDevAuthClient(d.authclientconf)
+	err := cl.UpdateDevice(*dev)
+	if err != nil {
+		// no good if we cannot propagate device update
+		// further
+		return errors.New("failed to propagate device status update")
+	}
 	return nil
 }
 
-func (d *DevAdm) UpdateDevice(id DeviceID, dev *Device) error {
-	return errors.New("not implemented")
+func (d *DevAdm) updateDeviceStatus(id DeviceID, status string) error {
+	dev, err := d.db.GetDevice(id)
+	if err != nil {
+		return err
+	}
+
+	dev.Status = status
+
+	err = d.propagateDeviceUpdate(dev)
+	if err != nil {
+		return err
+	}
+
+	// update only status and attributes fields
+	err = d.db.PutDevice(&Device{
+		ID:     dev.ID,
+		Status: dev.Status,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DevAdm) AcceptDevice(id DeviceID) error {
+	return d.updateDeviceStatus(id, DevStatusAccepted)
+}
+
+func (d *DevAdm) RejectDevice(id DeviceID) error {
+	return d.updateDeviceStatus(id, DevStatusRejected)
 }

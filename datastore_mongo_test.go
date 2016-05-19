@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	testDataFolder = "testdata"
+	testDataFolder  = "testdata"
+	allDevsInputSet = "get_devices_input.json"
 )
 
 // these tests need a real instance of mongodb
@@ -167,31 +168,24 @@ func TestMongoGetDevices(t *testing.T) {
 	for _, tc := range testCases {
 		//setup
 		err = wipe(d)
-		if err != nil {
-			t.Fatalf("failed to wipe data, error: %s", err.Error())
-		}
+		assert.NoError(t, err, "failed to wipe data")
 
 		err = setUp(d, tc.input)
-		if err != nil {
-			t.Fatalf("failed to setup input data %s, error: %s", tc.expected, err.Error())
-		}
+		assert.NoError(t, err, "failed to setup input data %s", tc.expected)
 
 		expected, err := parseDevs(tc.expected)
-		if err != nil {
-			t.Fatalf("failed to parse expected devs %s, error: %s", tc.expected, err.Error())
-		}
+		assert.NoError(t, err, "failed to parse expected devs %s", tc.expected)
 
 		//test
 		devs, err := d.GetDevices(tc.skip, tc.limit, tc.status)
-		if err != nil {
-			t.Fatalf("failed to get devices, error: %s", err.Error())
-
-		}
+		assert.NoError(t, err, "failed to get devices")
 
 		if !reflect.DeepEqual(expected, devs) {
-			t.Fatalf("expected: %v\nhave: %v", expected, devs)
+			assert.Fail(t, "expected: %v\nhave: %v", expected, devs)
 		}
 	}
+
+	wipe(d)
 }
 
 func TestFailedConn(t *testing.T) {
@@ -200,4 +194,119 @@ func TestFailedConn(t *testing.T) {
 	}
 	_, err := NewDataStoreMongo("invalid:27017")
 	assert.NotNil(t, err)
+}
+
+func TestMongoGetDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevice in short mode.")
+	}
+
+	d, err := getDb()
+	assert.NoError(t, err, "obtaining DB failed")
+
+	wipe(d)
+
+	_, err = d.GetDevice("")
+	assert.Error(t, err, "expected error")
+
+	// populate DB
+	err = setUp(d, allDevsInputSet)
+	assert.NoError(t, err, "failed to setup input data %s", allDevsInputSet)
+
+	// we're going to go through all expected devices just for the
+	// sake of it
+	expected, err := parseDevs(allDevsInputSet)
+	assert.NoError(t, err, "failed to parse expected devs %s", allDevsInputSet)
+
+	for _, dev := range expected {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error")
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		// obviously the found device should be identical
+		assert.True(t, reflect.DeepEqual(dev, *dbdev), "expected dev %+v to be equal to %+v",
+			dbdev, dev)
+
+		// modify device ID by appending bogus string to it
+		dbdev, err = d.GetDevice(dev.ID + "-foobar")
+		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
+		assert.EqualError(t, err, ErrDevNotFound.Error(), "expected error")
+	}
+
+	wipe(d)
+}
+
+func TestMongoPutDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevice in short mode.")
+	}
+
+	d, err := getDb()
+	assert.NoError(t, err, "obtaining DB failed")
+
+	wipe(d)
+
+	_, err = d.GetDevice("")
+	assert.Error(t, err, "expected error")
+
+	// populate DB
+	err = setUp(d, allDevsInputSet)
+	assert.NoError(t, err, "failed to setup input data %s", allDevsInputSet)
+
+	// all dataset of all devices
+	devs, err := parseDevs(allDevsInputSet)
+	assert.NoError(t, err, "failed to parse expected devs %s", allDevsInputSet)
+
+	// insert all devices to DB
+	for _, dev := range devs {
+		err := d.PutDevice(&dev)
+		assert.NoError(t, err, "expected no error inserting to data store")
+	}
+
+	// get devices, one by one
+	for _, dev := range devs {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error")
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		t.Logf("stored dev: %+v", dbdev)
+
+		// obviously the found device should be identical
+		assert.True(t, reflect.DeepEqual(dev, *dbdev), "expected dev %+v to be equal to %+v",
+			dbdev, dev)
+
+		// modify device staus
+		ndev := Device{
+			Status: "accepted",
+			ID:     dbdev.ID,
+		}
+
+		// update device key
+		err = d.PutDevice(&ndev)
+		assert.NoError(t, err, "expected no error updating devices in DB")
+	}
+
+	// get devices, one by one, check if status is set to accepted
+	for _, dev := range devs {
+		// we expect to find a device that was present in the
+		// input set
+		dbdev, err := d.GetDevice(dev.ID)
+		assert.NoError(t, err, "expected no error")
+		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
+			dev.ID)
+		t.Logf("updated dev: %+v", dbdev)
+
+		assert.Equal(t, "accepted", dbdev.Status)
+		// other fields should be identical
+		assert.Equal(t, dev.ID, dbdev.ID)
+		assert.Equal(t, dev.DeviceIdentity, dbdev.DeviceIdentity)
+		assert.Equal(t, dev.Key, dbdev.Key)
+		assert.True(t, reflect.DeepEqual(dev.Attributes, dbdev.Attributes))
+	}
+
+	// wipe(d)
 }

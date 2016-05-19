@@ -15,22 +15,31 @@ package main
 
 type DeviceID string
 
+// wrapper for device attributes data
+type DeviceAttributes map[string]string
+
+const (
+	DevStatusAccepted = "accepted"
+	DevStatusRejected = "rejected"
+	DevStatusPending  = "pending"
+)
+
 // Device wrapper
 type Device struct {
 	//system-generated device ID
-	ID DeviceID `json:"id"`
+	ID DeviceID `json:"id" bson:",omitempty"`
 
 	//blob of encrypted identity attributes
-	DeviceIdentity string `json:"device_identity"`
+	DeviceIdentity string `json:"device_identity" bson:",omitempty"`
 
 	//device's public key
-	Key string `json:"key"`
+	Key string `json:"key" bson:",omitempty"`
 
 	//admission status('accepted', 'rejected', 'pending')
-	Status string `json:"status"`
+	Status string `json:"status" bson:",omitempty"`
 
 	//decoded, human-readable identity attribute set
-	Attributes map[string]string `json:"attributes"`
+	Attributes DeviceAttributes `json:"attributes" bson:",omitempty"`
 }
 
 func (did DeviceID) String() string {

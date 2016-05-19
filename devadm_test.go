@@ -24,10 +24,19 @@ import (
 //redefining the struct for each case
 type TestDataStore struct {
 	MockGetDevices func(skip, limit int, status string) ([]Device, error)
+	MockGetDevice  func(id DeviceID) (*Device, error)
 }
 
 func (ds *TestDataStore) GetDevices(skip, limit int, status string) ([]Device, error) {
 	return ds.MockGetDevices(skip, limit, status)
+}
+
+func (ds *TestDataStore) GetDevice(id DeviceID) (*Device, error) {
+	return ds.MockGetDevice(id)
+}
+
+func (ds *TestDataStore) PutDevice(dev *Device) error {
+	return errors.New("not implemented")
 }
 
 //mock db methods for multiple cases
@@ -52,7 +61,7 @@ func devadmForTest(d DataStore) DevAdmApp {
 	return &DevAdm{db: d}
 }
 
-func TestListDevicesEmpty(t *testing.T) {
+func TestDevAdmListDevicesEmpty(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevicesEmpty,
 	}
@@ -63,7 +72,7 @@ func TestListDevicesEmpty(t *testing.T) {
 	assert.Len(t, l, 0)
 }
 
-func TestListDevices(t *testing.T) {
+func TestDevAdmListDevices(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevices,
 	}
@@ -74,7 +83,7 @@ func TestListDevices(t *testing.T) {
 	assert.Len(t, l, 3)
 }
 
-func TestListDevicesErr(t *testing.T) {
+func TestDevAdmListDevicesErr(t *testing.T) {
 	db := &TestDataStore{
 		MockGetDevices: getDevicesErr,
 	}
@@ -85,7 +94,7 @@ func TestListDevicesErr(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestAddDevice(t *testing.T) {
+func TestDevAdmAddDevice(t *testing.T) {
 	d := devadmForTest(nil)
 
 	err := d.AddDevice(&Device{})
@@ -94,25 +103,77 @@ func TestAddDevice(t *testing.T) {
 	// check error type?
 }
 
-func TestGetDevice(t *testing.T) {
-	d := devadmForTest(nil)
+func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
+	return func(did DeviceID) (*Device, error) {
+		if did == "" {
+			return nil, errors.New("unsupported device ID")
+		}
 
-	dev := d.GetDevice("foo")
-
-	assert.Nil(t, dev)
+		if did != id {
+			return nil, ErrDevNotFound
+		}
+		return &Device{ID: id}, nil
+	}
 }
 
-func TestUpdateDevice(t *testing.T) {
-	d := devadmForTest(nil)
+func TestDevAdmGetDevice(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
 
-	err := d.UpdateDevice("foo", &Device{})
+	d := devadmForTest(db)
+
+	dev, err := d.GetDevice("foo")
+	assert.NotNil(t, dev)
+	assert.NoError(t, err)
+
+	dev, err = d.GetDevice("bar")
+	assert.Nil(t, dev)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
+
+	// invoke special case that generates error other than ErrDevNotFound
+	dev, err = d.GetDevice("")
+	assert.Nil(t, dev)
+	assert.Error(t, err)
+}
+
+func TestDevAdmAcceptDevice(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
+
+	d := devadmForTest(db)
+
+	err := d.AcceptDevice("foo")
 
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to propagate")
 	// check error type?
+
+	err = d.AcceptDevice("bar")
+	assert.Error(t, err)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
+}
+
+func TestDevAdmRejectDevice(t *testing.T) {
+	db := &TestDataStore{
+		MockGetDevice: makeGetDevice("foo"),
+	}
+
+	d := devadmForTest(db)
+
+	err := d.RejectDevice("foo")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to propagate")
+
+	err = d.RejectDevice("bar")
+	assert.Error(t, err)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
 }
 
 func TestNewDevAdm(t *testing.T) {
-	d := NewDevAdm(&TestDataStore{})
+	d := NewDevAdm(&TestDataStore{}, DevAuthClientConfig{})
 
 	assert.NotNil(t, d)
 }

@@ -20,6 +20,19 @@ import (
 	"net/http"
 )
 
+const (
+	uriDevices      = "/api/0.1.0/devices"
+	uriDevice       = "/api/0.1.0/devices/:id"
+	uriDeviceStatus = "/api/0.1.0/devices/:id/status"
+)
+
+// model of device status response at /devices/:id/status endpoint,
+// the response is a stripped down version of the device containing
+// only the status field
+type DevAdmApiStatus struct {
+	Status string `json:"status"`
+}
+
 type DevAdmHandlers struct {
 	DevAdm DevAdmApp
 }
@@ -33,13 +46,13 @@ func NewDevAdmApiHandlers(devadm DevAdmApp) ApiHandler {
 
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
-		rest.Get("/api/0.1.0/devices", d.GetDevices),
-		rest.Post("/api/0.1.0/devices", d.AddDevice),
+		rest.Get(uriDevices, d.GetDevicesHandler),
+		rest.Post(uriDevices, d.AddDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id", d.GetDevice),
-		rest.Put("/api/0.1.0/devices/:id", d.UpdateDevice),
+		rest.Get(uriDevice, d.GetDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id/status", d.GetDeviceStatus),
+		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
+		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
 	}
 
 	routes = append(routes)
@@ -56,7 +69,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 
 }
 
-func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
 		rest.Error(w, err.Error(), http.StatusBadRequest)
@@ -91,14 +104,91 @@ func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJson(devs[:len])
 }
 
-func (d *DevAdmHandlers) AddDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 }
 
-func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
+// Helper for find a device of ID passed as path param ('id') in
+// request 'r' and return it. If a device was not found returns nil
+// and produces a sutabie error response using provided
+// rest.ResponseWriter
+func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
+	devid := r.PathParam("id")
+
+	dev, err := d.DevAdm.GetDevice(DeviceID(devid))
+
+	if dev == nil {
+		if err == ErrDevNotFound {
+			rest.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			rest.Error(w, "internal error",
+				http.StatusInternalServerError)
+		}
+		return nil
+	}
+
+	return dev
 }
 
-func (d *DevAdmHandlers) UpdateDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+	dev := d.getDeviceOrFail(w, r)
+	// getDeviceOrFail() has already produced a suitable error
+	// response if device was not found or something else happened
+
+	if dev != nil {
+		w.WriteJson(dev)
+	}
 }
 
-func (d *DevAdmHandlers) GetDeviceStatus(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
+	devid := r.PathParam("id")
+
+	var status DevAdmApiStatus
+	err := r.DecodeJsonPayload(&status)
+	if err != nil {
+		rest.Error(w,
+			errors.Wrap(err, "failed to decode status data").Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	// validate status
+	if status.Status != DevStatusAccepted && status.Status != DevStatusRejected {
+		rest.Error(w,
+			errors.New("incorrect device status").Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	if status.Status == DevStatusAccepted {
+		err = d.DevAdm.AcceptDevice(DeviceID(devid))
+	} else if status.Status == DevStatusRejected {
+		err = d.DevAdm.RejectDevice(DeviceID(devid))
+	}
+	if err != nil {
+		code := http.StatusInternalServerError
+		if err == ErrDevNotFound {
+			code = http.StatusNotFound
+		}
+		rest.Error(w, err.Error(), code)
+		return
+
+	}
+
+	devurl := utils.BuildURL(r, uriDevice, map[string]string{
+		":id": devid,
+	})
+	w.Header().Add("Location", devurl.String())
+	w.WriteHeader(http.StatusSeeOther)
+}
+
+func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
+	dev := d.getDeviceOrFail(w, r)
+	// getDeviceOrFail() has already produced a suitable error
+	// response if device was not found or something else happened
+
+	if dev != nil {
+		w.WriteJson(DevAdmApiStatus{
+			dev.Status,
+		})
+	}
 }
