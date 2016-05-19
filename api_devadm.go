@@ -102,6 +102,10 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 }
 
+// Helper for find a device of ID passed as path param ('id') in
+// request 'r' and return it. If a device was not found returns nil
+// and produces a sutabie error response using provided
+// rest.ResponseWriter
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
 	devid := r.PathParam("id")
 
@@ -122,6 +126,8 @@ func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request)
 
 func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	dev := d.getDeviceOrFail(w, r)
+	// getDeviceOrFail() has already produced a suitable error
+	// response if device was not found or something else happened
 
 	if dev != nil {
 		w.WriteJson(dev)
@@ -175,6 +181,8 @@ func (d *DevAdmHandlers) RejectDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 
 func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
 	dev := d.getDeviceOrFail(w, r)
+	// getDeviceOrFail() has already produced a suitable error
+	// response if device was not found or something else happened
 
 	if dev != nil {
 		w.WriteJson(DevAdmApiStatusRsp{
