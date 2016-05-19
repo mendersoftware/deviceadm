@@ -14,6 +14,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/pkg/errors"
@@ -105,6 +106,61 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 }
 
 func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+	dev, err := parseDevice(r)
+	if err != nil {
+		rest.Error(w,
+			err.Error(),
+			http.StatusBadRequest)
+		return
+	}
+
+	//save device in pending state
+	dev.Status = "pending"
+	err = d.DevAdm.AddDevice(dev)
+	if err != nil {
+		rest.Error(w,
+			"internal error",
+			http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func parseDevice(r *rest.Request) (*Device, error) {
+	dev := Device{}
+
+	//decode body
+	err := r.DecodeJsonPayload(&dev)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode request body")
+	}
+
+	//validate id
+	if dev.ID == DeviceID("") {
+		return nil, errors.New("'id' field required")
+	}
+
+	//validate identity
+	if dev.DeviceIdentity == "" {
+		return nil, errors.New("'device_identity' field required")
+	}
+
+	//validate key
+	if dev.Key == "" {
+		return nil, errors.New("'key' field required")
+	}
+
+	//decode attributes
+	err = json.Unmarshal([]byte(dev.DeviceIdentity), &(dev.Attributes))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode attributes data")
+	}
+
+	if len(dev.Attributes) == 0 {
+		return nil, errors.New("no attributes provided")
+	}
+	return &dev, nil
 }
 
 // Helper for find a device of ID passed as path param ('id') in

@@ -75,6 +75,10 @@ paths:
             Location:
               type: string
               description: URI for the new created resource.
+        400:
+          description: Invalid request
+          schema:
+            $ref: "#/definitions/SimpleError"
         500:
           description: Internal Server Error
           examples:

@@ -48,7 +48,11 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, erro
 }
 
 func (d *DevAdm) AddDevice(dev *Device) error {
-	return errors.New("not implemented")
+	err := d.db.PutDevice(dev)
+	if err != nil {
+		return errors.Wrap(err, "failed to add device")
+	}
+	return nil
 }
 
 func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
