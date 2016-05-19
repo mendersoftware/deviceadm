@@ -29,7 +29,7 @@ import (
 type MockDevAdm struct {
 	mockListDevices  func(skip int, limit int, status string) ([]Device, error)
 	mockGetDevice    func(id DeviceID) (*Device, error)
-	mockAcceptDevice func(id DeviceID, attrs DeviceAttributes) error
+	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
 }
 
@@ -45,8 +45,8 @@ func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
 	return mda.mockGetDevice(id)
 }
 
-func (mda *MockDevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
-	return mda.mockAcceptDevice(id, attrs)
+func (mda *MockDevAdm) AcceptDevice(id DeviceID) error {
+	return mda.mockAcceptDevice(id)
 }
 
 func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
@@ -316,7 +316,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 }
 
-func TestApiDevAdmAcceptDevice(t *testing.T) {
+func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	devs := map[string]struct {
 		dev *Device
 		err error
@@ -336,138 +336,78 @@ func TestApiDevAdmAcceptDevice(t *testing.T) {
 		},
 	}
 
+	mockaction := func(id DeviceID) error {
+		d, ok := devs[id.String()]
+		if ok == false {
+			return ErrDevNotFound
+		}
+		if d.err != nil {
+			return d.err
+		}
+		return nil
+	}
 	devadm := MockDevAdm{
-		mockAcceptDevice: func(id DeviceID, attrs DeviceAttributes) error {
-			d, ok := devs[id.String()]
-			if ok == false {
-				return ErrDevNotFound
-			}
-			if d.err != nil {
-				return d.err
-			}
-			return nil
-		},
+		mockAcceptDevice: mockaction,
+		mockRejectDevice: mockaction,
 	}
 
 	apih := makeMockApiHandler(t, &devadm)
 	// enforce specific field naming in errors returned by API
 	rest.ErrorFieldName = "error"
 
-	goodattrs := DeviceAttributes{
-		"dead": "cafe",
-		"tea":  "pot",
-	}
-	badattrs := DeviceAttributes{}
+	accstatus := DevAdmApiStatus{"accepted"}
+	rejstatus := DevAdmApiStatus{"rejected"}
 
 	tcases := []struct {
-		req  *http.Request
-		code int
-		body string
+		req     *http.Request
+		code    int
+		body    string
+		headers map[string]string
 	}{
 		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/foo/accept", nil),
-			400,
-			RestError("failed to decode attributes data: JSON payload is empty"),
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+			code: 400,
+			body: RestError("failed to decode status data: JSON payload is empty"),
 		},
 		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/foo/accept",
-				badattrs),
-			400,
-			RestError("no attributes provided"),
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				DevAdmApiStatus{"foo"}),
+			code: 400,
+			body: RestError("incorrect device status"),
 		},
 		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/foo/accept",
-				goodattrs),
-			200,
-			"",
-		},
-		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/bar/accept",
-				goodattrs),
-			500,
-			RestError(devs["bar"].err.Error()),
-		},
-		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/baz/accept",
-				goodattrs),
-			404,
-			RestError(ErrDevNotFound.Error()),
-		},
-	}
-
-	for _, tc := range tcases {
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.code)
-		recorded.BodyIs(tc.body)
-	}
-
-}
-
-func TestApiDevAdmRejectDevice(t *testing.T) {
-	devs := map[string]struct {
-		dev *Device
-		err error
-	}{
-		"foo": {
-			&Device{
-				ID:             "foo",
-				Key:            "foobar",
-				Status:         "accepted",
-				DeviceIdentity: "deadcafe",
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				accstatus),
+			code: 303,
+			headers: map[string]string{
+				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
 			},
-			nil,
-		},
-		"bar": {
-			nil,
-			errors.New("processing failed"),
-		},
-	}
-
-	devadm := MockDevAdm{
-		mockRejectDevice: func(id DeviceID) error {
-			d, ok := devs[id.String()]
-			if ok == false {
-				return ErrDevNotFound
-			}
-			if d.err != nil {
-				return d.err
-			}
-			return nil
-		},
-	}
-
-	apih := makeMockApiHandler(t, &devadm)
-
-	// enforce specific field naming in errors returned by API
-	rest.ErrorFieldName = "error"
-
-	tcases := []struct {
-		req  *http.Request
-		code int
-		body string
-	}{
-		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/foo/reject", nil),
-			200,
-			"",
 		},
 		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/bar/reject", nil),
-			500,
-			RestError(devs["bar"].err.Error()),
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/bar/status",
+				accstatus),
+			code: 500,
+			body: RestError(devs["bar"].err.Error()),
 		},
 		{
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices/baz/reject", nil),
-			404,
-			RestError(ErrDevNotFound.Error()),
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/baz/status",
+				accstatus),
+			code: 404,
+			body: RestError(ErrDevNotFound.Error()),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				rejstatus),
+			code: 303,
+			headers: map[string]string{
+				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
+			},
 		},
 	}
 
@@ -475,7 +415,11 @@ func TestApiDevAdmRejectDevice(t *testing.T) {
 		recorded := test.RunRequest(t, apih, tc.req)
 		recorded.CodeIs(tc.code)
 		recorded.BodyIs(tc.body)
+		for h, v := range tc.headers {
+			recorded.HeaderIs(h, v)
+		}
 	}
+
 }
 
 func TestNewDevAdmApiHandlers(t *testing.T) {

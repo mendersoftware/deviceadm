@@ -20,10 +20,16 @@ import (
 	"net/http"
 )
 
+const (
+	uriDevices      = "/api/0.1.0/devices"
+	uriDevice       = "/api/0.1.0/devices/:id"
+	uriDeviceStatus = "/api/0.1.0/devices/:id/status"
+)
+
 // model of device status response at /devices/:id/status endpoint,
 // the response is a stripped down version of the device containing
 // only the status field
-type DevAdmApiStatusRsp struct {
+type DevAdmApiStatus struct {
 	Status string `json:"status"`
 }
 
@@ -40,14 +46,13 @@ func NewDevAdmApiHandlers(devadm DevAdmApp) ApiHandler {
 
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
-		rest.Get("/api/0.1.0/devices", d.GetDevicesHandler),
-		rest.Post("/api/0.1.0/devices", d.AddDeviceHandler),
+		rest.Get(uriDevices, d.GetDevicesHandler),
+		rest.Post(uriDevices, d.AddDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id", d.GetDeviceHandler),
+		rest.Get(uriDevice, d.GetDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id/status", d.GetDeviceStatusHandler),
-		rest.Post("/api/0.1.0/devices/:id/accept", d.AcceptDeviceHandler),
-		rest.Post("/api/0.1.0/devices/:id/reject", d.RejectDeviceHandler),
+		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
+		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
 	}
 
 	routes = append(routes)
@@ -134,25 +139,31 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 	}
 }
 
-func (d *DevAdmHandlers) AcceptDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
 	devid := r.PathParam("id")
 
-	var attrs DeviceAttributes
-
-	err := r.DecodeJsonPayload(&attrs)
+	var status DevAdmApiStatus
+	err := r.DecodeJsonPayload(&status)
 	if err != nil {
 		rest.Error(w,
-			errors.Wrap(err, "failed to decode attributes data").Error(),
+			errors.Wrap(err, "failed to decode status data").Error(),
 			http.StatusBadRequest)
 		return
 	}
 
-	if len(attrs) == 0 {
-		rest.Error(w, "no attributes provided", http.StatusBadRequest)
+	// validate status
+	if status.Status != DevStatusAccepted && status.Status != DevStatusRejected {
+		rest.Error(w,
+			errors.New("incorrect device status").Error(),
+			http.StatusBadRequest)
 		return
 	}
 
-	err = d.DevAdm.AcceptDevice(DeviceID(devid), attrs)
+	if status.Status == DevStatusAccepted {
+		err = d.DevAdm.AcceptDevice(DeviceID(devid))
+	} else if status.Status == DevStatusRejected {
+		err = d.DevAdm.RejectDevice(DeviceID(devid))
+	}
 	if err != nil {
 		code := http.StatusInternalServerError
 		if err == ErrDevNotFound {
@@ -162,21 +173,12 @@ func (d *DevAdmHandlers) AcceptDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 		return
 
 	}
-	w.WriteHeader(http.StatusOK)
-}
 
-func (d *DevAdmHandlers) RejectDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	devid := r.PathParam("id")
-
-	err := d.DevAdm.RejectDevice(DeviceID(devid))
-	if err != nil {
-		code := http.StatusInternalServerError
-		if err == ErrDevNotFound {
-			code = http.StatusNotFound
-		}
-		rest.Error(w, err.Error(), code)
-	}
-	w.WriteHeader(http.StatusOK)
+	devurl := utils.BuildURL(r, uriDevice, map[string]string{
+		":id": devid,
+	})
+	w.Header().Add("Location", devurl.String())
+	w.WriteHeader(http.StatusSeeOther)
 }
 
 func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
@@ -185,7 +187,7 @@ func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.R
 	// response if device was not found or something else happened
 
 	if dev != nil {
-		w.WriteJson(DevAdmApiStatusRsp{
+		w.WriteJson(DevAdmApiStatus{
 			dev.Status,
 		})
 	}
