@@ -110,63 +110,6 @@ paths:
               error: Detailed error message
           schema:
             $ref: "#/definitions/SimpleError"
-  /devices/{id}/accept:
-    post:
-      description: Accepts device into the system
-      parameters:
-        - name: id
-          in: path
-          description: Device identifier
-          required: true
-          type: string
-        - name: atrributes
-          in: body
-          description: Device resource
-          schema:
-            $ref: "#/definitions/Attributes"
-      responses:
-        200:
-          description: Device accepted
-        404:
-          description: Not Found
-          examples:
-            application/json:
-              error: Detailed error message
-          schema:
-            $ref: "#/definitions/SimpleError"
-        500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
-          schema:
-            $ref: "#/definitions/SimpleError"
-  /devices/{id}/reject:
-    post:
-      description: Rejects the device
-      parameters:
-        - name: id
-          in: path
-          description: Device identifier
-          required: true
-          type: string
-      responses:
-        200:
-          description: Device rejected
-        404:
-          description: Not Found
-          examples:
-            application/json:
-              error: Detailed error message
-          schema:
-            $ref: "#/definitions/SimpleError"
-        500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
-          schema:
-            $ref: "#/definitions/SimpleError"
   /devices/{id}/status:
     get:
       description: Checks admission status for the device
@@ -181,6 +124,41 @@ paths:
           description: Admission status of the device
           schema:
             $ref: "#/definitions/Status"
+        404:
+          description: Not Found
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+        500:
+          description: Internal Server Error
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
+    put:
+      description: Update device admission state
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier
+          required: true
+          type: string
+        - name: status
+          in: body
+          description: New status
+          required: true
+          schema:
+            $ref: '#/definitions/Status'
+      responses:
+        303:
+          description: Device updated
+          headers:
+            Location:
+              type: string
+              description: URI of updated device
         404:
           description: Not Found
           examples:
