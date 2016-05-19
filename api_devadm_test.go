@@ -199,7 +199,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		}
 
 		handlers := DevAdmHandlers{&devadm}
-		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevices))
+		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevicesHandler))
 		assert.NoError(t, err)
 
 		api := rest.NewApi()

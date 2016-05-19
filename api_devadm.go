@@ -40,14 +40,14 @@ func NewDevAdmApiHandlers(devadm DevAdmApp) ApiHandler {
 
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
-		rest.Get("/api/0.1.0/devices", d.GetDevices),
-		rest.Post("/api/0.1.0/devices", d.AddDevice),
+		rest.Get("/api/0.1.0/devices", d.GetDevicesHandler),
+		rest.Post("/api/0.1.0/devices", d.AddDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id", d.GetDevice),
+		rest.Get("/api/0.1.0/devices/:id", d.GetDeviceHandler),
 
-		rest.Get("/api/0.1.0/devices/:id/status", d.GetDeviceStatus),
-		rest.Post("/api/0.1.0/devices/:id/accept", d.AcceptDevice),
-		rest.Post("/api/0.1.0/devices/:id/reject", d.RejectDevice),
+		rest.Get("/api/0.1.0/devices/:id/status", d.GetDeviceStatusHandler),
+		rest.Post("/api/0.1.0/devices/:id/accept", d.AcceptDeviceHandler),
+		rest.Post("/api/0.1.0/devices/:id/reject", d.RejectDeviceHandler),
 	}
 
 	routes = append(routes)
@@ -64,7 +64,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 
 }
 
-func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
 		rest.Error(w, err.Error(), http.StatusBadRequest)
@@ -99,7 +99,7 @@ func (d *DevAdmHandlers) GetDevices(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJson(devs[:len])
 }
 
-func (d *DevAdmHandlers) AddDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 }
 
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
@@ -120,7 +120,7 @@ func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request)
 	return dev
 }
 
-func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	dev := d.getDeviceOrFail(w, r)
 
 	if dev != nil {
@@ -128,7 +128,7 @@ func (d *DevAdmHandlers) GetDevice(w rest.ResponseWriter, r *rest.Request) {
 	}
 }
 
-func (d *DevAdmHandlers) AcceptDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) AcceptDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	devid := r.PathParam("id")
 
 	var attrs DeviceAttributes
@@ -159,7 +159,7 @@ func (d *DevAdmHandlers) AcceptDevice(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (d *DevAdmHandlers) RejectDevice(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) RejectDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	devid := r.PathParam("id")
 
 	err := d.DevAdm.RejectDevice(DeviceID(devid))
@@ -173,7 +173,7 @@ func (d *DevAdmHandlers) RejectDevice(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (d *DevAdmHandlers) GetDeviceStatus(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
 	dev := d.getDeviceOrFail(w, r)
 
 	if dev != nil {
