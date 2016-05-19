@@ -22,7 +22,7 @@ type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
 	AddDevice(d *Device) error
 	GetDevice(id DeviceID) (*Device, error)
-	AcceptDevice(id DeviceID, attrs DeviceAttributes) error
+	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
 }
 
@@ -71,15 +71,13 @@ func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	return nil
 }
 
-func (d *DevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
-
+func (d *DevAdm) updateDeviceStatus(id DeviceID, status string) error {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return err
 	}
 
-	dev.Attributes = attrs
-	dev.Status = DevStatusAccepted
+	dev.Status = status
 
 	err = d.propagateDeviceUpdate(dev)
 	if err != nil {
@@ -88,9 +86,8 @@ func (d *DevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
 
 	// update only status and attributes fields
 	err = d.db.PutDevice(&Device{
-		ID:         dev.ID,
-		Status:     DevStatusAccepted,
-		Attributes: attrs,
+		ID:     dev.ID,
+		Status: dev.Status,
 	})
 	if err != nil {
 		return err
@@ -99,25 +96,10 @@ func (d *DevAdm) AcceptDevice(id DeviceID, attrs DeviceAttributes) error {
 	return nil
 }
 
+func (d *DevAdm) AcceptDevice(id DeviceID) error {
+	return d.updateDeviceStatus(id, DevStatusAccepted)
+}
+
 func (d *DevAdm) RejectDevice(id DeviceID) error {
-	dev, err := d.db.GetDevice(id)
-	if err != nil {
-		return err
-	}
-
-	err = d.propagateDeviceUpdate(dev)
-	if err != nil {
-		return err
-	}
-
-	// update only status field
-	err = d.db.PutDevice(&Device{
-		ID:     dev.ID,
-		Status: DevStatusRejected,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return d.updateDeviceStatus(id, DevStatusRejected)
 }

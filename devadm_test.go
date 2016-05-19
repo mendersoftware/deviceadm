@@ -144,17 +144,13 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 
 	d := devadmForTest(db)
 
-	err := d.AcceptDevice("foo", DeviceAttributes{
-		"attr": "val",
-	})
+	err := d.AcceptDevice("foo")
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to propagate")
 	// check error type?
 
-	err = d.AcceptDevice("bar", DeviceAttributes{
-		"attr": "val",
-	})
+	err = d.AcceptDevice("bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, ErrDevNotFound.Error())
 }
