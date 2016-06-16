@@ -28,7 +28,7 @@ const (
 	SettingDbDefault = "mongo-device-adm:27017"
 
 	SettingDevAuthUrl        = "devauthurl"
-	SettingDevAuthUrlDefault = "http://devauth:8080/api/0.1.0/devices/{id}"
+	SettingDevAuthUrlDefault = "http://mender-device-auth:8080/api/0.1.0/devices/{id}"
 )
 
 var (
