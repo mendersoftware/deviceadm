@@ -46,7 +46,7 @@ func RunServer(c config.Reader) error {
 	}
 
 	devadm := NewDevAdm(d, DevAuthClientConfig{
-		UpdateUrl: c.GetString(SettingDevAuthUrl),
+		DevauthUrl: c.GetString(SettingDevAuthUrl),
 	})
 
 	api, err := SetupAPI(c.GetString(SettingMiddleware))

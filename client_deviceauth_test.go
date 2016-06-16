@@ -17,21 +17,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 )
 
 func TestDevAuthClientUrl(t *testing.T) {
 	da := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: "http://devauth:9999/api/v0.0.1/devices/{id}",
+		DevauthUrl: "http://devauth:9999",
 	})
 
 	s := da.buildDevAuthUpdateUrl(Device{
 		ID: "foobar",
 	})
 
-	assert.Equal(t, "http://devauth:9999/api/v0.0.1/devices/foobar", s)
+	assert.Equal(t, "http://devauth:9999/api/0.1.0/devices/foobar/status", s)
 }
 
 // return mock http server returning status code 'status'
@@ -46,9 +45,8 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 	s := newMockServer(200)
 	defer s.Close()
 
-	uurl := s.URL + "/devices/{id}"
 	c := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: uurl,
+		DevauthUrl: s.URL,
 	})
 
 	err := c.UpdateDevice(Device{
@@ -61,9 +59,8 @@ func TestDevAuthClientReqFail(t *testing.T) {
 	s := newMockServer(400)
 	defer s.Close()
 
-	uurl := s.URL + "/devices/{id}"
 	c := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: uurl,
+		DevauthUrl: s.URL,
 	})
 
 	err := c.UpdateDevice(Device{
@@ -83,10 +80,8 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 	}))
 	defer s.Close()
 
-	upath := "/devices/{id}"
-	uurl := s.URL + upath
 	c := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: uurl,
+		DevauthUrl: s.URL,
 	})
 
 	devid := "123"
@@ -94,15 +89,11 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 		ID: DeviceID(devid),
 	})
 
-	exp := strings.Replace(upath, "{id}", devid, 1)
-	assert.Equal(t, exp, urlPath)
 	assert.NoError(t, err, "expected no errors")
 }
 
 func TestDevAuthClientReqNoHost(t *testing.T) {
-	c := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: "http://somehost:1234/devices/{id}",
-	})
+	c := NewDevAuthClient(DevAuthClientConfig{})
 
 	devid := "123"
 	err := c.UpdateDevice(Device{
@@ -133,10 +124,8 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		w.WriteHeader(400)
 	}))
 
-	upath := "/devices/{id}"
-	uurl := s.URL + upath
 	c := NewDevAuthClient(DevAuthClientConfig{
-		UpdateUrl: uurl,
+		DevauthUrl: s.URL,
 	})
 
 	devid := "123"
