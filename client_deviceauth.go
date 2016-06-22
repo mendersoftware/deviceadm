@@ -14,6 +14,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/mendersoftware/deviceadm/log"
 	"github.com/pkg/errors"
 	"net/http"
@@ -23,12 +25,14 @@ import (
 
 const (
 	// default device ID endpoint
-	defaultDevAuthDevicesUri = "/devices/{id}"
+	defaultDevAuthDevicesUri = "/api/0.1.0/devices/{id}/status"
 	// default request timeout, 10s?
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
 )
 
 type DevAuthClientConfig struct {
+	// root devauth address
+	DevauthUrl string
 	// template of update URL, string '{id}' will be replaced with
 	// device ID
 	UpdateUrl string
@@ -42,13 +46,34 @@ type DevAuthClient struct {
 	conf   DevAuthClientConfig
 }
 
+// devauth's status request
+type DevAuthStatusReq struct {
+	Status string `json:"status"`
+}
+
+// TODO rename this and calling funcs to UpdateDeviceStatus etc.
+// perhaps change the interface - the whole Device isn't needed
+// leaving for later, requires large refact in tests etc.
 func (d *DevAuthClient) UpdateDevice(dev Device) error {
 	d.log.Debugf("update device %s", dev.ID)
 
 	url := d.buildDevAuthUpdateUrl(dev)
-	req, err := http.NewRequest(http.MethodPut, url, nil)
 
-	// TODO: prepare message
+	statusReqJson, err := json.Marshal(DevAuthStatusReq{
+		Status: dev.Status,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to prepare dev auth request")
+	}
+
+	reader := bytes.NewReader(statusReqJson)
+
+	req, err := http.NewRequest(http.MethodPut, url, reader)
+	if err != nil {
+		return errors.Wrapf(err, "failed to prepare dev auth request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	rsp, err := d.Client.Do(req)
 	if err != nil {
@@ -58,7 +83,7 @@ func (d *DevAuthClient) UpdateDevice(dev Device) error {
 
 	if rsp.StatusCode != http.StatusOK {
 		return errors.Wrapf(err,
-			"device update request failed with status %v", rsp.Status)
+			"device status update request failed with status %v", rsp.Status)
 	}
 	return nil
 }
@@ -67,6 +92,8 @@ func NewDevAuthClient(c DevAuthClientConfig) *DevAuthClient {
 	if c.Timeout == 0 {
 		c.Timeout = defaultDevAuthReqTimeout
 	}
+
+	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	return &DevAuthClient{
 		Client: http.Client{
