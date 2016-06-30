@@ -51,6 +51,10 @@
 			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
 		},
 		{
+			"ImportPath": "github.com/mendersoftware/mendertesting",
+			"Rev": "40e58a0eb46a0a0010b2ef202b166488a0230f70"
+		},
+		{
 			"ImportPath": "github.com/pkg/errors",
 			"Comment": "v0.2.0-2-g7efa461",
 			"Rev": "7efa461bd31efbfc388ecbedfc3feaf129eeed80"
