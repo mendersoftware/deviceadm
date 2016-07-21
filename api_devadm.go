@@ -230,11 +230,7 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 
 	}
 
-	devurl := utils.BuildURL(r, uriDevice, map[string]string{
-		":id": devid,
-	})
-	w.Header().Add("Location", devurl.String())
-	w.WriteHeader(http.StatusSeeOther)
+	w.WriteJson(&status)
 }
 
 func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
