@@ -157,12 +157,10 @@ paths:
           schema:
             $ref: '#/definitions/Status'
       responses:
-        303:
-          description: Device updated
-          headers:
-            Location:
-              type: string
-              description: URI of updated device
+        200:
+          description: Device status updated
+          schema:
+            $ref: "#/definitions/Status"
         404:
           description: Not Found
           examples:

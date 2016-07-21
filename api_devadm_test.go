@@ -360,10 +360,9 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	rejstatus := DevAdmApiStatus{"rejected"}
 
 	tcases := []struct {
-		req     *http.Request
-		code    int
-		body    string
-		headers map[string]string
+		req  *http.Request
+		code int
+		body string
 	}{
 		{
 			req: test.MakeSimpleRequest("PUT",
@@ -382,10 +381,8 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/foo/status",
 				accstatus),
-			code: 303,
-			headers: map[string]string{
-				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
-			},
+			code: 200,
+			body: ToJson(accstatus),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
@@ -405,10 +402,8 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/foo/status",
 				rejstatus),
-			code: 303,
-			headers: map[string]string{
-				"Location": "http://1.2.3.4/api/0.1.0/devices/foo",
-			},
+			code: 200,
+			body: ToJson(rejstatus),
 		},
 	}
 
@@ -416,9 +411,6 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		recorded := test.RunRequest(t, apih, tc.req)
 		recorded.CodeIs(tc.code)
 		recorded.BodyIs(tc.body)
-		for h, v := range tc.headers {
-			recorded.HeaderIs(h, v)
-		}
 	}
 
 }
