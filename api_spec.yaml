@@ -207,6 +207,7 @@ definitions:
       - id
       - status
       - attributes
+      - request_time
     properties:
       id:
         description: Hash created based on the device identity data
@@ -226,6 +227,10 @@ definitions:
           - rejected
       attributes:
           $ref: "#/definitions/Attributes"
+      request_time:
+        type: string
+        format: datetime
+        description: Server-side timestamp of the request reception.
   Status:
     description: Admission status of the device
     type: object
