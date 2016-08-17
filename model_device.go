@@ -13,6 +13,10 @@
 //    limitations under the License.
 package main
 
+import (
+	"time"
+)
+
 type DeviceID string
 
 // wrapper for device attributes data
@@ -40,6 +44,9 @@ type Device struct {
 
 	//decoded, human-readable identity attribute set
 	Attributes DeviceAttributes `json:"attributes" bson:",omitempty"`
+
+	//admission request reception time
+	RequestTime time.Time `json:"request_time" bson:"request_time,omitempty"`
 }
 
 func (did DeviceID) String() string {
