@@ -9,7 +9,7 @@ basePath: /api/0.1.0
 paths:
   /devices:
     get:
-      description: Gets `Device` objects.
+      summary: Gets `Device` objects.
       parameters:
         - name: status
           in: query
@@ -60,7 +60,8 @@ paths:
           schema:
             $ref: "#/definitions/SimpleError"
     post:
-      description: Adds new device for admission
+      summary: Adds new device for admission
+
       parameters:
         - name: Device
           in: body
@@ -88,7 +89,7 @@ paths:
             $ref: "#/definitions/SimpleError"
   /devices/{id}:
     get:
-      description: Gets device
+      summary: Gets device
       parameters:
         - name: id
           in: path
@@ -116,7 +117,7 @@ paths:
             $ref: "#/definitions/SimpleError"
   /devices/{id}/status:
     get:
-      description: Checks admission status for the device
+      summary: Checks admission status for the device
       parameters:
         - name: id
           in: path
@@ -143,7 +144,7 @@ paths:
           schema:
             $ref: "#/definitions/SimpleError"
     put:
-      description: Update device admission state
+      summary: Update device admission state
       parameters:
         - name: id
           in: path
