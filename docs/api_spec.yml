@@ -9,7 +9,7 @@ basePath: /api/0.1.0
 paths:
   /devices:
     get:
-      summary: Gets `Device` objects.
+      summary: Gets "Device" objects.
       parameters:
         - name: status
           in: query
@@ -45,7 +45,7 @@ paths:
           headers:
             Link:
               type: string
-              description: Standard header, we support 'first', 'next', and 'prev'.
+              description: Standard header, we support "first", "next", and "prev".
         400:
           description: Invalid parameters
           schema:
