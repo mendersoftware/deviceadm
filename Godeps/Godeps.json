@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/mendersoftware/deviceadm",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v65",
+	"GodepVersion": "v73",
 	"Deps": [
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
@@ -10,23 +10,23 @@
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.10.0-16-gcd7d1bb",
-			"Rev": "cd7d1bbe41066b6c1f19780f895901052150a575"
+			"Comment": "v0.9.0",
+			"Rev": "be52937128b38f1d99787bb476c789e2af1147f1"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest",
-			"Comment": "v3.3.1-5-gcfd0da1",
-			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
+			"Comment": "v3.3.1-8-g3a807d6",
+			"Rev": "3a807d6d8d36e0f9175d6c292030fce09bcbb2db"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest/test",
-			"Comment": "v3.3.1-5-gcfd0da1",
-			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
+			"Comment": "v3.3.1-8-g3a807d6",
+			"Rev": "3a807d6d8d36e0f9175d6c292030fce09bcbb2db"
 		},
 		{
 			"ImportPath": "github.com/ant0ine/go-json-rest/rest/trie",
-			"Comment": "v3.3.1-5-gcfd0da1",
-			"Rev": "cfd0da14df1db088980175e1c3c7e77c11b90718"
+			"Comment": "v3.3.1-8-g3a807d6",
+			"Rev": "3a807d6d8d36e0f9175d6c292030fce09bcbb2db"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -47,17 +47,17 @@
 			"Rev": "23b847ebbbdaada7234bf4b3da1e50e601fbf63b"
 		},
 		{
-			"ImportPath": "github.com/mitchellh/mapstructure",
-			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
-		},
-		{
 			"ImportPath": "github.com/mendersoftware/mendertesting",
 			"Rev": "40e58a0eb46a0a0010b2ef202b166488a0230f70"
 		},
 		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
+		},
+		{
 			"ImportPath": "github.com/pkg/errors",
-			"Comment": "v0.2.0-2-g7efa461",
-			"Rev": "7efa461bd31efbfc388ecbedfc3feaf129eeed80"
+			"Comment": "v0.7.1",
+			"Rev": "17b591df37844cde689f4d5813e5cea0927d8dd2"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
@@ -81,8 +81,8 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.1.3-16-g6cb3b85",
-			"Rev": "6cb3b85ef5a0efef77caef88363ec4d4b5c0976d"
+			"Comment": "v1.1.3-18-g8d64eb7",
+			"Rev": "8d64eb7173c7753d6419fd4a9caf057398611364"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",

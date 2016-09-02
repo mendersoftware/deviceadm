@@ -66,7 +66,7 @@ func TestDevAuthClientReqFail(t *testing.T) {
 	err := c.UpdateDevice(Device{
 		ID: "123",
 	})
-	assert.NoError(t, err, "expected an error")
+	assert.Error(t, err, "expected an error")
 }
 
 func TestDevAuthClientReqUrl(t *testing.T) {
