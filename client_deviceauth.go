@@ -82,8 +82,8 @@ func (d *DevAuthClient) UpdateDevice(dev Device) error {
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		return errors.Wrapf(err,
-			"device status update request failed with status %v", rsp.Status)
+		return errors.Errorf("device status update request failed with status %v",
+			rsp.Status)
 	}
 	return nil
 }
