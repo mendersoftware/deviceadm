@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -295,5 +296,43 @@ func TestMongoPutDevice(t *testing.T) {
 		assert.Equal(t, dev.Key, dbdev.Key)
 		assert.True(t, reflect.DeepEqual(dev.Attributes, dbdev.Attributes))
 	}
+}
 
+func TestMongoPutDeviceTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoPutDeviceTime in short mode.")
+	}
+
+	d := getDb()
+	defer d.session.Close()
+	var err error
+
+	dev, err := d.GetDevice(DeviceID("foobar"))
+	assert.Nil(t, dev)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
+
+	now := time.Now()
+	expdev := Device{
+		ID:          DeviceID("foobar"),
+		RequestTime: &now,
+		Attributes: DeviceAttributes{
+			"foo": "bar",
+		},
+	}
+	err = d.PutDevice(&expdev)
+	assert.NoError(t, err)
+
+	dev, err = d.GetDevice(DeviceID("foobar"))
+	assert.NotNil(t, dev)
+	assert.NoError(t, err)
+
+	t.Logf("go device: %v", dev)
+	// cannot just compare expected device with one we got from db because
+	// RequestTime might have been trimmed by mongo
+	assert.ObjectsAreEqualValues(expdev.Attributes, dev.Attributes)
+	assert.Equal(t, expdev.ID, dev.ID)
+	// time round off should be within 1s
+	if assert.NotNil(t, dev.RequestTime) {
+		assert.WithinDuration(t, time.Now(), *dev.RequestTime, time.Second)
+	}
 }

@@ -104,6 +104,10 @@ func genDeviceUpdate(dev *Device) *Device {
 		updev.Attributes = dev.Attributes
 	}
 
+	if dev.RequestTime != nil {
+		updev.RequestTime = dev.RequestTime
+	}
+
 	return &updev
 }
 
