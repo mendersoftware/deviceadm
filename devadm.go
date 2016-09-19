@@ -14,13 +14,15 @@
 package main
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 )
 
 // this device admission service interface
 type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
-	AddDevice(d *Device) error
+	AddDevice(d Device) error
 	GetDevice(id DeviceID) (*Device, error)
 	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
@@ -47,8 +49,10 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, erro
 	return devs, nil
 }
 
-func (d *DevAdm) AddDevice(dev *Device) error {
-	err := d.db.PutDevice(dev)
+func (d *DevAdm) AddDevice(dev Device) error {
+	now := time.Now()
+	dev.RequestTime = &now
+	err := d.db.PutDevice(&dev)
 	if err != nil {
 		return errors.Wrap(err, "failed to add device")
 	}
