@@ -145,6 +145,12 @@ paths:
             $ref: "#/definitions/SimpleError"
     put:
       summary: Update device admission state
+      description: |
+        Allows changing the device's admission status. Valid state transitions
+        - pending -> accepted
+        - pending -> rejected
+        - rejected -> accepted
+        - accepted -> rejected
       parameters:
         - name: id
           in: path
@@ -162,6 +168,19 @@ paths:
           description: Device status updated
           schema:
             $ref: "#/definitions/Status"
+        303:
+          description: Device updated
+          headers:
+            Location:
+              type: string
+              description: URI of updated device
+        400:
+          description: Bad request (including invalid state and/or state transition)
+          examples:
+            application/json:
+              error: Detailed error message
+          schema:
+            $ref: "#/definitions/SimpleError"
         404:
           description: Not Found
           examples:
