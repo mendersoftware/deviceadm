@@ -31,14 +31,14 @@ type MockDevAdm struct {
 	mockGetDevice    func(id DeviceID) (*Device, error)
 	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
-	mockAddDevice    func(d *Device) error
+	mockAddDevice    func(d Device) error
 }
 
 func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
 	return mda.mockListDevices(skip, limit, status)
 }
 
-func (mda *MockDevAdm) AddDevice(dev *Device) error {
+func (mda *MockDevAdm) AddDevice(dev Device) error {
 	return mda.mockAddDevice(dev)
 }
 
@@ -573,7 +573,7 @@ func TestApiDevAdmAddDevice(t *testing.T) {
 
 	for _, tc := range testCases {
 		devadm := MockDevAdm{
-			mockAddDevice: func(d *Device) error {
+			mockAddDevice: func(d Device) error {
 				if tc.devAdmErr != "" {
 					return errors.New(tc.devAdmErr)
 				}

@@ -15,11 +15,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -27,18 +29,10 @@ const (
 	allDevsInputSet = "get_devices_input.json"
 )
 
-// these tests need a real instance of mongodb
-// hardcoding the address here - valid both for the Travis env and local dev env
-const TestDb = "127.0.0.1:27017"
-
 // db and test management funcs
-func getDb() (*DataStoreMongo, error) {
-	d, err := NewDataStoreMongo(TestDb)
-	if err != nil {
-		return nil, err
-	}
-
-	return d, nil
+func getDb() *DataStoreMongo {
+	db.Wipe()
+	return NewDataStoreMongoWithSession(db.Session())
 }
 
 func setUp(db *DataStoreMongo, dataset string) error {
@@ -98,10 +92,10 @@ func TestMongoGetDevices(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevices in short mode.")
 	}
 
-	d, err := getDb()
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
+	d := getDb()
+	defer d.session.Close()
+
+	var err error
 
 	_, err = d.GetDevices(0, 5, "")
 	if err != nil {
@@ -184,8 +178,6 @@ func TestMongoGetDevices(t *testing.T) {
 			assert.Fail(t, "expected: %v\nhave: %v", expected, devs)
 		}
 	}
-
-	wipe(d)
 }
 
 func TestFailedConn(t *testing.T) {
@@ -201,10 +193,9 @@ func TestMongoGetDevice(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
 	}
 
-	d, err := getDb()
-	assert.NoError(t, err, "obtaining DB failed")
-
-	wipe(d)
+	d := getDb()
+	defer d.session.Close()
+	var err error
 
 	_, err = d.GetDevice("")
 	assert.Error(t, err, "expected error")
@@ -235,7 +226,6 @@ func TestMongoGetDevice(t *testing.T) {
 		assert.EqualError(t, err, ErrDevNotFound.Error(), "expected error")
 	}
 
-	wipe(d)
 }
 
 func TestMongoPutDevice(t *testing.T) {
@@ -243,10 +233,9 @@ func TestMongoPutDevice(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
 	}
 
-	d, err := getDb()
-	assert.NoError(t, err, "obtaining DB failed")
-
-	wipe(d)
+	d := getDb()
+	defer d.session.Close()
+	var err error
 
 	_, err = d.GetDevice("")
 	assert.Error(t, err, "expected error")
@@ -307,6 +296,43 @@ func TestMongoPutDevice(t *testing.T) {
 		assert.Equal(t, dev.Key, dbdev.Key)
 		assert.True(t, reflect.DeepEqual(dev.Attributes, dbdev.Attributes))
 	}
+}
 
-	// wipe(d)
+func TestMongoPutDeviceTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoPutDeviceTime in short mode.")
+	}
+
+	d := getDb()
+	defer d.session.Close()
+	var err error
+
+	dev, err := d.GetDevice(DeviceID("foobar"))
+	assert.Nil(t, dev)
+	assert.EqualError(t, err, ErrDevNotFound.Error())
+
+	now := time.Now()
+	expdev := Device{
+		ID:          DeviceID("foobar"),
+		RequestTime: &now,
+		Attributes: DeviceAttributes{
+			"foo": "bar",
+		},
+	}
+	err = d.PutDevice(&expdev)
+	assert.NoError(t, err)
+
+	dev, err = d.GetDevice(DeviceID("foobar"))
+	assert.NotNil(t, dev)
+	assert.NoError(t, err)
+
+	t.Logf("go device: %v", dev)
+	// cannot just compare expected device with one we got from db because
+	// RequestTime might have been trimmed by mongo
+	assert.ObjectsAreEqualValues(expdev.Attributes, dev.Attributes)
+	assert.Equal(t, expdev.ID, dev.ID)
+	// time round off should be within 1s
+	if assert.NotNil(t, dev.RequestTime) {
+		assert.WithinDuration(t, time.Now(), *dev.RequestTime, time.Second)
+	}
 }

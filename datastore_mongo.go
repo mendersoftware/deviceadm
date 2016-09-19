@@ -29,12 +29,16 @@ type DataStoreMongo struct {
 	session *mgo.Session
 }
 
+func NewDataStoreMongoWithSession(s *mgo.Session) *DataStoreMongo {
+	return &DataStoreMongo{session: s}
+}
+
 func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	s, err := mgo.Dial(host)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open mgo session")
 	}
-	return &DataStoreMongo{session: s}, nil
+	return NewDataStoreMongoWithSession(s), nil
 }
 
 func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, error) {
@@ -98,6 +102,10 @@ func genDeviceUpdate(dev *Device) *Device {
 	// TODO: should attributes be merged?
 	if len(dev.Attributes) != 0 {
 		updev.Attributes = dev.Attributes
+	}
+
+	if dev.RequestTime != nil {
+		updev.RequestTime = dev.RequestTime
 	}
 
 	return &updev

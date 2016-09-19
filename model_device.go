@@ -46,7 +46,7 @@ type Device struct {
 	Attributes DeviceAttributes `json:"attributes" bson:",omitempty"`
 
 	//admission request reception time
-	RequestTime time.Time `json:"request_time" bson:"request_time,omitempty"`
+	RequestTime *time.Time `json:"request_time" bson:"request_time,omitempty"`
 }
 
 func (did DeviceID) String() string {

@@ -19,7 +19,6 @@ import (
 	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/pkg/errors"
 	"net/http"
-	"time"
 )
 
 const (
@@ -117,8 +116,7 @@ func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request
 
 	//save device in pending state
 	dev.Status = "pending"
-	dev.RequestTime = time.Now()
-	err = d.DevAdm.AddDevice(dev)
+	err = d.DevAdm.AddDevice(*dev)
 	if err != nil {
 		rest.Error(w,
 			"internal error",
