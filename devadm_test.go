@@ -15,65 +15,20 @@ package main
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-//mock db with interface methods as fields
-//allows monkey patching the methods without
-//redefining the struct for each case
-type TestDataStore struct {
-	MockGetDevices func(skip, limit int, status string) ([]Device, error)
-	MockGetDevice  func(id DeviceID) (*Device, error)
-	MockPutDevice  func(dev *Device) error
-}
-
-func (ds *TestDataStore) GetDevices(skip, limit int, status string) ([]Device, error) {
-	return ds.MockGetDevices(skip, limit, status)
-}
-
-func (ds *TestDataStore) GetDevice(id DeviceID) (*Device, error) {
-	return ds.MockGetDevice(id)
-}
-
-func (ds *TestDataStore) PutDevice(dev *Device) error {
-	return ds.MockPutDevice(dev)
-}
-
-//mock db methods for multiple cases
-func getDevicesErr(skip, limit int, status string) ([]Device, error) {
-	return nil, errors.New("test error")
-}
-
-func getDevicesEmpty(skip, limit int, status string) ([]Device, error) {
-	return []Device{}, nil
-}
-
-func getDevices(skip, limit int, status string) ([]Device, error) {
-	ret := []Device{
-		Device{},
-		Device{},
-		Device{},
-	}
-	return ret, nil
-}
-
-func putDevice(dev *Device) error {
-	return nil
-}
-
-func putDeviceErr(dev *Device) error {
-	return errors.New("db connection failed")
-}
 
 func devadmForTest(d DataStore) DevAdmApp {
 	return &DevAdm{db: d}
 }
 
 func TestDevAdmListDevicesEmpty(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevices: getDevicesEmpty,
-	}
+	db := &MockDataStore{}
+	db.On("GetDevices", 0, 1, "").
+		Return([]Device{}, nil)
 
 	d := devadmForTest(db)
 
@@ -82,9 +37,9 @@ func TestDevAdmListDevicesEmpty(t *testing.T) {
 }
 
 func TestDevAdmListDevices(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevices: getDevices,
-	}
+	db := &MockDataStore{}
+	db.On("GetDevices", 0, 1, "").
+		Return([]Device{{}, {}, {}}, nil)
 
 	d := devadmForTest(db)
 
@@ -93,9 +48,9 @@ func TestDevAdmListDevices(t *testing.T) {
 }
 
 func TestDevAdmListDevicesErr(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevices: getDevicesErr,
-	}
+	db := &MockDataStore{}
+	db.On("GetDevices", 0, 1, "").
+		Return([]Device{}, errors.New("error"))
 
 	d := devadmForTest(db)
 
@@ -104,23 +59,25 @@ func TestDevAdmListDevicesErr(t *testing.T) {
 }
 
 func TestDevAdmAddDevice(t *testing.T) {
-	db := &TestDataStore{
-		MockPutDevice: putDevice,
-	}
+	db := &MockDataStore{}
+	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
+		Return(nil)
+
 	d := devadmForTest(db)
 
-	err := d.AddDevice(&Device{})
+	err := d.AddDevice(Device{})
 
 	assert.NoError(t, err)
 }
 
 func TestDevAdmAddDeviceErr(t *testing.T) {
-	db := &TestDataStore{
-		MockPutDevice: putDeviceErr,
-	}
+	db := &MockDataStore{}
+	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
+		Return(errors.New("db connection failed"))
+
 	d := devadmForTest(db)
 
-	err := d.AddDevice(&Device{})
+	err := d.AddDevice(Device{})
 
 	if assert.Error(t, err) {
 		assert.EqualError(t, err, "failed to add device: db connection failed")
@@ -141,9 +98,13 @@ func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
 }
 
 func TestDevAdmGetDevice(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevice: makeGetDevice("foo"),
-	}
+	db := &MockDataStore{}
+	db.On("GetDevice", DeviceID("foo")).
+		Return(&Device{ID: "foo"}, nil)
+	db.On("GetDevice", DeviceID("bar")).
+		Return(nil, ErrDevNotFound)
+	db.On("GetDevice", DeviceID("baz")).
+		Return(nil, errors.New("error"))
 
 	d := devadmForTest(db)
 
@@ -155,16 +116,17 @@ func TestDevAdmGetDevice(t *testing.T) {
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, ErrDevNotFound.Error())
 
-	// invoke special case that generates error other than ErrDevNotFound
-	dev, err = d.GetDevice("")
+	dev, err = d.GetDevice("baz")
 	assert.Nil(t, dev)
 	assert.Error(t, err)
 }
 
 func TestDevAdmAcceptDevice(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevice: makeGetDevice("foo"),
-	}
+	db := &MockDataStore{}
+	db.On("GetDevice", DeviceID("foo")).
+		Return(&Device{ID: "foo"}, nil)
+	db.On("GetDevice", DeviceID("bar")).
+		Return(nil, ErrDevNotFound)
 
 	d := devadmForTest(db)
 
@@ -180,9 +142,11 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 }
 
 func TestDevAdmRejectDevice(t *testing.T) {
-	db := &TestDataStore{
-		MockGetDevice: makeGetDevice("foo"),
-	}
+	db := &MockDataStore{}
+	db.On("GetDevice", DeviceID("foo")).
+		Return(&Device{ID: "foo"}, nil)
+	db.On("GetDevice", DeviceID("bar")).
+		Return(nil, ErrDevNotFound)
 
 	d := devadmForTest(db)
 
@@ -197,7 +161,7 @@ func TestDevAdmRejectDevice(t *testing.T) {
 }
 
 func TestNewDevAdm(t *testing.T) {
-	d := NewDevAdm(&TestDataStore{}, DevAuthClientConfig{})
+	d := NewDevAdm(&MockDataStore{}, DevAuthClientConfig{})
 
 	assert.NotNil(t, d)
 }
