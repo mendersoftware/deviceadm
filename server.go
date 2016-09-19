@@ -18,6 +18,7 @@ import (
 	"github.com/mendersoftware/deviceadm/config"
 	"github.com/mendersoftware/deviceadm/log"
 	"github.com/pkg/errors"
+	"gopkg.in/mgo.v2"
 	"net/http"
 )
 
@@ -36,11 +37,22 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 	return api, nil
 }
 
+func SetupDataStore(url string) (*DataStoreMongo, error) {
+	dbSession, err := mgo.Dial(url)
+	if err != nil {
+		return nil, err
+	}
+	dbSession.SetSafe(&mgo.Safe{})
+
+	d := NewDataStoreMongoWithSession(dbSession)
+	return d, nil
+}
+
 func RunServer(c config.Reader) error {
 
 	l := log.New(log.Ctx{})
 
-	d, err := NewDataStoreMongo(c.GetString(SettingDb))
+	d, err := SetupDataStore(c.GetString(SettingDb))
 	if err != nil {
 		return errors.Wrap(err, "database connection failed")
 	}
