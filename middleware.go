@@ -15,12 +15,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/deviceadm/accesslog"
 	dlog "github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestid"
+	"github.com/mendersoftware/deviceadm/requestlog"
 )
 
 const (
@@ -32,7 +33,8 @@ var (
 	DefaultDevStack = []rest.Middleware{
 
 		// logging
-		&rest.AccessLogApacheMiddleware{},
+		&requestlog.RequestLogMiddleware{},
+		&accesslog.AccessLogMiddleware{},
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
 
@@ -48,15 +50,14 @@ var (
 		// The expected Content-Type is 'application/json'
 		// if the content is non-null
 		&rest.ContentTypeCheckerMiddleware{},
+		&requestid.RequestIdMiddleware{},
 	}
 
 	DefaultProdStack = []rest.Middleware{
 
 		// logging
-		&rest.AccessLogJsonMiddleware{
-			// No prefix or other fields, entire output is JSON encoded and could break it.
-			Logger: log.New(os.Stderr, "", 0),
-		},
+		&requestlog.RequestLogMiddleware{},
+		&accesslog.AccessLogMiddleware{},
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
 
@@ -70,6 +71,7 @@ var (
 		// The expected Content-Type is 'application/json'
 		// if the content is non-null
 		&rest.ContentTypeCheckerMiddleware{},
+		&requestid.RequestIdMiddleware{},
 	}
 
 	middlewareMap = map[string][]rest.Middleware{
