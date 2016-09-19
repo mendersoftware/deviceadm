@@ -15,6 +15,7 @@ package main
 
 import (
 	"errors"
+	"github.com/mendersoftware/deviceadm/log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,10 @@ import (
 )
 
 func devadmForTest(d DataStore) DevAdmApp {
-	return &DevAdm{db: d}
+	return &DevAdm{
+		db:           d,
+		clientGetter: simpleApiClientGetter,
+		log:          log.New(log.Ctx{})}
 }
 
 func TestDevAdmListDevicesEmpty(t *testing.T) {
@@ -164,4 +168,14 @@ func TestNewDevAdm(t *testing.T) {
 	d := NewDevAdm(&MockDataStore{}, DevAuthClientConfig{})
 
 	assert.NotNil(t, d)
+}
+
+func TestDevAdmWithContext(t *testing.T) {
+	d := devadmForTest(&MockDataStore{})
+
+	l := log.New(log.Ctx{})
+	dwc := d.WithContext(&RequestContext{ReqId: "", Logger: l}).(*DevAdmWithContext)
+	assert.NotNil(t, dwc)
+	assert.NotNil(t, dwc.log)
+	assert.Equal(t, dwc.log, l)
 }
