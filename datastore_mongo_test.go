@@ -32,7 +32,7 @@ const (
 // db and test management funcs
 func getDb() *DataStoreMongo {
 	db.Wipe()
-	return NewDataStoreMongoWithSeession(db.Session())
+	return NewDataStoreMongoWithSession(db.Session())
 }
 
 func setUp(db *DataStoreMongo, dataset string) error {
