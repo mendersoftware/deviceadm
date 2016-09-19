@@ -14,6 +14,7 @@
 package main
 
 import (
+	"github.com/mendersoftware/deviceadm/log"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +25,7 @@ import (
 func TestDevAuthClientUrl(t *testing.T) {
 	da := NewDevAuthClient(DevAuthClientConfig{
 		DevauthUrl: "http://devauth:9999",
-	})
+	}, &http.Client{}, log.New(log.Ctx{}))
 
 	s := da.buildDevAuthUpdateUrl(Device{
 		ID: "foobar",
@@ -47,7 +48,7 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 
 	c := NewDevAuthClient(DevAuthClientConfig{
 		DevauthUrl: s.URL,
-	})
+	}, &http.Client{}, log.New(log.Ctx{}))
 
 	err := c.UpdateDevice(Device{
 		ID: "123",
@@ -61,7 +62,7 @@ func TestDevAuthClientReqFail(t *testing.T) {
 
 	c := NewDevAuthClient(DevAuthClientConfig{
 		DevauthUrl: s.URL,
-	})
+	}, &http.Client{}, log.New(log.Ctx{}))
 
 	err := c.UpdateDevice(Device{
 		ID: "123",
@@ -82,7 +83,7 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 
 	c := NewDevAuthClient(DevAuthClientConfig{
 		DevauthUrl: s.URL,
-	})
+	}, &http.Client{}, log.New(log.Ctx{}))
 
 	devid := "123"
 	err := c.UpdateDevice(Device{
@@ -93,7 +94,7 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 }
 
 func TestDevAuthClientReqNoHost(t *testing.T) {
-	c := NewDevAuthClient(DevAuthClientConfig{})
+	c := NewDevAuthClient(DevAuthClientConfig{}, &http.Client{}, log.New(log.Ctx{}))
 
 	devid := "123"
 	err := c.UpdateDevice(Device{
@@ -126,7 +127,7 @@ func TestDevAuthClientTImeout(t *testing.T) {
 
 	c := NewDevAuthClient(DevAuthClientConfig{
 		DevauthUrl: s.URL,
-	})
+	}, &http.Client{Timeout: defaultDevAuthReqTimeout}, log.New(log.Ctx{}))
 
 	devid := "123"
 
@@ -147,4 +148,12 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		time.Duration(0.2*float64(defaultDevAuthReqTimeout))
 
 	assert.WithinDuration(t, t2, t1, maxdur, "timeout took too long")
+}
+
+func TestUseLog(t *testing.T) {
+	c := NewDevAuthClient(DevAuthClientConfig{}, &http.Client{}, log.New(log.Ctx{}))
+
+	l2 := log.New(log.Ctx{"test": "test"})
+	c.UseLog(l2)
+	assert.Equal(t, l2, c.log)
 }
