@@ -21,15 +21,18 @@ import (
 )
 
 func TestNewTrackingApiClient(t *testing.T) {
-	c := NewTrackingApiClient("1234")
+	c := NewTrackingApiClient("1234", &http.Client{})
 	assert.NotNil(t, c)
+
+	c = NewTrackingApiClient("1234", nil)
+	assert.NotNil(t, c.Client)
 }
 
 func TestTrackingApiClientDo(t *testing.T) {
 	s := newMockServer()
 	defer s.Close()
 
-	c := NewTrackingApiClient("1234")
+	c := NewTrackingApiClient("1234", &http.Client{})
 	assert.NotNil(t, c)
 
 	req, err := http.NewRequest(

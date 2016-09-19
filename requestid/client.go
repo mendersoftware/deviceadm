@@ -28,9 +28,12 @@ type TrackingApiClient struct {
 	reqid string
 }
 
-func NewTrackingApiClient(reqid string) *TrackingApiClient {
+func NewTrackingApiClient(reqid string, httpClient *http.Client) *TrackingApiClient {
+	if httpClient == nil {
+		httpClient = &http.Client{}
+	}
 	return &TrackingApiClient{
-		http.Client{},
+		*httpClient,
 		reqid,
 	}
 }
