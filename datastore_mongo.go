@@ -29,12 +29,16 @@ type DataStoreMongo struct {
 	session *mgo.Session
 }
 
+func NewDataStoreMongoWithSeession(s *mgo.Session) *DataStoreMongo {
+	return &DataStoreMongo{session: s}
+}
+
 func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	s, err := mgo.Dial(host)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open mgo session")
 	}
-	return &DataStoreMongo{session: s}, nil
+	return NewDataStoreMongoWithSeession(s), nil
 }
 
 func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, error) {
