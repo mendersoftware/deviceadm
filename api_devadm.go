@@ -16,6 +16,8 @@ package main
 import (
 	"encoding/json"
 	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestlog"
 	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/pkg/errors"
 	"net/http"
@@ -25,6 +27,8 @@ const (
 	uriDevices      = "/api/0.1.0/devices"
 	uriDevice       = "/api/0.1.0/devices/:id"
 	uriDeviceStatus = "/api/0.1.0/devices/:id/status"
+
+	LogHttpCode = "http_code"
 )
 
 // model of device status response at /devices/:id/status endpoint,
@@ -71,22 +75,26 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 }
 
 func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.GetRequestLogger(r.Env)
+
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
-		rest.Error(w, err.Error(), http.StatusBadRequest)
+		restErrWithLog(w, l, err, http.StatusBadRequest)
 		return
 	}
 
 	status, err := utils.ParseQueryParmStr(r, utils.StatusName, false, utils.DevStatuses)
 	if err != nil {
-		rest.Error(w, err.Error(), http.StatusBadRequest)
+		restErrWithLog(w, l, err, http.StatusBadRequest)
 		return
 	}
 
+	da := d.DevAdm.WithContext(ContextFromRequest(r))
+
 	//get one extra device to see if there's a 'next' page
-	devs, err := d.DevAdm.ListDevices(int((page-1)*perPage), int(perPage+1), status)
+	devs, err := da.ListDevices(int((page-1)*perPage), int(perPage+1), status)
 	if err != nil {
-		rest.Error(w, "failed to list devices", http.StatusInternalServerError)
+		restErrWithLogInternal(w, l, errors.Wrap(err, "failed to list devices"))
 		return
 	}
 
@@ -106,21 +114,21 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 }
 
 func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.GetRequestLogger(r.Env)
+
 	dev, err := parseDevice(r)
 	if err != nil {
-		rest.Error(w,
-			err.Error(),
-			http.StatusBadRequest)
+		restErrWithLog(w, l, err, http.StatusBadRequest)
 		return
 	}
 
+	da := d.DevAdm.WithContext(ContextFromRequest(r))
+
 	//save device in pending state
 	dev.Status = "pending"
-	err = d.DevAdm.AddDevice(*dev)
+	err = da.AddDevice(*dev)
 	if err != nil {
-		rest.Error(w,
-			"internal error",
-			http.StatusInternalServerError)
+		restErrWithLogInternal(w, l, err)
 		return
 	}
 
@@ -168,16 +176,18 @@ func parseDevice(r *rest.Request) (*Device, error) {
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
+	l := requestlog.GetRequestLogger(r.Env)
+
 	devid := r.PathParam("id")
 
-	dev, err := d.DevAdm.GetDevice(DeviceID(devid))
+	da := d.DevAdm.WithContext(ContextFromRequest(r))
+	dev, err := da.GetDevice(DeviceID(devid))
 
 	if dev == nil {
 		if err == ErrDevNotFound {
-			rest.Error(w, err.Error(), http.StatusNotFound)
+			restErrWithLog(w, l, err, http.StatusNotFound)
 		} else {
-			rest.Error(w, "internal error",
-				http.StatusInternalServerError)
+			restErrWithLogInternal(w, l, err)
 		}
 		return nil
 	}
@@ -196,38 +206,37 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 }
 
 func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.GetRequestLogger(r.Env)
+
 	devid := r.PathParam("id")
 
 	var status DevAdmApiStatus
 	err := r.DecodeJsonPayload(&status)
 	if err != nil {
-		rest.Error(w,
-			errors.Wrap(err, "failed to decode status data").Error(),
-			http.StatusBadRequest)
+		restErrWithLog(w, l, errors.Wrap(err, "failed to decode status data"), http.StatusBadRequest)
 		return
 	}
 
 	// validate status
 	if status.Status != DevStatusAccepted && status.Status != DevStatusRejected {
-		rest.Error(w,
-			errors.New("incorrect device status").Error(),
-			http.StatusBadRequest)
+		restErrWithLog(w, l, errors.New("incorrect device status"), http.StatusBadRequest)
 		return
 	}
 
+	da := d.DevAdm.WithContext(ContextFromRequest(r))
+
 	if status.Status == DevStatusAccepted {
-		err = d.DevAdm.AcceptDevice(DeviceID(devid))
+		err = da.AcceptDevice(DeviceID(devid))
 	} else if status.Status == DevStatusRejected {
-		err = d.DevAdm.RejectDevice(DeviceID(devid))
+		err = da.RejectDevice(DeviceID(devid))
 	}
 	if err != nil {
 		code := http.StatusInternalServerError
 		if err == ErrDevNotFound {
 			code = http.StatusNotFound
 		}
-		rest.Error(w, err.Error(), code)
+		restErrWithLog(w, l, err, code)
 		return
-
 	}
 
 	w.WriteJson(&status)
@@ -243,4 +252,25 @@ func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.R
 			dev.Status,
 		})
 	}
+}
+
+// return selected http code + error message directly taken from error
+// log error
+func restErrWithLog(w rest.ResponseWriter, l *log.Logger, e error, code int) {
+	restErrWithLogMsg(w, l, e, code, e.Error())
+}
+
+// return http 500, with an "internal error" message
+// log full error
+func restErrWithLogInternal(w rest.ResponseWriter, l *log.Logger, e error) {
+	msg := "internal error"
+	e = errors.Wrap(e, msg)
+	restErrWithLogMsg(w, l, e, http.StatusInternalServerError, msg)
+}
+
+// return an error code with an overriden message (to avoid exposing the details)
+// log full error
+func restErrWithLogMsg(w rest.ResponseWriter, l *log.Logger, e error, code int, msg string) {
+	rest.Error(w, msg, code)
+	l.F(log.Ctx{LogHttpCode: code}).Error(errors.Wrap(e, msg).Error())
 }
