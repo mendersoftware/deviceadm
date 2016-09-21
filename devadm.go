@@ -87,10 +87,9 @@ func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	cl := NewDevAuthClient(d.authclientconf, d.clientGetter(), d.log)
 	err := cl.UpdateDevice(*dev)
 	if err != nil {
-		d.log.Errorf("update device failed: %s", err)
 		// no good if we cannot propagate device update
 		// further
-		return errors.New("failed to propagate device status update")
+		return errors.Wrap(err, "failed to propagate device status update")
 	}
 	return nil
 }
