@@ -14,6 +14,7 @@
 package requestlog
 
 import (
+	"context"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/ant0ine/go-json-rest/rest/test"
 	"github.com/mendersoftware/deviceadm/log"
@@ -27,7 +28,7 @@ func TestRequestLogMiddleware(t *testing.T) {
 	api.Use(&RequestLogMiddleware{})
 
 	api.SetApp(rest.AppSimple(func(w rest.ResponseWriter, r *rest.Request) {
-		log := r.Env[ReqLog]
+		log := r.Context().Value(ReqLog).(*log.Logger)
 		assert.NotNil(t, log)
 		w.WriteJson(map[string]string{"foo": "bar"})
 	}))
@@ -40,9 +41,8 @@ func TestRequestLogMiddleware(t *testing.T) {
 }
 
 func TestRequestLogMiddlewareGetLogger(t *testing.T) {
-	env := map[string]interface{} {
-		ReqLog: log.New(log.Ctx{}),
-	}
-	logger := GetRequestLogger(env)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ReqLog, log.New(log.Ctx{}))
+	logger := RequestLoggerFromContext(ctx)
 	assert.NotNil(t, logger)
 }

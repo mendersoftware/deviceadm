@@ -14,8 +14,10 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestlog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -174,7 +176,9 @@ func TestDevAdmWithContext(t *testing.T) {
 	d := devadmForTest(&MockDataStore{})
 
 	l := log.New(log.Ctx{})
-	dwc := d.WithContext(&RequestContext{ReqId: "", Logger: l}).(*DevAdmWithContext)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, requestlog.ReqLog, l)
+	dwc := d.WithContext(ctx).(*DevAdmWithContext)
 	assert.NotNil(t, dwc)
 	assert.NotNil(t, dwc.log)
 	assert.Equal(t, dwc.log, l)

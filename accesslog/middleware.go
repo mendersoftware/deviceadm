@@ -51,7 +51,7 @@ func (mw *AccessLogMiddleware) MiddlewareFunc(h rest.HandlerFunc) rest.HandlerFu
 		// call the handler
 		h(w, r)
 
-		logger := requestlog.GetRequestLogger(r.Env)
+		logger := requestlog.RequestLoggerFromContext(r.Context())
 		util := &accessLogUtil{w, r}
 
 		logger.Print(mw.executeTextTemplate(util))

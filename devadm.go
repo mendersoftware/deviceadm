@@ -14,8 +14,10 @@
 package main
 
 import (
+	"context"
 	"github.com/mendersoftware/deviceadm/log"
 	"github.com/mendersoftware/deviceadm/requestid"
+	"github.com/mendersoftware/deviceadm/requestlog"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
@@ -36,7 +38,7 @@ type DevAdmApp interface {
 	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
 
-	WithContext(c *RequestContext) DevAdmApp
+	WithContext(c context.Context) DevAdmApp
 }
 
 func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
@@ -127,12 +129,12 @@ func (d *DevAdm) RejectDevice(id DeviceID) error {
 	return d.updateDeviceStatus(id, DevStatusRejected)
 }
 
-func (d *DevAdm) WithContext(ctx *RequestContext) DevAdmApp {
+func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
 	dwc := &DevAdmWithContext{
-		*d,
-		ctx,
+		DevAdm: *d,
+		ctx:    ctx,
 	}
-	dwc.log = ctx.Logger
+	dwc.log = requestlog.RequestLoggerFromContext(ctx)
 	dwc.clientGetter = dwc.contextClientGetter
 	return dwc
 }

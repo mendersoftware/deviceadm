@@ -14,6 +14,7 @@
 package requestlog
 
 import (
+	"context"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/log"
 )
@@ -31,11 +32,20 @@ type RequestLogMiddleware struct {
 func (mw *RequestLogMiddleware) MiddlewareFunc(h rest.HandlerFunc) rest.HandlerFunc {
 	return func(w rest.ResponseWriter, r *rest.Request) {
 		l := log.New(log.Ctx{})
-		r.Env[ReqLog] = l
+		ctx := context.WithValue(r.Context(), ReqLog, l)
+		r = &rest.Request{
+			Request:    r.WithContext(ctx),
+			PathParams: r.PathParams,
+			Env:        r.Env,
+		}
 		h(w, r)
 	}
 }
 
-func GetRequestLogger(env map[string]interface{}) *log.Logger {
-	return env[ReqLog].(*log.Logger)
+func RequestLoggerFromContext(ctx context.Context) *log.Logger {
+	logger, found := ctx.Value(ReqLog).(*log.Logger)
+	if found {
+		return logger
+	}
+	return nil
 }

@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,7 +35,7 @@ type MockDevAdm struct {
 	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
 	mockAddDevice    func(d Device) error
-	mockWithContext  func(c *RequestContext) DevAdmApp
+	mockWithContext  func(c context.Context) DevAdmApp
 }
 
 func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -57,7 +58,7 @@ func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
 	return mda.mockRejectDevice(id)
 }
 
-func (mda *MockDevAdm) WithContext(c *RequestContext) DevAdmApp {
+func (mda *MockDevAdm) WithContext(c context.Context) DevAdmApp {
 	return mda
 }
 

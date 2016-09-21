@@ -14,16 +14,18 @@
 package main
 
 import (
+	"context"
 	"github.com/mendersoftware/deviceadm/requestid"
 	"net/http"
 )
 
 type DevAdmWithContext struct {
 	DevAdm
-	ctx *RequestContext
+	ctx context.Context
 }
 
 func (d *DevAdmWithContext) contextClientGetter() requestid.ApiRequester {
 	httpClient := http.Client{Timeout: defaultDevAuthReqTimeout}
-	return requestid.NewTrackingApiClient(d.ctx.ReqId, &httpClient)
+	reqId := requestid.RequestIdFromContext(d.ctx)
+	return requestid.NewTrackingApiClient(reqId, &httpClient)
 }

@@ -14,6 +14,7 @@
 package requestid
 
 import (
+	"context"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/deviceadm/log"
 	"github.com/mendersoftware/deviceadm/requestlog"
@@ -34,14 +35,19 @@ func (mw *RequestIdMiddleware) MiddlewareFunc(h rest.HandlerFunc) rest.HandlerFu
 			reqId = uuid.NewV4().String()
 		}
 
-		r.Env[RequestIdHeader] = reqId
+		ctx := context.WithValue(r.Context(), RequestIdHeader, reqId)
 
 		// enrich log context
-		logger := r.Env[requestlog.ReqLog]
+		logger := requestlog.RequestLoggerFromContext(r.Context())
 		if logger != nil {
-			logger := logger.(*log.Logger)
 			logger = logger.F(log.Ctx{"request_id": reqId})
-			r.Env[requestlog.ReqLog] = logger
+			ctx = context.WithValue(r.Context(), requestlog.ReqLog, logger)
+		}
+
+		r = &rest.Request{
+			Request:    r.WithContext(ctx),
+			PathParams: r.PathParams,
+			Env:        r.Env,
 		}
 
 		//return the reuqest ID in response too, the client can log it

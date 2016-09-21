@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -24,10 +25,10 @@ func TestContextClientGetter(t *testing.T) {
 		clientGetter: simpleApiClientGetter,
 		log:          nil,
 	}
-	ctx := RequestContext{ReqId: "", Logger: nil}
+	ctx := context.Background()
 	dwc := DevAdmWithContext{
 		d,
-		&ctx,
+		ctx,
 	}
 	client := dwc.contextClientGetter()
 	assert.NotNil(t, client)

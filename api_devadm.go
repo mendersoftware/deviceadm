@@ -75,7 +75,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 }
 
 func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	l := requestlog.RequestLoggerFromContext(r.Context())
 
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
@@ -89,7 +89,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
-	da := d.DevAdm.WithContext(ContextFromRequest(r))
+	da := d.DevAdm.WithContext(r.Context())
 
 	//get one extra device to see if there's a 'next' page
 	devs, err := da.ListDevices(int((page-1)*perPage), int(perPage+1), status)
@@ -114,7 +114,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 }
 
 func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	l := requestlog.RequestLoggerFromContext(r.Context())
 
 	dev, err := parseDevice(r)
 	if err != nil {
@@ -122,7 +122,7 @@ func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request
 		return
 	}
 
-	da := d.DevAdm.WithContext(ContextFromRequest(r))
+	da := d.DevAdm.WithContext(r.Context())
 
 	//save device in pending state
 	dev.Status = "pending"
@@ -176,11 +176,11 @@ func parseDevice(r *rest.Request) (*Device, error) {
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
-	l := requestlog.GetRequestLogger(r.Env)
+	l := requestlog.RequestLoggerFromContext(r.Context())
 
 	devid := r.PathParam("id")
 
-	da := d.DevAdm.WithContext(ContextFromRequest(r))
+	da := d.DevAdm.WithContext(r.Context())
 	dev, err := da.GetDevice(DeviceID(devid))
 
 	if dev == nil {
@@ -206,7 +206,7 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 }
 
 func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	l := requestlog.RequestLoggerFromContext(r.Context())
 
 	devid := r.PathParam("id")
 
@@ -223,7 +223,7 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 		return
 	}
 
-	da := d.DevAdm.WithContext(ContextFromRequest(r))
+	da := d.DevAdm.WithContext(r.Context())
 
 	if status.Status == DevStatusAccepted {
 		err = da.AcceptDevice(DeviceID(devid))

@@ -14,12 +14,12 @@
 package requestid
 
 import (
-	"github.com/ant0ine/go-json-rest/rest"
+	"context"
 )
 
 // GetReqId helper for retrieving current request Id
-func GetReqId(r *rest.Request) string {
-	reqid := r.Env[RequestIdHeader]
+func RequestIdFromContext(ctx context.Context) string {
+	reqid := ctx.Value(RequestIdHeader)
 	if reqid != nil {
 		return reqid.(string)
 	}
