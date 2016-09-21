@@ -34,9 +34,9 @@ const (
 var (
 	configValidators = []config.Validator{}
 	configDefaults   = []config.Default{
-		{SettingListen, SettingListenDefault},
-		{SettingMiddleware, SettingMiddlewareDefault},
-		{SettingDb, SettingDbDefault},
-		{SettingDevAuthUrl, SettingDevAuthUrlDefault},
+		{Key: SettingListen, Value: SettingListenDefault},
+		{Key: SettingMiddleware, Value: SettingMiddlewareDefault},
+		{Key: SettingDb, Value: SettingDbDefault},
+		{Key: SettingDevAuthUrl, Value: SettingDevAuthUrlDefault},
 	}
 )
