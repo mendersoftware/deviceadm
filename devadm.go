@@ -84,7 +84,7 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 
 func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	// forward device state to auth service
-	cl := NewDevAuthClient(d.authclientconf, d.clientGetter(), d.log)
+	cl := NewDevAuthClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
 	err := cl.UpdateDevice(*dev)
 	if err != nil {
 		// no good if we cannot propagate device update

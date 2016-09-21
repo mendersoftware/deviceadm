@@ -45,7 +45,6 @@ type DevAuthClient struct {
 	client requestid.ApiRequester
 	log    *log.Logger
 	conf   DevAuthClientConfig
-	log.ContextLogger
 }
 
 // devauth's status request
@@ -94,14 +93,20 @@ func (d *DevAuthClient) UseLog(l *log.Logger) {
 	d.log = l.F(log.Ctx{})
 }
 
-func NewDevAuthClient(c DevAuthClientConfig, client requestid.ApiRequester, l *log.Logger) *DevAuthClient {
+func NewDevAuthClient(c DevAuthClientConfig, client requestid.ApiRequester) *DevAuthClient {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	return &DevAuthClient{
 		client: client,
-		log:    l.F(log.Ctx{}),
+		log:    log.New(log.Ctx{}),
 		conf:   c,
 	}
+}
+
+func NewDevAuthClientWithLogger(c DevAuthClientConfig, client requestid.ApiRequester, l *log.Logger) *DevAuthClient {
+	dac := NewDevAuthClient(c, client)
+	dac.UseLog(l)
+	return dac
 }
 
 func (d *DevAuthClient) buildDevAuthUpdateUrl(dev Device) string {
