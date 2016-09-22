@@ -14,11 +14,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/ant0ine/go-json-rest/rest/test"
+	"github.com/mendersoftware/deviceadm/requestid"
+	"github.com/mendersoftware/deviceadm/requestlog"
 	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -32,6 +35,7 @@ type MockDevAdm struct {
 	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
 	mockAddDevice    func(d Device) error
+	mockWithContext  func(c context.Context) DevAdmApp
 }
 
 func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -52,6 +56,10 @@ func (mda *MockDevAdm) AcceptDevice(id DeviceID) error {
 
 func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
 	return mda.mockRejectDevice(id)
+}
+
+func (mda *MockDevAdm) WithContext(c context.Context) DevAdmApp {
+	return mda
 }
 
 func mockListDevices(num int) []Device {
@@ -183,7 +191,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			errors.New("devadm error"),
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5", nil),
 			500,
-			RestError("failed to list devices"),
+			RestError("internal error"),
 			nil,
 		},
 	}
@@ -204,6 +212,10 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		assert.NoError(t, err)
 
 		api := rest.NewApi()
+		api.Use(
+			&requestlog.RequestLogMiddleware{},
+			&requestid.RequestIdMiddleware{},
+		)
 		api.SetApp(router)
 
 		rest.ErrorFieldName = "error"
@@ -227,6 +239,10 @@ func makeMockApiHandler(t *testing.T, mocka *MockDevAdm) http.Handler {
 	assert.NoError(t, err)
 
 	api := rest.NewApi()
+	api.Use(
+		&requestlog.RequestLogMiddleware{},
+		&requestid.RequestIdMiddleware{},
+	)
 	api.SetApp(app)
 
 	return api.MakeHandler()

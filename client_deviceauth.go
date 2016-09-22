@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestid"
 	"github.com/pkg/errors"
 	"net/http"
 	"strings"
@@ -41,7 +42,7 @@ type DevAuthClientConfig struct {
 }
 
 type DevAuthClient struct {
-	Client http.Client
+	client requestid.ApiRequester
 	log    *log.Logger
 	conf   DevAuthClientConfig
 }
@@ -75,7 +76,7 @@ func (d *DevAuthClient) UpdateDevice(dev Device) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	rsp, err := d.Client.Do(req)
+	rsp, err := d.client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update device status")
 	}
@@ -88,21 +89,24 @@ func (d *DevAuthClient) UpdateDevice(dev Device) error {
 	return nil
 }
 
-func NewDevAuthClient(c DevAuthClientConfig) *DevAuthClient {
-	if c.Timeout == 0 {
-		c.Timeout = defaultDevAuthReqTimeout
-	}
+func (d *DevAuthClient) UseLog(l *log.Logger) {
+	d.log = l.F(log.Ctx{})
+}
 
+func NewDevAuthClient(c DevAuthClientConfig, client requestid.ApiRequester) *DevAuthClient {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	return &DevAuthClient{
-		Client: http.Client{
-			// request timeout
-			Timeout: c.Timeout,
-		},
-		log:  log.New("devauth-client"),
-		conf: c,
+		client: client,
+		log:    log.New(log.Ctx{}),
+		conf:   c,
 	}
+}
+
+func NewDevAuthClientWithLogger(c DevAuthClientConfig, client requestid.ApiRequester, l *log.Logger) *DevAuthClient {
+	dac := NewDevAuthClient(c, client)
+	dac.UseLog(l)
+	return dac
 }
 
 func (d *DevAuthClient) buildDevAuthUpdateUrl(dev Device) string {

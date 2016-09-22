@@ -11,35 +11,18 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package requestid
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"context"
 )
 
-func TestSetupApi(t *testing.T) {
-	// expecting an error
-	api, err := SetupAPI("foo")
-	assert.Nil(t, api)
-	assert.Error(t, err)
-
-	api, err = SetupAPI(EnvDev)
-	assert.NotNil(t, api)
-	assert.Nil(t, err)
-}
-
-func TestSetupDataStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestSetupDataStore in short mode.")
+// GetReqId helper for retrieving current request Id
+func RequestIdFromContext(ctx context.Context) string {
+	reqid := ctx.Value(RequestIdHeader)
+	if reqid != nil {
+		return reqid.(string)
 	}
 
-	d, err := SetupDataStore("::invalid-url::")
-	assert.Nil(t, d)
-	assert.Error(t, err)
-
-	d, err = SetupDataStore("")
-	assert.NotNil(t, d)
-	assert.Nil(t, err)
-	d.session.Close()
+	return ""
 }

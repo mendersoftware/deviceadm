@@ -14,32 +14,18 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"context"
+	"github.com/mendersoftware/deviceadm/requestid"
+	"net/http"
 )
 
-func TestSetupApi(t *testing.T) {
-	// expecting an error
-	api, err := SetupAPI("foo")
-	assert.Nil(t, api)
-	assert.Error(t, err)
-
-	api, err = SetupAPI(EnvDev)
-	assert.NotNil(t, api)
-	assert.Nil(t, err)
+type DevAdmWithContext struct {
+	DevAdm
+	ctx context.Context
 }
 
-func TestSetupDataStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestSetupDataStore in short mode.")
-	}
-
-	d, err := SetupDataStore("::invalid-url::")
-	assert.Nil(t, d)
-	assert.Error(t, err)
-
-	d, err = SetupDataStore("")
-	assert.NotNil(t, d)
-	assert.Nil(t, err)
-	d.session.Close()
+func (d *DevAdmWithContext) contextClientGetter() requestid.ApiRequester {
+	httpClient := http.Client{Timeout: defaultDevAuthReqTimeout}
+	reqId := requestid.RequestIdFromContext(d.ctx)
+	return requestid.NewTrackingApiClient(reqId, &httpClient)
 }

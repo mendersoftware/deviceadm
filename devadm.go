@@ -14,10 +14,21 @@
 package main
 
 import (
-	"time"
-
+	"context"
+	"github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestid"
+	"github.com/mendersoftware/deviceadm/requestlog"
 	"github.com/pkg/errors"
+	"net/http"
+	"time"
 )
+
+// helper for obtaining API clients
+type ApiClientGetter func() requestid.ApiRequester
+
+func simpleApiClientGetter() requestid.ApiRequester {
+	return &http.Client{}
+}
 
 // this device admission service interface
 type DevAdmApp interface {
@@ -26,18 +37,24 @@ type DevAdmApp interface {
 	GetDevice(id DeviceID) (*Device, error)
 	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
+
+	WithContext(c context.Context) DevAdmApp
 }
 
 func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
 	return &DevAdm{
+		log:            log.New(log.Ctx{}),
 		db:             d,
 		authclientconf: authclientconf,
+		clientGetter:   simpleApiClientGetter,
 	}
 }
 
 type DevAdm struct {
+	log            *log.Logger
 	db             DataStore
 	authclientconf DevAuthClientConfig
+	clientGetter   ApiClientGetter
 }
 
 func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
@@ -69,12 +86,12 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 
 func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	// forward device state to auth service
-	cl := NewDevAuthClient(d.authclientconf)
+	cl := NewDevAuthClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
 	err := cl.UpdateDevice(*dev)
 	if err != nil {
 		// no good if we cannot propagate device update
 		// further
-		return errors.New("failed to propagate device status update")
+		return errors.Wrap(err, "failed to propagate device status update")
 	}
 	return nil
 }
@@ -110,4 +127,14 @@ func (d *DevAdm) AcceptDevice(id DeviceID) error {
 
 func (d *DevAdm) RejectDevice(id DeviceID) error {
 	return d.updateDeviceStatus(id, DevStatusRejected)
+}
+
+func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
+	dwc := &DevAdmWithContext{
+		DevAdm: *d,
+		ctx:    ctx,
+	}
+	dwc.log = requestlog.RequestLoggerFromContext(ctx)
+	dwc.clientGetter = dwc.contextClientGetter
+	return dwc
 }
