@@ -1,1 +1,9 @@
-# Config file placeholder
+    # HTTP Server middleware environment
+    # Available values:
+    #   dev
+    #       development environment
+    #   prod
+    #       production environment
+    #
+    # Defaults to: prod
+middleware: dev
