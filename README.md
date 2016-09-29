@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.com/mendersoftware/deviceadm.svg?token=rx8YqsZ2ZyaopcMPmDmo&branch=master)](https://travis-ci.com/mendersoftware/deviceadm)
+[![Build Status](https://travis-ci.org/mendersoftware/deviceadm.svg?branch=master)](https://travis-ci.org/mendersoftware/deviceadm)
+[![codecov](https://codecov.io/gh/mendersoftware/deviceadm/branch/master/graph/badge.svg)](https://codecov.io/gh/mendersoftware/deviceadm)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mendersoftware/deviceadm)](https://goreportcard.com/report/github.com/mendersoftware/deviceadm)
 
 Mender: Device Admission Service
 ==============================================
