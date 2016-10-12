@@ -349,7 +349,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		},
 		"bar": {
 			nil,
-			errors.New("processing failed"),
+			errors.New("internal error"),
 		},
 	}
 

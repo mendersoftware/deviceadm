@@ -27,8 +27,6 @@ const (
 	uriDevices      = "/api/0.1.0/devices"
 	uriDevice       = "/api/0.1.0/devices/:id"
 	uriDeviceStatus = "/api/0.1.0/devices/:id/status"
-
-	LogHttpCode = "http_code"
 )
 
 // model of device status response at /devices/:id/status endpoint,
@@ -231,11 +229,11 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 		err = da.RejectDevice(DeviceID(devid))
 	}
 	if err != nil {
-		code := http.StatusInternalServerError
 		if err == ErrDevNotFound {
-			code = http.StatusNotFound
+			restErrWithLog(w, l, err, http.StatusNotFound)
+		} else {
+			restErrWithLogInternal(w, l, errors.Wrap(err, "failed to list change device status"))
 		}
-		restErrWithLog(w, l, err, code)
 		return
 	}
 
@@ -272,5 +270,5 @@ func restErrWithLogInternal(w rest.ResponseWriter, l *log.Logger, e error) {
 // log full error
 func restErrWithLogMsg(w rest.ResponseWriter, l *log.Logger, e error, code int, msg string) {
 	rest.Error(w, msg, code)
-	l.F(log.Ctx{LogHttpCode: code}).Error(errors.Wrap(e, msg).Error())
+	l.F(log.Ctx{}).Error(errors.Wrap(e, msg).Error())
 }
