@@ -41,7 +41,7 @@ func (mw *RequestIdMiddleware) MiddlewareFunc(h rest.HandlerFunc) rest.HandlerFu
 		logger := requestlog.RequestLoggerFromContext(r.Context())
 		if logger != nil {
 			logger = logger.F(log.Ctx{"request_id": reqId})
-			ctx = context.WithValue(r.Context(), requestlog.ReqLog, logger)
+			ctx = context.WithValue(ctx, requestlog.ReqLog, logger)
 		}
 
 		r = &rest.Request{

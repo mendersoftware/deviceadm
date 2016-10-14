@@ -100,8 +100,16 @@ func ExtractHeader(hdr, val string, r *test.Recorded) string {
 }
 
 func RestError(status string) string {
-	msg, _ := json.Marshal(map[string]string{"error": status})
+	msg, _ := json.Marshal(map[string]interface{}{"error": status, "request_id": "test"})
 	return string(msg)
+}
+
+func runTestRequest(t *testing.T, handler http.Handler, req *http.Request, code int, body string) *test.Recorded {
+	req.Header.Add(requestid.RequestIdHeader, "test")
+	recorded := test.RunRequest(t, handler, req)
+	recorded.CodeIs(code)
+	recorded.BodyIs(body)
+	return recorded
 }
 
 func TestApiDevAdmGetDevices(t *testing.T) {
@@ -220,9 +228,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 
 		rest.ErrorFieldName = "error"
 
-		recorded := test.RunRequest(t, api.MakeHandler(), testCase.inReq)
-		recorded.CodeIs(testCase.outResponseCode)
-		recorded.BodyIs(testCase.outResponseBody)
+		recorded := runTestRequest(t, api.MakeHandler(), testCase.inReq,
+			testCase.outResponseCode, testCase.outResponseBody)
 
 		for _, h := range testCase.outHdrs {
 			assert.Equal(t, h, ExtractHeader("Link", h, recorded))
@@ -327,9 +334,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.code)
-		recorded.BodyIs(tc.body)
+		runTestRequest(t, apih, tc.req, tc.code, tc.body)
 	}
 }
 
@@ -424,9 +429,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.code)
-		recorded.BodyIs(tc.body)
+		runTestRequest(t, apih, tc.req, tc.code, tc.body)
 	}
 
 }
@@ -601,8 +604,6 @@ func TestApiDevAdmAddDevice(t *testing.T) {
 
 		rest.ErrorFieldName = "error"
 
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.respCode)
-		recorded.BodyIs(tc.respBody)
+		runTestRequest(t, apih, tc.req, tc.respCode, tc.respBody)
 	}
 }
