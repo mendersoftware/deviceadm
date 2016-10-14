@@ -51,6 +51,15 @@ cd deviceadm
 go build
 ```
 
+## Configuration
+
+The service can be configured by:
+* providing configuration file (supports JSON, TOML, YAML and HCL formatting).
+The default configuration file is provided to be downloaded from [config.yaml](https://github.com/mendersoftware/deviceadm/blob/master/config.yaml).
+* setting environment variables. The service will check for a environment variable
+with a name matching the key uppercased and prefixed with "DEVICEADM_".
+Eg. for "listen" the variable name is "DEVICEADM_LISTEN".
+
 ## Contributing
 
 We welcome and ask for your contribution. If you would like to contribute to Mender, please read our guide on how to best get started [contributing code or
