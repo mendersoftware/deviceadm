@@ -28,7 +28,7 @@ func main() {
 	var debug bool
 
 	flag.StringVar(&configPath, "config",
-		"config.yaml",
+		"",
 		"Configuration file path. Supports JSON, TOML, YAML and HCL formatted configs.")
 	flag.BoolVar(&printVersion, "version",
 		false, "Show version")
@@ -62,7 +62,6 @@ func main() {
 func HandleConfigFile(filePath string) (config.Handler, error) {
 
 	c := viper.New()
-	c.SetConfigFile(filePath)
 
 	// Set default values for config
 	config.SetDefaults(c, configDefaults)
@@ -72,8 +71,11 @@ func HandleConfigFile(filePath string) (config.Handler, error) {
 	c.AutomaticEnv()
 
 	// Find and read the config file
-	if err := c.ReadInConfig(); err != nil {
-		return nil, errors.Wrap(err, "failed to read configuration")
+	if filePath != "" {
+		c.SetConfigFile(filePath)
+		if err := c.ReadInConfig(); err != nil {
+			return nil, errors.Wrap(err, "failed to read configuration")
+		}
 	}
 
 	// Validate config
