@@ -67,6 +67,10 @@ func HandleConfigFile(filePath string) (config.Handler, error) {
 	// Set default values for config
 	config.SetDefaults(c, configDefaults)
 
+	// Enable setting conig values by environment variables
+	c.SetEnvPrefix("DEVICEADM")
+	c.AutomaticEnv()
+
 	// Find and read the config file
 	if err := c.ReadInConfig(); err != nil {
 		return nil, errors.Wrap(err, "failed to read configuration")
