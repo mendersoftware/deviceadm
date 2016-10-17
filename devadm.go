@@ -33,7 +33,7 @@ func simpleApiClientGetter() requestid.ApiRequester {
 // this device admission service interface
 type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
-	AddDevice(d Device) error
+	SubmitDevice(d Device) error
 	GetDevice(id DeviceID) (*Device, error)
 	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
@@ -66,12 +66,18 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, erro
 	return devs, nil
 }
 
-func (d *DevAdm) AddDevice(dev Device) error {
+func (d *DevAdm) SubmitDevice(dev Device) error {
 	now := time.Now()
 	dev.RequestTime = &now
-	err := d.db.PutDevice(&dev)
+
+	err := d.propagateDeviceUpdate(&dev)
 	if err != nil {
-		return errors.Wrap(err, "failed to add device")
+		return err
+	}
+
+	err = d.db.PutDevice(&dev)
+	if err != nil {
+		return errors.Wrap(err, "failed to put device")
 	}
 	return nil
 }
