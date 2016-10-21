@@ -77,21 +77,29 @@ paths:
           description: Internal server error.
           schema:
             $ref: "#/definitions/Error"
-    post:
-      summary: Add a new device for admission
+  /devices/{id}:
+    put:
+      summary: Submit a device for admission
       description: |
         Adds the device to the database with a 'pending' admission status.
+        If the device already exists, it changes the device's status to
+        'pending' and updates identity data.
         The user will be able to inspect the device, and either accept, or reject it.
       parameters:
+        - name: id
+          in: path
+          description: Device identifier (SHA256 over identity data).
+          required: true
+          type: string
         - name: device
           in: body
-          description: New device for admission.
+          description: A device for admission.
           required: true
           schema:
             $ref: '#/definitions/NewDevice'
       responses:
-        201:
-          description: New device for admission created.
+        204:
+          description: The device for admission submitted successfully.
         400:
           description: |
               The request body is malformed. See error for details.
@@ -101,7 +109,6 @@ paths:
           description: Internal server error.
           schema:
             $ref: "#/definitions/Error"
-  /devices/{id}:
     get:
       summary: Get the details of a selected device
       description: Returns the details of a particular device.
@@ -223,13 +230,9 @@ definitions:
     description: New device for admission process.
     type: object
     required:
-      - id
       - device_identity
       - key
     properties:
-      id:
-        description: Device identifier (SHA256 over identity data).
-        type: string
       device_identity:
         description: The identity data of the device.
         type: string

@@ -51,7 +51,7 @@ func NewDevAdmApiHandlers(devadm DevAdmApp) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
-		rest.Post(uriDevices, d.AddDeviceHandler),
+		rest.Put(uriDevice, d.SubmitDeviceHandler),
 
 		rest.Get(uriDevice, d.GetDeviceHandler),
 
@@ -112,7 +112,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	w.WriteJson(devs[:len])
 }
 
-func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	l := requestlog.RequestLoggerFromContext(r.Context())
 
 	dev, err := parseDevice(r)
@@ -125,13 +125,13 @@ func (d *DevAdmHandlers) AddDeviceHandler(w rest.ResponseWriter, r *rest.Request
 
 	//save device in pending state
 	dev.Status = "pending"
-	err = da.AddDevice(*dev)
+	err = da.SubmitDevice(*dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func parseDevice(r *rest.Request) (*Device, error) {
@@ -144,9 +144,11 @@ func parseDevice(r *rest.Request) (*Device, error) {
 	}
 
 	//validate id
-	if dev.ID == DeviceID("") {
+	id := r.PathParam("id")
+	if id == "" {
 		return nil, errors.New("'id' field required")
 	}
+	dev.ID = DeviceID(id)
 
 	//validate identity
 	if dev.DeviceIdentity == "" {
