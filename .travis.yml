@@ -83,6 +83,7 @@ before_install:
     # Get our own Swagger verifier
     - wget https://raw.githubusercontent.com/mendersoftware/autodocs/master/verify_docs.py
 
+
 before_script:
     # Print build info that binary is compiled with.
     - echo $TRAVIS_COMMIT
@@ -115,14 +116,30 @@ script:
     # Exclude vendor directory, we don't want to run tests and coverage for all dependencies every time,
     # also including their coverage may introduce to much noice. Concentrate on the coverage of local packages.
     # Execute go test on every local subpackage (resolved as dependencies) and generate covreage report for each.
+
     # Test packages pararell (xargs -P)
     - go list ./... | grep -v /vendor/ | xargs -n1 -I {} -P 4 go test -v -covermode=atomic -coverprofile=../../../{}/coverage.txt {}
 
     # Insert build information into compiled binary using ldflags
     - CGO_ENABLED=0 go build -ldflags "-X main.Commit=`echo $TRAVIS_COMMIT` -X main.Tag=`echo $TRAVIS_TAG` -X main.Branch=`echo $TRAVIS_BRANCH` -X main.BuildNumber=`echo $TRAVIS_BUILD_NUMBER`"
 
+    # Clone integration repo. for api testing (purposely after license checking..)
+    - git clone https://github.com/mendersoftware/integration.git
+
+    # Run dependant microservices for deviceadm
+    - cp tests/deviceadm-deps.sh integration/ && cd integration && bash deviceadm-deps.sh && cd ..
+
     # Build docker image from docker file
     - sudo docker build -t $DOCKER_REPOSITORY .
+
+    # Run docker container
+    - sudo docker run -d --name=mender-device-adm --network=integration_mender -t mendersoftware/deviceadm
+
+    - cp docs/integrations_api.yml tests
+
+    # Make docker testing container and run tests
+    -  ( cd tests && docker build -t testing . && docker run --network=integration_mender -t testing )
+
 
 after_success:
     # Integrate with https://codecov.io
