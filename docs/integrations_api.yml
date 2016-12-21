@@ -1,20 +1,27 @@
 swagger: '2.0'
 
 info:
-  version: "0.1"
-  title: Admission Service API
+  version: '0.1'
+  title: Device admission
+  description: |
+    An API for device admission handling. Intended for use by the web GUI.
 
-host: 'localhost:8080'
 basePath: '/api/integrations/0.1/admission'
+host: 'docker.mender.io:8080'
+schemes:
+  - https
 
 paths:
   /devices:
     get:
-      summary: Gets "Device" objects.
+      summary: List known devices
+      description: |
+        Returns a paged collection of devices registered for admission, and optionally filters by device admission status.
       parameters:
         - name: status
           in: query
-          description: Filters devices by admission status (pending, accepted, rejected)
+          description: |
+            Admission status filter. If not specified, all devices are listed.
           required: false
           type: string
           enum:
@@ -23,139 +30,158 @@ paths:
             - rejected
         - name: page
           in: query
-          description: Starting page
+          description: Starting page.
           required: false
           type: number
           format: integer
           default: 1
         - name: per_page
           in: query
-          description: Number of results per page
+          description: Number of results per page.
           required: false
           type: number
           format: integer
           default: 10
       responses:
         200:
-          description: Successful response
+          description: Successful response.
           schema:
-            title: ListOfRequests
+            title: ListOfDevices
             type: array
             items:
               $ref: '#/definitions/Device'
+            example:
+              application/json:
+                - id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+                  device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+                  key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+                  status: "pending"
+                  attributes:
+                    mac: "00:01:02:03:04:05"
+                    sku: "My Device 1"
+                    sn:  "SN1234567890"
+                  request_time: "2016-10-03T16:58:51.639Z"
           headers:
             Link:
               type: string
-              description: Standard header, we support "first", "next", and "prev".
-        400:
-          description: Invalid parameters
-          schema:
-            $ref: "#/definitions/SimpleError"
-        202:
-          description: No Content
-        500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
-          schema:
-            $ref: "#/definitions/SimpleError"
-    post:
-      summary: Adds new device for admission
+              description: |
+                Standard header, used for page navigation.
 
+                Supported relation types are 'first', 'next' and 'prev'.
+        400:
+          description: |
+            Invalid parameters. See error message for details.
+          schema:
+            $ref: "#/definitions/Error"
+        500:
+          description: Internal server error.
+          schema:
+            $ref: "#/definitions/Error"
+  /devices/{id}:
+    put:
+      summary: Submit a device for admission
+      description: |
+        Adds the device to the database with a 'pending' admission status.
+        If the device already exists, it changes the device's status to
+        'pending' and updates identity data.
+        The user will be able to inspect the device, and either accept, or reject it.
       parameters:
-        - name: Device
+        - name: id
+          in: path
+          description: Device identifier (SHA256 over identity data).
+          required: true
+          type: string
+        - name: device
           in: body
-          description: New device for admission
+          description: A device for admission.
           required: true
           schema:
             $ref: '#/definitions/NewDevice'
       responses:
-        201:
-          description: New device for admission created
-          headers:
-            Location:
-              type: string
-              description: URI for the new created resource.
+        204:
+          description: The device for admission submitted successfully.
         400:
-          description: Invalid request
+          description: |
+              The request body is malformed. See error for details.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
         500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
+          description: Internal server error.
           schema:
-            $ref: "#/definitions/SimpleError"
-  /devices/{id}:
+            $ref: "#/definitions/Error"
     get:
-      summary: Gets device
+      summary: Get the details of a selected device
+      description: Returns the details of a particular device.
       parameters:
         - name: id
           in: path
-          description: Device identifier
+          description: Device identifier (SHA256 over identity data).
           required: true
           type: string
       responses:
         200:
-          description: Device
+          description: Successful response - a device is returned.
           schema:
             $ref: "#/definitions/Device"
+          examples:
+            application/json:
+              id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+              device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+              key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+              status: "pending"
+              attributes:
+                mac: "00:01:02:03:04:05"
+                sku: "My Device 1"
+                sn:  "SN1234567890"
+              request_time: "2016-10-03T16:58:51.639Z"
         404:
-          description: Not Found
-          examples:
-            application/json:
-              error: Detailed error message
+          description: The device was not found.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
         500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
+          description: Internal server error.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
   /devices/{id}/status:
     get:
-      summary: Checks admission status for the device
+      summary: Check the admission status of a selected device
+      description: Returns the admission status of a particular device.
       parameters:
         - name: id
           in: path
-          description: Device identifier
+          description: Device identifier (SHA256 over identity data).
           required: true
           type: string
       responses:
         200:
-          description: Admission status of the device
+          description: |
+            Successful response - the device's admission status is returned.
           schema:
             $ref: "#/definitions/Status"
+          examples:
+            application/json:
+              status: "accepted"
         404:
-          description: Not Found
-          examples:
-            application/json:
-              error: Detailed error message
+          description: The device was not found.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
         500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
+          description: Internal server error.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
     put:
-      summary: Update device admission state
+      summary: Update the admission status of a selected device
       description: |
-        Allows changing the device's admission status. Valid state transitions
-        - pending -> accepted
-        - pending -> rejected
-        - rejected -> accepted
-        - accepted -> rejected
+        Changes the given device's admission status.
+        Valid state transitions:
+        - 'pending' -> 'accepted'
+        - 'pending' -> 'rejected'
+        - 'rejected' -> 'accepted'
+        - 'accepted' -> 'rejected'
       parameters:
         - name: id
           in: path
-          description: Device identifier
+          description: Device identifier (SHA256 over identity data).
           required: true
           type: string
         - name: status
@@ -166,72 +192,71 @@ paths:
             $ref: '#/definitions/Status'
       responses:
         200:
-          description: Device status updated
+          description: The status of the device was successfully updated.
           schema:
             $ref: "#/definitions/Status"
-        303:
-          description: Device updated
-          headers:
-            Location:
-              type: string
-              description: URI of updated device
+          examples:
+            application/json:
+              status: "accepted"
         400:
-          description: Bad request (including invalid state and/or state transition)
-          examples:
-            application/json:
-              error: Detailed error message
+          description: |
+              The request body is malformed or the state transition is invalid. See error for details.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
         404:
-          description: Not Found
-          examples:
-            application/json:
-              error: Detailed error message
+          description: The device was not found.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
         500:
-          description: Internal Server Error
-          examples:
-            application/json:
-              error: Detailed error message
+          description: Internal server error.
           schema:
-            $ref: "#/definitions/SimpleError"
+            $ref: "#/definitions/Error"
 definitions:
-  SimpleError:
-    description: Simple error descriptor
+  Error:
+    description: Error descriptor.
     type: object
     properties:
       error:
-        description: Description of error
+        description: Description of the error.
         type: string
+      request_id:
+        description: Request ID (same as in X-MEN-RequestID header).
+        type: string
+    example:
+      application/json:
+          error: "failed to decode device group data: JSON payload is empty"
+          request_id: "f7881e82-0492-49fb-b459-795654e7188a"
   NewDevice:
-    description: New device for admission process
+    description: New device for admission process.
+    type: object
+    required:
+      - device_identity
+      - key
+    properties:
+      device_identity:
+        description: The identity data of the device.
+        type: string
+      key:
+        description: Device public key
+        type: string
+    example:
+      application/json:
+        id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+        device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+        key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+  Device:
+    description: Device descriptor.
     type: object
     required:
       - id
       - device_identity
       - key
-    properties:
-      id:
-        description: Hash created based on the device identity data
-        type: string
-      device_identity:
-        description: Device identity data
-        type: string
-      key:
-        description: Device public key
-        type: string
-  Device:
-    description: Device
-    type: object
-    required:
-      - id
       - status
       - attributes
       - request_time
     properties:
       id:
-        description: Hash created based on the device identity data
+        description: Hash created based on the device identity data.
         type: string
       device_identity:
         description: Identity data
@@ -252,8 +277,20 @@ definitions:
         type: string
         format: datetime
         description: Server-side timestamp of the request reception.
+    example:
+      application/json:
+        id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+        device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+        key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+        status: "pending"
+        attributes:
+          mac: "00:01:02:03:04:05"
+          sku: "My Device 1"
+          sn:  "SN1234567890"
+        request_time: "2016-10-03T16:58:51.639Z"
+
   Status:
-    description: Admission status of the device
+    description: Admission status of the device.
     type: object
     properties:
       status:
@@ -264,21 +301,26 @@ definitions:
           - rejected
     required:
       - status
+    example:
+      application/json:
+          status: "accepted"
   Attributes:
     description: |
-      Human readable attributes of the device.
-      Attributes can have more or different properties then defined here.
+      Human readable attributes of the device, in the form of a JSON structure.
+      The attributes are completely vendor-specific, the provided ones are just an example.
     type: object
     properties:
-      mac_address:
-        description: Device MAC address
+      mac:
+        description: MAC address.
         type: string
-        example: "aa:bb:cc:dd:00:11"
-      SKU:
-        description: Stock keeping unit
+      sku:
+        description: Stock keeping unit.
         type: string
-        example: "My Device 1"
-      SN:
-        description: Serial Number
+      sn:
+        description: Serial number.
         type: string
-        example: "13132313"
+    example:
+      application/json:
+        mac: "00:01:02:03:04:05"
+        sku: "My Device 1"
+        sn:  "SN1234567890"

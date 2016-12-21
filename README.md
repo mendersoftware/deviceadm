@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/mendersoftware/deviceadm.svg?branch=master)](https://travis-ci.org/mendersoftware/deviceadm)
 [![codecov](https://codecov.io/gh/mendersoftware/deviceadm/branch/master/graph/badge.svg)](https://codecov.io/gh/mendersoftware/deviceadm)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mendersoftware/deviceadm)](https://goreportcard.com/report/github.com/mendersoftware/deviceadm)
+[![Docker pulls](https://img.shields.io/docker/pulls/mendersoftware/deviceadm.svg?maxAge=3600)](https://hub.docker.com/r/mendersoftware/deviceadm/)
 
 Mender: Device Admission Service
 ==============================================
@@ -49,6 +50,15 @@ git clone https://github.com/mendersoftware/deviceadm.git
 cd deviceadm
 go build
 ```
+
+## Configuration
+
+The service can be configured by:
+* providing configuration file (supports JSON, TOML, YAML and HCL formatting).
+The default configuration file is provided to be downloaded from [config.yaml](https://github.com/mendersoftware/deviceadm/blob/master/config.yaml).
+* setting environment variables. The service will check for a environment variable
+with a name matching the key uppercased and prefixed with "DEVICEADM_".
+Eg. for "listen" the variable name is "DEVICEADM_LISTEN".
 
 ## Contributing
 

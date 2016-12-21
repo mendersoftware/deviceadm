@@ -34,7 +34,7 @@ type MockDevAdm struct {
 	mockGetDevice    func(id DeviceID) (*Device, error)
 	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
-	mockAddDevice    func(d Device) error
+	mockSubmitDevice func(d Device) error
 	mockWithContext  func(c context.Context) DevAdmApp
 }
 
@@ -42,8 +42,8 @@ func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]Device
 	return mda.mockListDevices(skip, limit, status)
 }
 
-func (mda *MockDevAdm) AddDevice(dev Device) error {
-	return mda.mockAddDevice(dev)
+func (mda *MockDevAdm) SubmitDevice(dev Device) error {
+	return mda.mockSubmitDevice(dev)
 }
 
 func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
@@ -100,8 +100,16 @@ func ExtractHeader(hdr, val string, r *test.Recorded) string {
 }
 
 func RestError(status string) string {
-	msg, _ := json.Marshal(map[string]string{"error": status})
+	msg, _ := json.Marshal(map[string]interface{}{"error": status, "request_id": "test"})
 	return string(msg)
+}
+
+func runTestRequest(t *testing.T, handler http.Handler, req *http.Request, code int, body string) *test.Recorded {
+	req.Header.Add(requestid.RequestIdHeader, "test")
+	recorded := test.RunRequest(t, handler, req)
+	recorded.CodeIs(code)
+	recorded.BodyIs(body)
+	return recorded
 }
 
 func TestApiDevAdmGetDevices(t *testing.T) {
@@ -220,9 +228,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 
 		rest.ErrorFieldName = "error"
 
-		recorded := test.RunRequest(t, api.MakeHandler(), testCase.inReq)
-		recorded.CodeIs(testCase.outResponseCode)
-		recorded.BodyIs(testCase.outResponseBody)
+		recorded := runTestRequest(t, api.MakeHandler(), testCase.inReq,
+			testCase.outResponseCode, testCase.outResponseBody)
 
 		for _, h := range testCase.outHdrs {
 			assert.Equal(t, h, ExtractHeader("Link", h, recorded))
@@ -327,9 +334,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.code)
-		recorded.BodyIs(tc.body)
+		runTestRequest(t, apih, tc.req, tc.code, tc.body)
 	}
 }
 
@@ -349,7 +354,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		},
 		"bar": {
 			nil,
-			errors.New("processing failed"),
+			errors.New("internal error"),
 		},
 	}
 
@@ -424,9 +429,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	}
 
 	for _, tc := range tcases {
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.code)
-		recorded.BodyIs(tc.body)
+		runTestRequest(t, apih, tc.req, tc.code, tc.body)
 	}
 
 }
@@ -452,53 +455,32 @@ func makeJson(t *testing.T, d interface{}) string {
 	return string(out)
 }
 
-func TestApiDevAdmAddDevice(t *testing.T) {
-	testCases := []struct {
+func TestApiDevAdmSubmitDevice(t *testing.T) {
+	testCases := map[string]struct {
 		req       *http.Request
 		devAdmErr string
 		respCode  int
 		respBody  string
 	}{
-		{
-			//empty body
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"empty body": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				nil),
-			"",
-			400,
-			RestError("failed to decode request body: JSON payload is empty"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("failed to decode request body: JSON payload is empty"),
 		},
-		{
-			//garbled body
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"garbled body": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				"foo bar"),
-			"",
-			400,
-
-			RestError("failed to decode request body: json: cannot unmarshal string into Go value of type main.Device"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("failed to decode request body: json: cannot unmarshal string into Go value of type main.Device"),
 		},
-		{
-			//body formatted ok, all fields present
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
-				map[string]string{
-					"id":  "id-0001",
-					"key": "key-0001",
-					"device_identity": makeJson(t,
-						map[string]string{
-							"mac": "00:00:00:01",
-						}),
-				},
-			),
-			"",
-			201,
-			"",
-		},
-		{
-			//body formatted ok, 'id' missing
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, all fields present": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
 					"key": "key-0001",
 					"device_identity": makeJson(t,
@@ -507,73 +489,63 @@ func TestApiDevAdmAddDevice(t *testing.T) {
 						}),
 				},
 			),
-			"",
-			400,
-			RestError("'id' field required"),
+			devAdmErr: "",
+			respCode:  204,
+			respBody:  "",
 		},
-		{
-			//body formatted ok, 'key' missing
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, 'key' missing": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"id": "id-0001",
 					"device_identity": makeJson(t,
 						map[string]string{
 							"mac": "00:00:00:01",
 						}),
 				},
 			),
-			"",
-			400,
-			RestError("'key' field required"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("'key' field required"),
 		},
-		{
-			//body formatted ok, identity missing
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, identity missing": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"id":  "id-0001",
 					"key": "key-0001",
 				},
 			),
-			"",
-			400,
-			RestError("'device_identity' field required"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("'device_identity' field required"),
 		},
-		{
-			//body formatted ok, identity garbled
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, identity garbled": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"id":              "id-0001",
 					"key":             "key-0001",
 					"device_identity": "{mac: foobar}",
 				},
 			),
-			"",
-			400,
-			RestError("failed to decode attributes data: invalid character 'm' looking for beginning of object key string"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("failed to decode attributes data: invalid character 'm' looking for beginning of object key string"),
 		},
-		{
-			//body formatted ok, identity empty
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, identity empty": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"id":              "id-0001",
 					"key":             "key-0001",
 					"device_identity": "{}",
 				},
 			),
-			"",
-			400,
-			RestError("no attributes provided"),
+			devAdmErr: "",
+			respCode:  400,
+			respBody:  RestError("no attributes provided"),
 		},
-		{
-			//body formatted ok, devadm error
-			test.MakeSimpleRequest("POST",
-				"http://1.2.3.4/api/0.1.0/devices",
+		"body formatted ok, devadm error": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"id":  "id-0001",
 					"key": "key-0001",
 					"device_identity": makeJson(t,
 						map[string]string{
@@ -581,15 +553,16 @@ func TestApiDevAdmAddDevice(t *testing.T) {
 						}),
 				},
 			),
-			"internal error",
-			500,
-			RestError("internal error"),
+			devAdmErr: "internal error",
+			respCode:  500,
+			respBody:  RestError("internal error"),
 		},
 	}
 
-	for _, tc := range testCases {
+	for name, tc := range testCases {
+		t.Logf("test case: %s", name)
 		devadm := MockDevAdm{
-			mockAddDevice: func(d Device) error {
+			mockSubmitDevice: func(d Device) error {
 				if tc.devAdmErr != "" {
 					return errors.New(tc.devAdmErr)
 				}
@@ -601,8 +574,6 @@ func TestApiDevAdmAddDevice(t *testing.T) {
 
 		rest.ErrorFieldName = "error"
 
-		recorded := test.RunRequest(t, apih, tc.req)
-		recorded.CodeIs(tc.respCode)
-		recorded.BodyIs(tc.respBody)
+		runTestRequest(t, apih, tc.req, tc.respCode, tc.respBody)
 	}
 }

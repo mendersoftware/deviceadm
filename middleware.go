@@ -34,6 +34,7 @@ var (
 
 		// logging
 		&requestlog.RequestLogMiddleware{},
+		&requestid.RequestIdMiddleware{},
 		&accesslog.AccessLogMiddleware{Format: accesslog.SimpleLogFormat},
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
@@ -50,13 +51,13 @@ var (
 		// The expected Content-Type is 'application/json'
 		// if the content is non-null
 		&rest.ContentTypeCheckerMiddleware{},
-		&requestid.RequestIdMiddleware{},
 	}
 
 	DefaultProdStack = []rest.Middleware{
 
 		// logging
 		&requestlog.RequestLogMiddleware{},
+		&requestid.RequestIdMiddleware{},
 		&accesslog.AccessLogMiddleware{Format: accesslog.SimpleLogFormat},
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
@@ -71,7 +72,6 @@ var (
 		// The expected Content-Type is 'application/json'
 		// if the content is non-null
 		&rest.ContentTypeCheckerMiddleware{},
-		&requestid.RequestIdMiddleware{},
 	}
 
 	middlewareMap = map[string][]rest.Middleware{

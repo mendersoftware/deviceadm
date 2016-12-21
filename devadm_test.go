@@ -17,12 +17,39 @@ import (
 	"context"
 	"errors"
 	"github.com/mendersoftware/deviceadm/log"
+	"github.com/mendersoftware/deviceadm/requestid"
 	"github.com/mendersoftware/deviceadm/requestlog"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type FakeApiRequester struct {
+	status int
+}
+
+func (f FakeApiRequester) Do(r *http.Request) (*http.Response, error) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(f.status)
+	}))
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL)
+	return res, err
+}
+
+func devadmWithClientForTest(d DataStore, clientRespStatus int) DevAdmApp {
+	clientGetter := func() requestid.ApiRequester {
+		return FakeApiRequester{clientRespStatus}
+	}
+	return &DevAdm{
+		db:           d,
+		clientGetter: clientGetter,
+		log:          log.New(log.Ctx{})}
+}
 
 func devadmForTest(d DataStore) DevAdmApp {
 	return &DevAdm{
@@ -64,29 +91,43 @@ func TestDevAdmListDevicesErr(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestDevAdmAddDevice(t *testing.T) {
+func TestDevAdmSubmitDevice(t *testing.T) {
 	db := &MockDataStore{}
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
 
-	d := devadmForTest(db)
+	d := devadmWithClientForTest(db, http.StatusOK)
 
-	err := d.AddDevice(Device{})
+	err := d.SubmitDevice(Device{})
 
 	assert.NoError(t, err)
 }
 
-func TestDevAdmAddDeviceErr(t *testing.T) {
+func TestDevAdmSubmitDeviceClientErr(t *testing.T) {
+	db := &MockDataStore{}
+	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
+		Return(nil)
+
+	d := devadmWithClientForTest(db, http.StatusBadRequest)
+
+	err := d.SubmitDevice(Device{})
+
+	if assert.Error(t, err) {
+		assert.EqualError(t, err, "failed to propagate device status update: device status update request failed with status 400 Bad Request")
+	}
+}
+
+func TestDevAdmSubmitDeviceErr(t *testing.T) {
 	db := &MockDataStore{}
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(errors.New("db connection failed"))
 
-	d := devadmForTest(db)
+	d := devadmWithClientForTest(db, http.StatusOK)
 
-	err := d.AddDevice(Device{})
+	err := d.SubmitDevice(Device{})
 
 	if assert.Error(t, err) {
-		assert.EqualError(t, err, "failed to add device: db connection failed")
+		assert.EqualError(t, err, "failed to put device: db connection failed")
 	}
 }
 
@@ -133,14 +174,14 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 		Return(&Device{ID: "foo"}, nil)
 	db.On("GetDevice", DeviceID("bar")).
 		Return(nil, ErrDevNotFound)
+	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
+		Return(nil)
 
-	d := devadmForTest(db)
+	d := devadmWithClientForTest(db, http.StatusOK)
 
 	err := d.AcceptDevice("foo")
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to propagate")
-	// check error type?
+	assert.NoError(t, err)
 
 	err = d.AcceptDevice("bar")
 	assert.Error(t, err)
@@ -153,13 +194,14 @@ func TestDevAdmRejectDevice(t *testing.T) {
 		Return(&Device{ID: "foo"}, nil)
 	db.On("GetDevice", DeviceID("bar")).
 		Return(nil, ErrDevNotFound)
+	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
+		Return(nil)
 
-	d := devadmForTest(db)
+	d := devadmWithClientForTest(db, http.StatusOK)
 
 	err := d.RejectDevice("foo")
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to propagate")
+	assert.NoError(t, err)
 
 	err = d.RejectDevice("bar")
 	assert.Error(t, err)
