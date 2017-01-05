@@ -22,7 +22,7 @@ class Client(object):
         self.http_client = RequestsClient()
         self.http_client.session.verify = False
 
-        self.client = SwaggerClient.from_spec(load_file('integrations_api.yml'), config=self.config, http_client=self.http_client)
+        self.client = SwaggerClient.from_spec(load_file('management_api.yml'), config=self.config, http_client=self.http_client)
         self.client.swagger_spec.api_url = "http://%s/api/%s/" % (pytest.config.getoption("host"), pytest.config.getoption("api"))
 
 
