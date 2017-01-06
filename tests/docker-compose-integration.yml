@@ -2,5 +2,4 @@ version: '2'
 services:
     mender-device-adm:
             # built/tagged locally and only used for testing
-            image: mendersoftware/deviceadm
-
+            image: mendersoftware/deviceadm:pr
