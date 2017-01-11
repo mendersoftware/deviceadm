@@ -129,8 +129,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			200,
 			ToJson(mockListDevices(5)),
 			[]string{
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=3&per_page=5", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=1&per_page=5", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
 			},
 		},
 		{
@@ -141,8 +141,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			200,
 			ToJson(mockListDevices(5)),
 			[]string{
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=3&per_page=5", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=1&per_page=5", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
 			},
 		},
 		{
@@ -180,8 +180,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			200,
 			ToJson(mockListDevices(5)),
 			[]string{
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=3&per_page=5&status=allowed", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "http://1.2.3.4/r?page=1&per_page=5&status=allowed", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5&status=allowed", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5&status=allowed", "first"),
 			},
 		},
 		{
@@ -217,6 +217,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 
 		handlers := DevAdmHandlers{&devadm}
 		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevicesHandler))
+		assert.NotNil(t, router)
 		assert.NoError(t, err)
 
 		api := rest.NewApi()
