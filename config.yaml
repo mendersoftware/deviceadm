@@ -6,4 +6,4 @@
     #       production environment
     #
     # Defaults to: prod
-middleware: dev
+#middleware: dev
