@@ -2,7 +2,7 @@
 # Apache-2.0
 bbb303820971c294a9a8e5eba5affcf1379036e877ea61c11cbf9400b2949483  LICENSE
 bbb303820971c294a9a8e5eba5affcf1379036e877ea61c11cbf9400b2949483  vendor/github.com/mendersoftware/mendertesting/LICENSE
-#
+b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1  vendor/github.com/mendersoftware/go-lib-micro/LICENSE
 # BSD-2-Clause
 1e0222fa00c5a5356489185f78758e8ce8352c44e992486136b605f8ef7ee657  vendor/github.com/magiconair/properties/LICENSE
 8d427fd87bc9579ea368fde3d49f9ca22eac857f91a9dec7e3004bdfab7dee86  vendor/github.com/pkg/errors/LICENSE
@@ -29,6 +29,7 @@ feb6d17a0e7a64e5ab0f7e2b0e0ee3e69c1a6396626fd554dc0cddaa06851b44  vendor/github.
 402f39eed8a1851385d0703999aa9f23d067c2ea3e15c63c074e389cbf8f8f8f  vendor/github.com/stretchr/testify/LICENCE.txt
 fde7d610b9b95fc5a6304055c4dae951025b630aaa42a24e95ebf76675ae832c  vendor/github.com/stretchr/objx/LICENSE.md
 3525392c6db3b804af76980b2c560ee9ec1abdadd907d76a26091df7c78f3a25  vendor/github.com/davecgh/go-spew/LICENSE
+d5ecab1f944eb45c5c89dbd749819af7b8a74a018065695baf535c962ded39f0  vendor/github.com/satori/go.uuid/LICENSE
 #
 # Basically MIT (but with a "colorful" language!)
 7637386b5f81e8a719ca336233149005e5fa28b5e6054ea7b67de49355b0ad40  vendor/github.com/BurntSushi/toml/COPYING
@@ -37,3 +38,5 @@ fde7d610b9b95fc5a6304055c4dae951025b630aaa42a24e95ebf76675ae832c  vendor/github.
 b442bc6658b18bf92cb6cb34dd12e758773de618bbad62294ba65f2758e2dc34  vendor/gopkg.in/yaml.v2/LICENSE
 # Addendum to the above.
 a94710b55e03b5285f77d048c5ba61bb9d6ee04a06c0eb90e68821e11b0c707a  vendor/gopkg.in/yaml.v2/LICENSE.libyaml
+
+
