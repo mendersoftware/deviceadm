@@ -22,6 +22,7 @@ import (
 	dlog "github.com/mendersoftware/deviceadm/log"
 	"github.com/mendersoftware/deviceadm/requestid"
 	"github.com/mendersoftware/deviceadm/requestlog"
+	"github.com/mendersoftware/go-lib-micro/customheader"
 )
 
 const (
@@ -83,6 +84,11 @@ var (
 func SetupMiddleware(api *rest.Api, mwtype string) error {
 
 	l := dlog.New(dlog.Ctx{})
+
+	api.Use(&customheader.CustomHeaderMiddleware{
+		HeaderName:  "X-ADMISSION-VERSION",
+		HeaderValue: CreateVersionString(),
+	})
 
 	l.Infof("setting up %s middleware", mwtype)
 

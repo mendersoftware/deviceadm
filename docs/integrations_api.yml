@@ -1,13 +1,13 @@
 swagger: '2.0'
 
 info:
-  version: '0.1'
+  version: '1'
   title: Device admission
   description: |
     An API for device admission handling. Intended for use by the web GUI.
 
-basePath: '/api/integrations/0.1/admission'
-host: 'docker.mender.io:8080'
+basePath: '/api/integrations/v1/admission'
+host: 'docker.mender.io'
 schemes:
   - https
 
