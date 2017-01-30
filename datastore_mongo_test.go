@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -335,4 +336,51 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	if assert.NotNil(t, dev.RequestTime) {
 		assert.WithinDuration(t, time.Now(), *dev.RequestTime, time.Second)
 	}
+}
+
+func TestMigrate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMigrate in short mode.")
+	}
+
+	testCases := map[string]struct {
+		version string
+		err     string
+	}{
+		"0.1.0": {
+			version: "0.1.0",
+			err:     "",
+		},
+		"1.2.3": {
+			version: "1.2.3",
+			err:     "",
+		},
+		"0.1 error": {
+			version: "0.1",
+			err:     "failed to parse service version: failed to parse Version: unexpected EOF",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Logf("case: %s", name)
+		db.Wipe()
+		session := db.Session()
+
+		store := NewDataStoreMongoWithSession(session)
+
+		err := store.Migrate(tc.version, nil)
+		if tc.err == "" {
+			assert.NoError(t, err)
+			var out []migrate.MigrationEntry
+			session.DB(DbName).C(migrate.DbMigrationsColl).Find(nil).All(&out)
+			assert.Len(t, out, 1)
+			v, _ := migrate.NewVersion(tc.version)
+			assert.Equal(t, v, out[0].Version)
+		} else {
+			assert.EqualError(t, err, tc.err)
+		}
+
+		session.Close()
+	}
+
 }
