@@ -16,6 +16,8 @@ package main
 
 import (
 	"errors"
+
+	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 )
 
 var (
@@ -39,4 +41,7 @@ type DataStore interface {
 	// 	Status: "accepted",
 	// })
 	PutDevice(dev *Device) error
+
+	// Run migrations
+	Migrate(version string, migrations []migrate.Migration) error
 }

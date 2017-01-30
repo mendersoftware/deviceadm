@@ -56,6 +56,16 @@ func main() {
 	l.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
+	db, err := NewDataStoreMongo(conf.GetString(SettingDb))
+	if err != nil {
+		l.Fatal("failed to connect to db")
+	}
+
+	err = db.Migrate(DbVersion, nil)
+	if err != nil {
+		l.Fatal("failed to run migrations")
+	}
+
 	l.Fatal(RunServer(conf))
 }
 
