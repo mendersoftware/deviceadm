@@ -1,5 +1,6 @@
 {
 	"comment": "",
+<<<<<<< fc27820da12fc1f12091ff9763b31fb1bc16986c
 	"ignore": "test",
 	"package": [
 		{
@@ -172,6 +173,12 @@
 			"checksumSHA1": "Ww6wiSKdA8LwxoJz4DNUF+crH4g=",
 			"path": "gopkg.in/yaml.v2",
 			"revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4"
+        },
+		{
+			"checksumSHA1": "AslGZd/VnH8RZgPcgpB+cbxEeKc=",
+			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
+			"revision": "5a7f06d87cc653f59e4cd6de15e711d7b795bb46",
+			"revisionTime": "2017-01-30T12:11:14Z"
 		}
 	],
 	"rootPath": "github.com/mendersoftware/deviceadm"
