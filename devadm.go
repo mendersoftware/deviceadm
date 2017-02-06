@@ -70,12 +70,7 @@ func (d *DevAdm) SubmitDevice(dev Device) error {
 	now := time.Now()
 	dev.RequestTime = &now
 
-	err := d.propagateDeviceUpdate(&dev)
-	if err != nil {
-		return err
-	}
-
-	err = d.db.PutDevice(&dev)
+	err := d.db.PutDevice(&dev)
 	if err != nil {
 		return errors.Wrap(err, "failed to put device")
 	}
