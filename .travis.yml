@@ -14,6 +14,7 @@ go:
 env:
     matrix:
         - JOB_TYPE=compile_and_basic_tests
+        - JOB_TYPE=compile_and_acceptance_tests
         - JOB_TYPE=compile_and_integration_tests_fast
         - JOB_TYPE=compile_and_integration_tests_slow
 
@@ -137,7 +138,7 @@ script:
     # Move script to testing directory
     - mv integration_new/extra/travis-testing/* tests
 
-    - if [[ "$JOB_TYPE" = compile_and_basic_tests ]]; then
+    - if [[ "$JOB_TYPE" = compile_and_acceptance_tests ]]; then
         ./tests/build-acceptance ./tests ./docs/integrations_api.yml;
         TESTS_DIR=$PWD/tests ./tests/run-test-environment "acceptance" $PWD/integration_new ./tests/docker-compose.yml;
       fi
