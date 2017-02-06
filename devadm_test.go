@@ -103,20 +103,6 @@ func TestDevAdmSubmitDevice(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDevAdmSubmitDeviceClientErr(t *testing.T) {
-	db := &MockDataStore{}
-	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
-		Return(nil)
-
-	d := devadmWithClientForTest(db, http.StatusBadRequest)
-
-	err := d.SubmitDevice(Device{})
-
-	if assert.Error(t, err) {
-		assert.EqualError(t, err, "failed to propagate device status update: device status update request failed with status 400 Bad Request")
-	}
-}
-
 func TestDevAdmSubmitDeviceErr(t *testing.T) {
 	db := &MockDataStore{}
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
