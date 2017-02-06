@@ -43,7 +43,7 @@ func newMockServer(status int) *httptest.Server {
 }
 
 func TestDevAuthClientReqSuccess(t *testing.T) {
-	s := newMockServer(200)
+	s := newMockServer(http.StatusNoContent)
 	defer s.Close()
 
 	c := NewDevAuthClient(DevAuthClientConfig{
@@ -57,7 +57,7 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 }
 
 func TestDevAuthClientReqFail(t *testing.T) {
-	s := newMockServer(400)
+	s := newMockServer(http.StatusBadRequest)
 	defer s.Close()
 
 	c := NewDevAuthClient(DevAuthClientConfig{
@@ -77,7 +77,7 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 		// this is just URI endpoint, without host/port/scheme
 		// etc.
 		urlPath = r.URL.Path
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer s.Close()
 
@@ -122,7 +122,7 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		case <-time.After(defaultDevAuthReqTimeout * 2):
 			// don't block longer than default timeout * 2
 		}
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 	}))
 
 	c := NewDevAuthClient(DevAuthClientConfig{

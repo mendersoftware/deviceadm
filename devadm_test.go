@@ -96,7 +96,7 @@ func TestDevAdmSubmitDevice(t *testing.T) {
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
 
-	d := devadmWithClientForTest(db, http.StatusOK)
+	d := devadmWithClientForTest(db, http.StatusNoContent)
 
 	err := d.SubmitDevice(Device{})
 
@@ -122,7 +122,7 @@ func TestDevAdmSubmitDeviceErr(t *testing.T) {
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(errors.New("db connection failed"))
 
-	d := devadmWithClientForTest(db, http.StatusOK)
+	d := devadmWithClientForTest(db, http.StatusNoContent)
 
 	err := d.SubmitDevice(Device{})
 
@@ -177,7 +177,7 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
 
-	d := devadmWithClientForTest(db, http.StatusOK)
+	d := devadmWithClientForTest(db, http.StatusNoContent)
 
 	err := d.AcceptDevice("foo")
 
@@ -197,7 +197,7 @@ func TestDevAdmRejectDevice(t *testing.T) {
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
 
-	d := devadmWithClientForTest(db, http.StatusOK)
+	d := devadmWithClientForTest(db, http.StatusNoContent)
 
 	err := d.RejectDevice("foo")
 
