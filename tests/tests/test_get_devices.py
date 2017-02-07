@@ -6,7 +6,6 @@ import pytest
 @pytest.mark.usefixtures("create_devices")
 class TestPrebootstrap(Client):
 
-
     def test_get_all_devices(self, expected_total=pytest.config.getoption("devices")):
         """
             Test all devices appear after being bootstrapped
@@ -28,7 +27,7 @@ class TestPrebootstrap(Client):
             Test getting a specific device results in 404
         """
         try:
-            self.client.devices.get_devices_id(id="0c396e0032f2b4367d6abe709c889ced728df1f97eb0c368a41465aa24a89454").result()
+            self.client.devices.get_devices_id(id="0c396e0032f2b4367d6abe709c889ced728df1f97eb0c368a41465aa24a89454", _request_options=self.uauth).result()
         except bravado.exception.HTTPError, e:
             assert e.response.status_code == 404
         else:

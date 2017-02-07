@@ -10,9 +10,9 @@ class TestPrebootstrap(Client):
         Status = self.client.get_model('Status')
         s = Status(status=expected_final)
         try:
-            actual_initial = self.client.devices.get_devices_id(id=device_id).result()[0].status 
+            actual_initial = self.client.devices.get_devices_id(id=device_id, _request_options=self.uauth).result()[0].status
             assert actual_initial == expected_initial
-            self.client.devices.put_devices_id_status(id=device_id, status=s).result()
+            self.client.devices.put_devices_id_status(id=device_id, status=s, _request_options=self.uauth).result()
         except bravado.exception.HTTPError, e:
             assert e.response.status_code == expected_error_code
             return
@@ -21,14 +21,14 @@ class TestPrebootstrap(Client):
                 pytest.fail("Expected an exception, but didnt get any!")
                 return
 
-        assert self.client.devices.get_devices_id(id=device_id).result()[0].status == expected_final
+        assert self.client.devices.get_devices_id(id=device_id, _request_options=self.uauth).result()[0].status == expected_final
 
 
     def test_change_status(self):
         """
             Test every possible status transition works, invalid and non-specified transitions fail
         """
-        r, h = self.client.devices.get_devices().result()
+        r, h = self.client.devices.get_devices(_request_options=self.uauth).result()
 
         firstDevice = r[0]
         secondDevice = r[1]

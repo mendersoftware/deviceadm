@@ -18,6 +18,12 @@ paths:
       description: |
         Returns a paged collection of devices registered for admission, and optionally filters by device admission status.
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: status
           in: query
           description: |
@@ -86,6 +92,12 @@ paths:
         'pending' and updates identity data.
         The user will be able to inspect the device, and either accept, or reject it.
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: id
           in: path
           description: Device identifier (SHA256 over identity data).
@@ -113,6 +125,12 @@ paths:
       summary: Get the details of a selected device
       description: Returns the details of a particular device.
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: id
           in: path
           description: Device identifier (SHA256 over identity data).
@@ -147,6 +165,12 @@ paths:
       summary: Check the admission status of a selected device
       description: Returns the admission status of a particular device.
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: id
           in: path
           description: Device identifier (SHA256 over identity data).
@@ -179,6 +203,12 @@ paths:
         - 'rejected' -> 'accepted'
         - 'accepted' -> 'rejected'
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: id
           in: path
           description: Device identifier (SHA256 over identity data).
