@@ -8,6 +8,7 @@ info:
 
 basePath: '/api/integrations/v1/admission'
 host: 'docker.mender.io'
+
 schemes:
   - https
 
