@@ -22,53 +22,19 @@ env:
         # Should be encrypted or set as private travis variables (in travis settings):
         # AWS_ACCESS_KEY_ID
         # AWS_SECRET_ACCESS_KEY
-        # GITHUB_RELEASE_TOKEN
         # DOCKER_HUB_EMAIL
         # DOCKER_HUB_USERNAME
         # DOCKER_HUB_PASSWORD
-
-        # AWS S3 bucket name, need to have access setup.
-        # Can be overridden by travis private variable set in travis settings: AWS_BUCKET_OVERRIDE
-        - AWS_BUCKET_DEFAULT=mender-buildsystem
 
         # AWS S3 bucket name, to store updated docs
         - AWS_BUCKET_DOCS=mender-docs
 
         # AWS region.
         # Can be overridden by travis private variable set in travis settings: AWS_REGION_OVERRIDE
-        - AWS_REGION_DEFAULT=eu-west-1
-
-        # AWS S3 ACL for build artifacts.
-        # Valid ACL values are: private, public_read, public_read_write, authenticated_read,
-        # bucket_owner_read, bucket_owner_full_control.
-        # Can be overridden by travis private variable set in travis settings: AWS_S3_ACL_OVERRIDE
-        - AWS_S3_ACL_DEFAULT=private
-
-        # Perform deployment steps if the build is performed for build: user/repo_name
-        # $TRAVIS_REPO_SLUG could be used if want to perform deploy on any repo.
-        # Currently perform deployment steps only of building main repository.
-        # Can be overridden by travis private variable set in travis settings: DEPLOY_REPO_OVERRIDE
-        - DEPLOY_REPO_DEFAULT=mendersoftware/deviceadm
-
-        # Default configuration file (to be uploaded to S3 and Github Release).
-        - CONFIG_FILE=config.yaml
-
-        # Binary name to be uploaded to github release.
-        - GITHUB_RELEASE_BINARY=deviceadm
-
-        # Build artifacts list, fomat: "file1 file2 ./dir/file3"
-        # Can be overridden by travis private variable set in travis settings: BUILD_ARTIFATS_OVERRIDE
-        - BUILD_ARTIFATS_DEFAULT="deviceadm"
+        - AWS_REGION=eu-west-1
 
         # Docker repository name
         - DOCKER_REPOSITORY="mendersoftware/deviceadm"
-
-        # INTERNAL VARIABLES (for default/overrite management)
-        - AWS_BUCKET=${AWS_BUCKET_OVERRIDE:-$AWS_BUCKET_DEFAULT}
-        - AWS_REGION=${AWS_REGION_OVERRIDE:-$AWS_REGION_DEFAULT}
-        - AWS_S3_ACL=${AWS_S3_ACL_OVERRIDE:-$AWS_S3_ACL_DEFAULT}
-        - DEPLOY_REPO=${DEPLOY_REPO_OVERRIDE:-$DEPLOY_REPO_DEFAULT}
-        - BUILD_ARTIFATS=${BUILD_ARTIFATS_OVERRIDE:-$BUILD_ARTIFATS_DEFAULT}
 
 before_install:
 
@@ -78,7 +44,6 @@ before_install:
 
     # Install cyclomatic dependency analysis tool
     - go get -u github.com/fzipp/gocyclo
-
 
     - sudo apt-get -qq update && sudo apt-get -qq install -y npm e2tools
     - sudo npm install -g swagger-cli
@@ -115,8 +80,6 @@ before_script:
    # Verify that the Swagger docs follow the autodeployment requirements
     - python2.7 verify_docs.py `find docs -name "*.yml"`
 
-    - sleep 15
-
 script:
     # go list supply import paths for all sub directories.
     # Exclude vendor directory, we don't want to run tests and coverage for all dependencies every time,
@@ -130,7 +93,8 @@ script:
     - CGO_ENABLED=0 go build -ldflags "-X main.Commit=`echo $TRAVIS_COMMIT` -X main.Tag=`echo $TRAVIS_TAG` -X main.Branch=`echo $TRAVIS_BRANCH` -X main.BuildNumber=`echo $TRAVIS_BUILD_NUMBER`"
 
     # Clone integration repo. for api testing (purposely after license checking..)
-    - git clone https://github.com/mendersoftware/integration.git integration_new
+    # Exexutes acceptance/integration tasts with branch: master
+    - git clone -b master https://github.com/mendersoftware/integration.git integration_new
 
     # Build docker image from docker file
     - sudo docker build -t $DOCKER_REPOSITORY:pr .
@@ -157,14 +121,6 @@ after_success:
     # Integrate with https://codecov.io
     - bash <(curl -s https://codecov.io/bash)
 
-    # Make build directory and copy all artifacts to this directory.
-    - mkdir build
-    - cp $BUILD_ARTIFATS $CONFIG_FILE build/
-
-
-    # Check if api docs have changed
-    - git show --stat ${TRAVIS_COMMIT_RANGE} | grep -E "docs/.+\.yml" && export API_DOCS_CHANGED=true
-
 before_deploy:
     # Master is always lastest
     - if [ ! -z "$TRAVIS_TAG" ]; then export IMAGE_TAG=$TRAVIS_TAG; else export IMAGE_TAG=$TRAVIS_BRANCH; fi
@@ -181,65 +137,6 @@ before_deploy:
     - docker push $DOCKER_REPOSITORY:$IMAGE_TAG
 
 deploy:
-    # In case tag is set. Deploy build as github release.
-    # List of files to be uploaded need to be specified in 'file' field
-    -
-        provider: releases
-        api_key: $GITHUB_RELEASE_TOKEN
-        file:
-            -$GITHUB_RELEASE_BINARY
-            -$CONFIG_FILE
-        skip_cleanup: true
-        on:
-            repo: $DEPLOY_REPO
-            tags: true
-            all_branches: true
-
-    # Deploy tag builds to S3 in structure /user/repo/release/tag/os_arch/
-    -
-        provider: s3
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: $AWS_BUCKET
-        region: $AWS_REGION
-        upload-dir: $DEPLOY_REPO/release/$TRAVIS_TAG/`go env GOOS`_`go env GOARCH`
-        local_dir: build
-        skip_cleanup: true
-        acl: $AWS_S3_ACL
-        on:
-            repo: $DEPLOY_REPO
-            tags: true
-            all_branches: true
-
-    # Deploy all development builds to S3 in structure /user/repo/dev/branch/build/os_arch/
-    -
-        provider: s3
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: $AWS_BUCKET
-        region: $AWS_REGION
-        upload-dir: $DEPLOY_REPO/dev/$TRAVIS_BRANCH/$TRAVIS_BUILD_NUMBER/`go env GOOS`_`go env GOARCH`
-        local_dir: build
-        skip_cleanup: true
-        acl: $AWS_S3_ACL
-        on:
-            repo: $DEPLOY_REPO
-            tags: false
-            all_branches: true
-
-    # Deploy all builds to S3 as latest folder /user/repo/latest/branch/os_arch
-    -
-        provider: s3
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: $AWS_BUCKET
-        region: $AWS_REGION
-        upload-dir: $DEPLOY_REPO/latest/$TRAVIS_BRANCH/`go env GOOS`_`go env GOARCH`
-        local_dir: build
-        skip_cleanup: true
-        acl: $AWS_S3_ACL
-        on:
-            repo: $DEPLOY_REPO
 
     # Store docs for auto-deployment script
     -
@@ -248,11 +145,10 @@ deploy:
         secret_access_key: $AWS_SECRET_ACCESS_KEY
         bucket: $AWS_BUCKET_DOCS
         region: $AWS_REGION
-        upload-dir: $DEPLOY_REPO/latest/$TRAVIS_BRANCH
+        upload-dir: $TRAVIS_REPO_SLUG/latest/$TRAVIS_BRANCH
         local_dir: docs
         skip_cleanup: true
         acl: public_read
         on:
-            repo: $DEPLOY_REPO
+            repo: $TRAVIS_REPO_SLUG
             all_branches: true
-            condition: $API_DOCS_CHANGED = true
