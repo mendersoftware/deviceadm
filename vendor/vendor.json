@@ -1,6 +1,5 @@
 {
 	"comment": "",
-<<<<<<< fc27820da12fc1f12091ff9763b31fb1bc16986c
 	"ignore": "test",
 	"package": [
 		{
@@ -72,9 +71,16 @@
 			"revisionTime": "2017-01-30T12:11:14Z"
 		},
 		{
-			"checksumSHA1": "i38FeB/pqmU7xcluq/0LHjIwDY8=",
+			"checksumSHA1": "AslGZd/VnH8RZgPcgpB+cbxEeKc=",
+			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
+			"revision": "5a7f06d87cc653f59e4cd6de15e711d7b795bb46",
+			"revisionTime": "2017-01-30T12:11:14Z"
+		},
+		{
+			"checksumSHA1": "K8d7CAzHt4Ga7gdGvY7x2TYGfao=",
 			"path": "github.com/mendersoftware/mendertesting",
-			"revision": "8f7685eaafcdf5702c7484892858237090f1240a"
+			"revision": "117f7c75fe4272681f8ec544aa58ab1f7ebdab88",
+			"revisionTime": "2017-02-15T08:38:29Z"
 		},
 		{
 			"checksumSHA1": "4Js6Jlu93Wa0o6Kjt393L9Z7diE=",
@@ -179,12 +185,6 @@
 			"checksumSHA1": "Ww6wiSKdA8LwxoJz4DNUF+crH4g=",
 			"path": "gopkg.in/yaml.v2",
 			"revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4"
-        },
-		{
-			"checksumSHA1": "AslGZd/VnH8RZgPcgpB+cbxEeKc=",
-			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
-			"revision": "5a7f06d87cc653f59e4cd6de15e711d7b795bb46",
-			"revisionTime": "2017-01-30T12:11:14Z"
 		}
 	],
 	"rootPath": "github.com/mendersoftware/deviceadm"
