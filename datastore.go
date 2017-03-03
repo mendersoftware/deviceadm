@@ -42,6 +42,9 @@ type DataStore interface {
 	// })
 	PutDevice(dev *Device) error
 
+	// remove device
+	DeleteDevice(id DeviceID) error
+
 	// Run migrations
 	Migrate(version string, migrations []migrate.Migration) error
 }

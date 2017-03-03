@@ -85,6 +85,23 @@ func (db *DataStoreMongo) GetDevice(id DeviceID) (*Device, error) {
 	return &res, nil
 }
 
+func (db *DataStoreMongo) DeleteDevice(id DeviceID) error {
+	s := db.session.Copy()
+	defer s.Close()
+
+	filter := bson.M{"id": id}
+	err := s.DB(DbName).C(DbDevicesColl).Remove(filter)
+
+	switch err {
+	case nil:
+		return nil
+	case mgo.ErrNotFound:
+		return ErrDevNotFound
+	default:
+		return errors.Wrap(err, "failed to delete device")
+	}
+}
+
 // produce a Device wrapper suitable for passing in an Upsert() as
 // '$set' fields
 func genDeviceUpdate(dev *Device) *Device {
