@@ -37,6 +37,7 @@ type DevAdmApp interface {
 	GetDevice(id DeviceID) (*Device, error)
 	AcceptDevice(id DeviceID) error
 	RejectDevice(id DeviceID) error
+	DeleteDevice(id DeviceID) error
 
 	WithContext(c context.Context) DevAdmApp
 }
@@ -83,6 +84,18 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 		return nil, err
 	}
 	return dev, nil
+}
+
+func (d *DevAdm) DeleteDevice(id DeviceID) error {
+	err := d.db.DeleteDevice(id)
+	switch err {
+	case nil:
+		return nil
+	case ErrDevNotFound:
+		return ErrDevNotFound
+	default:
+		return errors.Wrap(err, "failed to delete device")
+	}
 }
 
 func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {

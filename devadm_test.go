@@ -16,6 +16,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/mendersoftware/deviceadm/log"
 	"github.com/mendersoftware/deviceadm/requestid"
 	"github.com/mendersoftware/deviceadm/requestlog"
@@ -172,6 +173,49 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 	err = d.AcceptDevice("bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, ErrDevNotFound.Error())
+}
+
+func TestDevAdmDeleteDevice(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		datastoreError error
+		outError       error
+	}{
+		"ok": {
+			datastoreError: nil,
+			outError:       nil,
+		},
+		"no device": {
+			datastoreError: ErrDevNotFound,
+			outError:       ErrDevNotFound,
+		},
+		"datastore error": {
+			datastoreError: errors.New("db connection failed"),
+			outError:       errors.New("failed to delete device: db connection failed"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+
+			db := &MockDataStore{}
+			db.On("DeleteDevice",
+				mock.AnythingOfType("DeviceID"),
+			).Return(tc.datastoreError)
+			i := devadmForTest(db)
+
+			err := i.DeleteDevice(DeviceID("foo"))
+
+			if tc.outError != nil {
+				if assert.Error(t, err) {
+					assert.EqualError(t, err, tc.outError.Error())
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestDevAdmRejectDevice(t *testing.T) {
