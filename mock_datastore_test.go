@@ -49,6 +49,12 @@ func (_m *MockDataStore) Migrate(version string, migrations []migrate.Migration)
 	return ret.Error(0)
 }
 
+func (_m *MockDataStore) EnsureIndexes() error {
+	ret := _m.Called()
+
+	return ret.Error(0)
+}
+
 func (_m *MockDataStore) DeleteDevice(id DeviceID) error {
 	ret := _m.Called(id)
 

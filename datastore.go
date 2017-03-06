@@ -47,4 +47,7 @@ type DataStore interface {
 
 	// Run migrations
 	Migrate(version string, migrations []migrate.Migration) error
+
+	// Setup necessary indexes
+	EnsureIndexes() error
 }

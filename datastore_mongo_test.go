@@ -23,6 +23,7 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2"
 )
 
 const (
@@ -482,4 +483,34 @@ func TestMongoDeleteDevice(t *testing.T) {
 		session.Close()
 	}
 
+}
+
+func TestMongoEnsureIndexes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoEnsureIndexes in short mode.")
+	}
+
+	db.Wipe()
+	session := db.Session()
+
+	store := NewDataStoreMongoWithSession(session)
+
+	err := store.EnsureIndexes()
+	assert.NoError(t, err, "EnsureIndexes() failed")
+
+	// verify index exists
+	indexes, err := session.DB(DbName).C(DbDevicesColl).Indexes()
+	assert.NoError(t, err, "getting indexes failed")
+
+	assert.Len(t, indexes, 2)
+	assert.Equal(t,
+		indexes[1],
+		mgo.Index{
+			Key:        []string{DbDeviceIdIndex},
+			Unique:     true,
+			Name:       DbDeviceIdIndexName,
+			Background: false,
+		})
+
+	session.Close()
 }
