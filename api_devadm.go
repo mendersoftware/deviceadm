@@ -54,6 +54,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 		rest.Put(uriDevice, d.SubmitDeviceHandler),
 
 		rest.Get(uriDevice, d.GetDeviceHandler),
+		rest.Delete(uriDevice, d.DeleteDeviceHandler),
 
 		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
 		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
@@ -253,6 +254,26 @@ func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.R
 			dev.Status,
 		})
 	}
+}
+
+func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.RequestLoggerFromContext(r.Context())
+
+	devid := r.PathParam("id")
+
+	da := d.DevAdm.WithContext(r.Context())
+	err := da.DeleteDevice(DeviceID(devid))
+
+	switch err {
+	case nil:
+		w.WriteHeader(http.StatusNoContent)
+	case ErrDevNotFound:
+		restErrWithLog(w, r, l, ErrDevNotFound, http.StatusNotFound)
+	default:
+		restErrWithLogInternal(w, r, l, err)
+	}
+
+	return
 }
 
 // return selected http code + error message directly taken from error

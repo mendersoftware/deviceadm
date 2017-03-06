@@ -35,6 +35,7 @@ type MockDevAdm struct {
 	mockAcceptDevice func(id DeviceID) error
 	mockRejectDevice func(id DeviceID) error
 	mockSubmitDevice func(d Device) error
+	mockDeleteDevice func(id DeviceID) error
 	mockWithContext  func(c context.Context) DevAdmApp
 }
 
@@ -56,6 +57,10 @@ func (mda *MockDevAdm) AcceptDevice(id DeviceID) error {
 
 func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
 	return mda.mockRejectDevice(id)
+}
+
+func (mda *MockDevAdm) DeleteDevice(id DeviceID) error {
+	return mda.mockDeleteDevice(id)
 }
 
 func (mda *MockDevAdm) WithContext(c context.Context) DevAdmApp {
@@ -576,5 +581,60 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		rest.ErrorFieldName = "error"
 
 		runTestRequest(t, apih, tc.req, tc.respCode, tc.respBody)
+	}
+}
+
+func TestApiDeleteDevice(t *testing.T) {
+	t.Parallel()
+	rest.ErrorFieldName = "error"
+
+	tcases := map[string]struct {
+		req *http.Request
+
+		devadmErr error
+
+		code int
+		body string
+	}{
+		"success": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/2", nil),
+
+			devadmErr: nil,
+
+			code: http.StatusNoContent,
+			body: "",
+		},
+		"error: no device": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/1", nil),
+
+			devadmErr: ErrDevNotFound,
+
+			code: http.StatusNotFound,
+			body: RestError(ErrDevNotFound.Error()),
+		},
+		"error: generic": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/3", nil),
+
+			devadmErr: errors.New("some internal error"),
+
+			code: http.StatusInternalServerError,
+			body: RestError("internal error"),
+		},
+	}
+
+	for name, tc := range tcases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			t.Parallel()
+
+			devadm := MockDevAdm{
+				mockDeleteDevice: func(id DeviceID) error {
+					return tc.devadmErr
+				},
+			}
+
+			apih := makeMockApiHandler(t, &devadm)
+
+			runTestRequest(t, apih, tc.req, tc.code, tc.body)
+		})
 	}
 }

@@ -1,0 +1,51 @@
+swagger: '2.0'
+
+info:
+  version: '1'
+  title: Device admission
+  description: |
+    An API for device admission handling. Intended for internal use.
+
+basePath: '/api/0.1.0/'
+host: 'mender-device-adm:8080'
+
+schemes:
+  - http
+
+paths:
+  /devices/{id}:
+    delete:
+      summary: Remove device
+      description: Removes all device data.
+      parameters:
+        - name: id
+          in: path
+          description: Device identifier (SHA256 over identity data).
+          required: true
+          type: string
+      responses:
+        204:
+          description: The device was removed.
+        404:
+         description: The device was not found.
+         schema:
+           $ref: "#/definitions/Error"
+        500:
+          description: Internal server error.
+          schema:
+           $ref: "#/definitions/Error"
+definitions:
+  Error:
+    description: Error descriptor.
+    type: object
+    properties:
+      error:
+        description: Description of the error.
+        type: string
+      request_id:
+        description: Request ID (same as in X-MEN-RequestID header).
+        type: string
+    example:
+      application/json:
+          error: "device not found"
+          request_id: "f7881e82-0492-49fb-b459-795654e7188a"

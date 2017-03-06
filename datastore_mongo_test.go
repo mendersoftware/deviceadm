@@ -23,6 +23,7 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2"
 )
 
 const (
@@ -383,4 +384,133 @@ func TestMigrate(t *testing.T) {
 		session.Close()
 	}
 
+}
+
+func TestMongoDeleteDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoDeleteDevice in short mode.")
+	}
+
+	inDevs := []Device{
+		Device{
+			ID:             DeviceID("0001"),
+			DeviceIdentity: "0001-id",
+			Key:            "0001-key",
+			Status:         "pending",
+		},
+		Device{
+			ID:             DeviceID("0002"),
+			DeviceIdentity: "0002-id",
+			Key:            "0002-key",
+			Status:         "pending",
+		},
+	}
+
+	testCases := map[string]struct {
+		id  DeviceID
+		out []Device
+		err error
+	}{
+		"exists 1": {
+			id: DeviceID("0001"),
+			out: []Device{
+				Device{
+					ID:             DeviceID("0002"),
+					DeviceIdentity: "0002-id",
+					Key:            "0002-key",
+					Status:         "pending",
+				},
+			},
+			err: nil,
+		},
+		"exists 2": {
+			id: DeviceID("0002"),
+			out: []Device{
+				Device{
+					ID:             DeviceID("0001"),
+					DeviceIdentity: "0001-id",
+					Key:            "0001-key",
+					Status:         "pending",
+				},
+			},
+			err: nil,
+		},
+		"doesn't exist": {
+			id: DeviceID("foo"),
+			out: []Device{
+				Device{
+					ID:             DeviceID("0001"),
+					DeviceIdentity: "0001-id",
+					Key:            "0001-key",
+					Status:         "pending",
+				},
+				Device{
+					ID:             DeviceID("0002"),
+					DeviceIdentity: "0002-id",
+					Key:            "0002-key",
+					Status:         "pending",
+				},
+			},
+			err: ErrDevNotFound,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Logf("case: %s", name)
+		db.Wipe()
+		session := db.Session()
+
+		for _, d := range inDevs {
+			err := session.DB(DbName).C(DbDevicesColl).Insert(d)
+			assert.NoError(t, err, "failed to setup input data")
+		}
+
+		store := NewDataStoreMongoWithSession(session)
+
+		err := store.DeleteDevice(tc.id)
+		if tc.err != nil {
+			assert.EqualError(t, err, tc.err.Error())
+		} else {
+			assert.NoError(t, err, "failed to delete device")
+		}
+
+		var outDevs []Device
+		err = session.DB(DbName).C(DbDevicesColl).Find(nil).All(&outDevs)
+		assert.NoError(t, err, "failed to verify devices")
+
+		assert.True(t, reflect.DeepEqual(tc.out, outDevs))
+
+		session.Close()
+	}
+
+}
+
+func TestMongoEnsureIndexes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoEnsureIndexes in short mode.")
+	}
+
+	db.Wipe()
+	session := db.Session()
+
+	store := NewDataStoreMongoWithSession(session)
+
+	err := store.EnsureIndexes()
+	assert.NoError(t, err, "EnsureIndexes() failed")
+
+	// verify index exists
+	indexes, err := session.DB(DbName).C(DbDevicesColl).Indexes()
+	assert.NoError(t, err, "getting indexes failed")
+
+	assert.Len(t, indexes, 2)
+	assert.Equal(t,
+		indexes[1],
+		mgo.Index{
+			Key:        []string{DbDeviceIdIndex},
+			Unique:     true,
+			Name:       DbDeviceIdIndexName,
+			Background: false,
+		})
+
+	session.Close()
 }
