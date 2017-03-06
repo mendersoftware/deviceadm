@@ -114,7 +114,9 @@ script:
     - sudo docker build -t $DOCKER_REPOSITORY:pr .
 
     # Move script to testing directory
-    - mv integration_new/extra/travis-testing/* tests
+    - if [[ "$JOB_TYPE" = compile_and_acceptance_tests ]]; then
+        mv integration_new/extra/travis-testing/* tests;
+      fi
 
 
     - if [[ "$JOB_TYPE" = compile_and_acceptance_tests ]]; then
