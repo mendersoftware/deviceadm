@@ -15,11 +15,13 @@
 import pytest
 import json
 import requests
+import random
+from base64 import b64encode
+
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-from base64 import b64encode
 from Crypto.Hash import SHA256
-import random
+
 
 apiURL = "http://%s/api/%s/auth_requests" % (pytest.config.getoption("devauth_host"), pytest.config.getoption("api"))
 
@@ -27,12 +29,14 @@ apiURL = "http://%s/api/%s/auth_requests" % (pytest.config.getoption("devauth_ho
 def get_keypair():
     private = RSA.generate(1024)
     public = private.publickey()
-    return str(private.exportKey()), str(public.exportKey())
+    return private.exportKey().decode(), public.exportKey().decode()
 
 def sign_data(data, privateKey):
     rsakey = RSA.importKey(privateKey)
     signer = PKCS1_v1_5.new(rsakey)
     digest = SHA256.new()
+    if type(data) is str:
+        data = data.encode()
     digest.update(data)
     sign = signer.sign(digest)
     return b64encode(sign)
