@@ -1,8 +1,9 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
-COPY / /testing
-RUN apt-get -y -qq update && apt-get -qq -y install python-dev python-pip libffi-dev libssl-dev
-RUN pip2 install --quiet pytest bravado pycrypto
-WORKDIR /testing
-RUN find . -iname "*.pyc" -delete
-ENTRYPOINT ["bash", "run.sh"]
+RUN apt-get -y -qq update && apt-get -qq -y install \
+    python3-pip \
+    python3-pytest python3-crypto python3-twisted python3-requests python3-yaml
+RUN pip3 install --quiet bravado
+
+RUN mkdir -p /testing
+ENTRYPOINT ["bash", "/testing/run.sh"]
