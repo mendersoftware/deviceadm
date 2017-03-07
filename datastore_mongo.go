@@ -27,7 +27,7 @@ const (
 	DbName        = "deviceadm"
 	DbDevicesColl = "devices"
 
-	DbDeviceIdIndex     = DbDevicesColl + ".id"
+	DbDeviceIdIndex     = "id"
 	DbDeviceIdIndexName = "uniqueDeviceIdIndex"
 )
 
