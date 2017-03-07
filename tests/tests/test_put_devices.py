@@ -13,7 +13,7 @@ class TestPrebootstrap(Client):
             actual_initial = self.client.devices.get_devices_id(id=device_id, _request_options=self.uauth).result()[0].status
             assert actual_initial == expected_initial
             self.client.devices.put_devices_id_status(id=device_id, status=s, _request_options=self.uauth).result()
-        except bravado.exception.HTTPError, e:
+        except bravado.exception.HTTPError as e:
             assert e.response.status_code == expected_error_code
             return
         else:

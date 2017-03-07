@@ -2,7 +2,7 @@ import pytest
 from bravado.swagger_model import load_file
 from bravado.client import SwaggerClient, RequestsClient
 from requests.utils import parse_header_links
-import urlparse
+from urllib import parse as urlparse
 
 
 class Client(object):
@@ -17,13 +17,17 @@ class Client(object):
         'use_models': True,
     }
 
+    spec_option = 'spec'
 
     def setup(self):
         self.http_client = RequestsClient()
         self.http_client.session.verify = False
 
-        self.client = SwaggerClient.from_spec(load_file('management_api.yml'), config=self.config, http_client=self.http_client)
-        self.client.swagger_spec.api_url = "http://%s/api/%s/" % (pytest.config.getoption("host"), pytest.config.getoption("api"))
+        spec = pytest.config.getoption(self.spec_option)
+        self.client = SwaggerClient.from_spec(load_file(spec),
+                                              config=self.config, http_client=self.http_client)
+        self.client.swagger_spec.api_url = "http://%s/api/%s/" % (pytest.config.getoption("host"),
+                                                                  pytest.config.getoption("api"))
 
 
     def get_all_devices(self, page=1):
