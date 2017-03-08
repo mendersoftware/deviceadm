@@ -31,11 +31,11 @@ import (
 
 type MockDevAdm struct {
 	mockListDevices  func(skip int, limit int, status string) ([]Device, error)
-	mockGetDevice    func(id DeviceID) (*Device, error)
-	mockAcceptDevice func(id DeviceID) error
-	mockRejectDevice func(id DeviceID) error
+	mockGetDevice    func(id AuthID) (*Device, error)
+	mockAcceptDevice func(id AuthID) error
+	mockRejectDevice func(id AuthID) error
 	mockSubmitDevice func(d Device) error
-	mockDeleteDevice func(id DeviceID) error
+	mockDeleteDevice func(id AuthID) error
 	mockWithContext  func(c context.Context) DevAdmApp
 }
 
@@ -47,19 +47,19 @@ func (mda *MockDevAdm) SubmitDevice(dev Device) error {
 	return mda.mockSubmitDevice(dev)
 }
 
-func (mda *MockDevAdm) GetDevice(id DeviceID) (*Device, error) {
+func (mda *MockDevAdm) GetDevice(id AuthID) (*Device, error) {
 	return mda.mockGetDevice(id)
 }
 
-func (mda *MockDevAdm) AcceptDevice(id DeviceID) error {
+func (mda *MockDevAdm) AcceptDevice(id AuthID) error {
 	return mda.mockAcceptDevice(id)
 }
 
-func (mda *MockDevAdm) RejectDevice(id DeviceID) error {
+func (mda *MockDevAdm) RejectDevice(id AuthID) error {
 	return mda.mockRejectDevice(id)
 }
 
-func (mda *MockDevAdm) DeleteDevice(id DeviceID) error {
+func (mda *MockDevAdm) DeleteDevice(id AuthID) error {
 	return mda.mockDeleteDevice(id)
 }
 
@@ -70,7 +70,10 @@ func (mda *MockDevAdm) WithContext(c context.Context) DevAdmApp {
 func mockListDevices(num int) []Device {
 	var devs []Device
 	for i := 0; i < num; i++ {
-		devs = append(devs, Device{ID: DeviceID(strconv.Itoa(i))})
+		devs = append(devs, Device{
+			ID:       AuthID(strconv.Itoa(i)),
+			DeviceId: DeviceID(strconv.Itoa(i)),
+		})
 	}
 	return devs
 }
@@ -282,7 +285,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 
 	devadm := MockDevAdm{
-		mockGetDevice: func(id DeviceID) (*Device, error) {
+		mockGetDevice: func(id AuthID) (*Device, error) {
 			d, ok := devs[id.String()]
 			if ok == false {
 				return nil, ErrDevNotFound
@@ -352,6 +355,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		"foo": {
 			&Device{
 				ID:             "foo",
+				DeviceId:       "bar",
 				Key:            "foobar",
 				Status:         "accepted",
 				DeviceIdentity: "deadcafe",
@@ -364,7 +368,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		},
 	}
 
-	mockaction := func(id DeviceID) error {
+	mockaction := func(id AuthID) error {
 		d, ok := devs[id.String()]
 		if ok == false {
 			return ErrDevNotFound
@@ -488,7 +492,8 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"key": "key-0001",
+					"key":       "key-0001",
+					"device_id": "123",
 					"device_identity": makeJson(t,
 						map[string]string{
 							"mac": "00:00:00:01",
@@ -503,6 +508,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
+					"device_id": "123",
 					"device_identity": makeJson(t,
 						map[string]string{
 							"mac": "00:00:00:01",
@@ -517,7 +523,8 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"key": "key-0001",
+					"device_id": "123",
+					"key":       "key-0001",
 				},
 			),
 			devAdmErr: "",
@@ -528,6 +535,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
+					"device_id":       "123",
 					"key":             "key-0001",
 					"device_identity": "{mac: foobar}",
 				},
@@ -540,6 +548,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
+					"device_id":       "123",
 					"key":             "key-0001",
 					"device_identity": "{}",
 				},
@@ -552,7 +561,8 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			req: test.MakeSimpleRequest("PUT",
 				"http://1.2.3.4/api/0.1.0/devices/id-0001",
 				map[string]string{
-					"key": "key-0001",
+					"device_id": "123",
+					"key":       "key-0001",
 					"device_identity": makeJson(t,
 						map[string]string{
 							"mac": "00:00:00:01",
@@ -562,6 +572,21 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 			devAdmErr: "internal error",
 			respCode:  500,
 			respBody:  RestError("internal error"),
+		},
+		"body formatted ok, missing device_id": {
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				map[string]string{
+					"key": "key-0001",
+					"device_identity": makeJson(t,
+						map[string]string{
+							"mac": "00:00:00:01",
+						}),
+				},
+			),
+			devAdmErr: "internal error",
+			respCode:  400,
+			respBody:  RestError("'device_id' field required"),
 		},
 	}
 
@@ -627,7 +652,7 @@ func TestApiDeleteDevice(t *testing.T) {
 			t.Parallel()
 
 			devadm := MockDevAdm{
-				mockDeleteDevice: func(id DeviceID) error {
+				mockDeleteDevice: func(id AuthID) error {
 					return tc.devadmErr
 				},
 			}
