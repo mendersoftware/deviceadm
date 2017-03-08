@@ -67,7 +67,7 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, 
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDevice(id DeviceID) (*Device, error) {
+func (db *DataStoreMongo) GetDevice(id AuthID) (*Device, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -88,7 +88,7 @@ func (db *DataStoreMongo) GetDevice(id DeviceID) (*Device, error) {
 	return &res, nil
 }
 
-func (db *DataStoreMongo) DeleteDevice(id DeviceID) error {
+func (db *DataStoreMongo) DeleteDevice(id AuthID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -109,6 +109,10 @@ func (db *DataStoreMongo) DeleteDevice(id DeviceID) error {
 // '$set' fields
 func genDeviceUpdate(dev *Device) *Device {
 	updev := Device{}
+
+	if dev.DeviceId != "" {
+		updev.DeviceId = dev.DeviceId
+	}
 
 	if dev.Status != "" {
 		updev.Status = dev.Status

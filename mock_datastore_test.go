@@ -27,7 +27,7 @@ func (_m *MockDataStore) PutDevice(d *Device) error {
 	return ret.Error(0)
 }
 
-func (_m *MockDataStore) GetDevice(id DeviceID) (*Device, error) {
+func (_m *MockDataStore) GetDevice(id AuthID) (*Device, error) {
 	ret := _m.Called(id)
 
 	dif := ret.Get(0)
@@ -55,7 +55,7 @@ func (_m *MockDataStore) EnsureIndexes() error {
 	return ret.Error(0)
 }
 
-func (_m *MockDataStore) DeleteDevice(id DeviceID) error {
+func (_m *MockDataStore) DeleteDevice(id AuthID) error {
 	ret := _m.Called(id)
 
 	return ret.Error(0)

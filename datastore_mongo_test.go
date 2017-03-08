@@ -309,13 +309,14 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	dev, err := d.GetDevice(DeviceID("foobar"))
+	dev, err := d.GetDevice("foobar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, ErrDevNotFound.Error())
 
 	now := time.Now()
 	expdev := Device{
-		ID:          DeviceID("foobar"),
+		ID:          "foobar",
+		DeviceId:    "bar",
 		RequestTime: &now,
 		Attributes: DeviceAttributes{
 			"foo": "bar",
@@ -324,7 +325,7 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	err = d.PutDevice(&expdev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDevice(DeviceID("foobar"))
+	dev, err = d.GetDevice("foobar")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
@@ -393,13 +394,15 @@ func TestMongoDeleteDevice(t *testing.T) {
 
 	inDevs := []Device{
 		Device{
-			ID:             DeviceID("0001"),
+			ID:             "0001",
+			DeviceId:       "0001",
 			DeviceIdentity: "0001-id",
 			Key:            "0001-key",
 			Status:         "pending",
 		},
 		Device{
-			ID:             DeviceID("0002"),
+			ID:             "0002",
+			DeviceId:       "0002",
 			DeviceIdentity: "0002-id",
 			Key:            "0002-key",
 			Status:         "pending",
@@ -407,15 +410,16 @@ func TestMongoDeleteDevice(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		id  DeviceID
+		id  AuthID
 		out []Device
 		err error
 	}{
 		"exists 1": {
-			id: DeviceID("0001"),
+			id: "0001",
 			out: []Device{
 				Device{
-					ID:             DeviceID("0002"),
+					ID:             "0002",
+					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
 					Key:            "0002-key",
 					Status:         "pending",
@@ -424,10 +428,11 @@ func TestMongoDeleteDevice(t *testing.T) {
 			err: nil,
 		},
 		"exists 2": {
-			id: DeviceID("0002"),
+			id: "0002",
 			out: []Device{
 				Device{
-					ID:             DeviceID("0001"),
+					ID:             "0001",
+					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
 					Key:            "0001-key",
 					Status:         "pending",
@@ -436,16 +441,18 @@ func TestMongoDeleteDevice(t *testing.T) {
 			err: nil,
 		},
 		"doesn't exist": {
-			id: DeviceID("foo"),
+			id: "foo",
 			out: []Device{
 				Device{
-					ID:             DeviceID("0001"),
+					ID:             "0001",
+					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
 					Key:            "0001-key",
 					Status:         "pending",
 				},
 				Device{
-					ID:             DeviceID("0002"),
+					ID:             "0002",
+					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
 					Key:            "0002-key",
 					Status:         "pending",
