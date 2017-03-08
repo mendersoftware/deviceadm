@@ -37,9 +37,4 @@ func TestSetupDataStore(t *testing.T) {
 	d, err := SetupDataStore("::invalid-url::")
 	assert.Nil(t, d)
 	assert.Error(t, err)
-
-	d, err = SetupDataStore("")
-	assert.NotNil(t, d)
-	assert.Nil(t, err)
-	d.session.Close()
 }
