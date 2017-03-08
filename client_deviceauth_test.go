@@ -28,10 +28,11 @@ func TestDevAuthClientUrl(t *testing.T) {
 	}, &http.Client{})
 
 	s := da.buildDevAuthUpdateUrl(Device{
-		ID: "foobar",
+		ID:       "1",
+		DeviceId: "1234",
 	})
 
-	assert.Equal(t, "http://devauth:9999/api/0.1.0/devices/foobar/status", s)
+	assert.Equal(t, "http://devauth:9999/api/management/v1/devauth/devices/1234/auth/1/status", s)
 }
 
 // return mock http server returning status code 'status'
@@ -65,7 +66,8 @@ func TestDevAuthClientReqFail(t *testing.T) {
 	}, &http.Client{})
 
 	err := c.UpdateDevice(Device{
-		ID: "123",
+		ID:       "123",
+		DeviceId: "1",
 	})
 	assert.Error(t, err, "expected an error")
 }
@@ -85,9 +87,9 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	devid := "123"
 	err := c.UpdateDevice(Device{
-		ID: DeviceID(devid),
+		ID:       "123",
+		DeviceId: "1",
 	})
 
 	assert.NoError(t, err, "expected no errors")
@@ -96,9 +98,9 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 func TestDevAuthClientReqNoHost(t *testing.T) {
 	c := NewDevAuthClient(DevAuthClientConfig{}, &http.Client{})
 
-	devid := "123"
 	err := c.UpdateDevice(Device{
-		ID: DeviceID(devid),
+		ID:       "123",
+		DeviceId: "1",
 	})
 
 	assert.Error(t, err, "expected an error")
@@ -129,11 +131,10 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		DevauthUrl: s.URL,
 	}, &http.Client{Timeout: defaultDevAuthReqTimeout})
 
-	devid := "123"
-
 	t1 := time.Now()
 	err := c.UpdateDevice(Device{
-		ID: DeviceID(devid),
+		ID:       "123",
+		DeviceId: "1",
 	})
 	t2 := time.Now()
 

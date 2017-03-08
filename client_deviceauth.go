@@ -26,7 +26,7 @@ import (
 
 const (
 	// default device ID endpoint
-	defaultDevAuthDevicesUri = "/api/0.1.0/devices/{id}/status"
+	defaultDevAuthDevicesUri = "/api/management/v1/devauth/devices/{id}/auth/{aid}/status"
 	// default request timeout, 10s?
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
 )
@@ -110,5 +110,8 @@ func NewDevAuthClientWithLogger(c DevAuthClientConfig, client requestid.ApiReque
 }
 
 func (d *DevAuthClient) buildDevAuthUpdateUrl(dev Device) string {
-	return strings.Replace(d.conf.UpdateUrl, "{id}", dev.ID.String(), 1)
+	repl := strings.NewReplacer("{id}", dev.DeviceId.String(),
+		"{aid}", dev.ID.String())
+
+	return repl.Replace(d.conf.UpdateUrl)
 }
