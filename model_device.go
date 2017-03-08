@@ -18,6 +18,7 @@ import (
 )
 
 type DeviceID string
+type AuthID string
 
 // wrapper for device attributes data
 type DeviceAttributes map[string]string
@@ -30,8 +31,11 @@ const (
 
 // Device wrapper
 type Device struct {
-	//system-generated device ID
-	ID DeviceID `json:"id" bson:",omitempty"`
+	//system-generated authentication data set ID
+	ID AuthID `json:"id" bson:",omitempty"`
+
+	//device ID
+	DeviceId DeviceID `json:"device_id" bson:",omitempty"`
 
 	//blob of encrypted identity attributes
 	DeviceIdentity string `json:"device_identity" bson:",omitempty"`
@@ -51,4 +55,8 @@ type Device struct {
 
 func (did DeviceID) String() string {
 	return string(did)
+}
+
+func (aid AuthID) String() string {
+	return string(aid)
 }
