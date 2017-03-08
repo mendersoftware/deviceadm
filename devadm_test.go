@@ -118,26 +118,29 @@ func TestDevAdmSubmitDeviceErr(t *testing.T) {
 	}
 }
 
-func makeGetDevice(id DeviceID) func(id DeviceID) (*Device, error) {
-	return func(did DeviceID) (*Device, error) {
-		if did == "" {
-			return nil, errors.New("unsupported device ID")
+func makeGetDevice(id AuthID) func(id AuthID) (*Device, error) {
+	return func(aid AuthID) (*Device, error) {
+		if aid == "" {
+			return nil, errors.New("unsupported device auth ID")
 		}
 
-		if did != id {
+		if aid != id {
 			return nil, ErrDevNotFound
 		}
-		return &Device{ID: id}, nil
+		return &Device{
+			ID:       id,
+			DeviceId: DeviceID(id),
+		}, nil
 	}
 }
 
 func TestDevAdmGetDevice(t *testing.T) {
 	db := &MockDataStore{}
-	db.On("GetDevice", DeviceID("foo")).
-		Return(&Device{ID: "foo"}, nil)
-	db.On("GetDevice", DeviceID("bar")).
+	db.On("GetDevice", AuthID("foo")).
+		Return(&Device{ID: "foo", DeviceId: "foo"}, nil)
+	db.On("GetDevice", AuthID("bar")).
 		Return(nil, ErrDevNotFound)
-	db.On("GetDevice", DeviceID("baz")).
+	db.On("GetDevice", AuthID("baz")).
 		Return(nil, errors.New("error"))
 
 	d := devadmForTest(db)
@@ -157,9 +160,9 @@ func TestDevAdmGetDevice(t *testing.T) {
 
 func TestDevAdmAcceptDevice(t *testing.T) {
 	db := &MockDataStore{}
-	db.On("GetDevice", DeviceID("foo")).
+	db.On("GetDevice", AuthID("foo")).
 		Return(&Device{ID: "foo"}, nil)
-	db.On("GetDevice", DeviceID("bar")).
+	db.On("GetDevice", AuthID("bar")).
 		Return(nil, ErrDevNotFound)
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
@@ -201,11 +204,11 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 
 			db := &MockDataStore{}
 			db.On("DeleteDevice",
-				mock.AnythingOfType("DeviceID"),
+				mock.AnythingOfType("AuthID"),
 			).Return(tc.datastoreError)
 			i := devadmForTest(db)
 
-			err := i.DeleteDevice(DeviceID("foo"))
+			err := i.DeleteDevice("foo")
 
 			if tc.outError != nil {
 				if assert.Error(t, err) {
@@ -220,9 +223,9 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 
 func TestDevAdmRejectDevice(t *testing.T) {
 	db := &MockDataStore{}
-	db.On("GetDevice", DeviceID("foo")).
+	db.On("GetDevice", AuthID("foo")).
 		Return(&Device{ID: "foo"}, nil)
-	db.On("GetDevice", DeviceID("bar")).
+	db.On("GetDevice", AuthID("bar")).
 		Return(nil, ErrDevNotFound)
 	db.On("PutDevice", mock.AnythingOfType("*main.Device")).
 		Return(nil)
