@@ -649,8 +649,6 @@ func TestApiDeleteDevice(t *testing.T) {
 
 	for name, tc := range tcases {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
-			t.Parallel()
-
 			devadm := MockDevAdm{
 				mockDeleteDevice: func(id AuthID) error {
 					return tc.devadmErr
