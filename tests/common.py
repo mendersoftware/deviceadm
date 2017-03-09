@@ -23,7 +23,8 @@ from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA256
 
 
-apiURL = "http://%s/api/%s/auth_requests" % (pytest.config.getoption("devauth_host"), pytest.config.getoption("api"))
+apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
+         pytest.config.getoption("devauth_host")
 
 
 def get_keypair():
