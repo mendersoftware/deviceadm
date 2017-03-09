@@ -10,7 +10,7 @@ class TestPrebootstrap(Client):
         """
             Test all devices appear after being bootstrapped
         """
-        assert len(self.get_all_devices()) == int(expected_total)
+        assert len(self.get_all_devices()) >= int(expected_total)
 
 
     def test_get_devices(self):
