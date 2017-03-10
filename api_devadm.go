@@ -149,7 +149,11 @@ func parseDevice(r *rest.Request) (*Device, error) {
 	if id == "" {
 		return nil, errors.New("'id' field required")
 	}
-	dev.ID = DeviceID(id)
+	dev.ID = AuthID(id)
+
+	if dev.DeviceId == "" {
+		return nil, errors.New("'device_id' field required")
+	}
 
 	//validate identity
 	if dev.DeviceIdentity == "" {
@@ -180,10 +184,10 @@ func parseDevice(r *rest.Request) (*Device, error) {
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
 	l := requestlog.RequestLoggerFromContext(r.Context())
 
-	devid := r.PathParam("id")
+	authid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(r.Context())
-	dev, err := da.GetDevice(DeviceID(devid))
+	dev, err := da.GetDevice(AuthID(authid))
 
 	if dev == nil {
 		if err == ErrDevNotFound {
@@ -210,7 +214,7 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
 	l := requestlog.RequestLoggerFromContext(r.Context())
 
-	devid := r.PathParam("id")
+	authid := r.PathParam("id")
 
 	var status DevAdmApiStatus
 	err := r.DecodeJsonPayload(&status)
@@ -228,9 +232,9 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 	da := d.DevAdm.WithContext(r.Context())
 
 	if status.Status == DevStatusAccepted {
-		err = da.AcceptDevice(DeviceID(devid))
+		err = da.AcceptDevice(AuthID(authid))
 	} else if status.Status == DevStatusRejected {
-		err = da.RejectDevice(DeviceID(devid))
+		err = da.RejectDevice(AuthID(authid))
 	}
 	if err != nil {
 		if err == ErrDevNotFound {
@@ -262,7 +266,7 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	devid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(r.Context())
-	err := da.DeleteDevice(DeviceID(devid))
+	err := da.DeleteDevice(AuthID(devid))
 
 	switch err {
 	case nil:

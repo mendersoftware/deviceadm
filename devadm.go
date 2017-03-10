@@ -34,10 +34,10 @@ func simpleApiClientGetter() requestid.ApiRequester {
 type DevAdmApp interface {
 	ListDevices(skip int, limit int, status string) ([]Device, error)
 	SubmitDevice(d Device) error
-	GetDevice(id DeviceID) (*Device, error)
-	AcceptDevice(id DeviceID) error
-	RejectDevice(id DeviceID) error
-	DeleteDevice(id DeviceID) error
+	GetDevice(id AuthID) (*Device, error)
+	AcceptDevice(id AuthID) error
+	RejectDevice(id AuthID) error
+	DeleteDevice(id AuthID) error
 
 	WithContext(c context.Context) DevAdmApp
 }
@@ -78,7 +78,7 @@ func (d *DevAdm) SubmitDevice(dev Device) error {
 	return nil
 }
 
-func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
+func (d *DevAdm) GetDevice(id AuthID) (*Device, error) {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (d *DevAdm) GetDevice(id DeviceID) (*Device, error) {
 	return dev, nil
 }
 
-func (d *DevAdm) DeleteDevice(id DeviceID) error {
+func (d *DevAdm) DeleteDevice(id AuthID) error {
 	err := d.db.DeleteDevice(id)
 	switch err {
 	case nil:
@@ -110,7 +110,7 @@ func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	return nil
 }
 
-func (d *DevAdm) updateDeviceStatus(id DeviceID, status string) error {
+func (d *DevAdm) updateDeviceStatus(id AuthID, status string) error {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return err
@@ -125,8 +125,9 @@ func (d *DevAdm) updateDeviceStatus(id DeviceID, status string) error {
 
 	// update only status and attributes fields
 	err = d.db.PutDevice(&Device{
-		ID:     dev.ID,
-		Status: dev.Status,
+		ID:       dev.ID,
+		DeviceId: dev.DeviceId,
+		Status:   dev.Status,
 	})
 	if err != nil {
 		return err
@@ -135,11 +136,11 @@ func (d *DevAdm) updateDeviceStatus(id DeviceID, status string) error {
 	return nil
 }
 
-func (d *DevAdm) AcceptDevice(id DeviceID) error {
+func (d *DevAdm) AcceptDevice(id AuthID) error {
 	return d.updateDeviceStatus(id, DevStatusAccepted)
 }
 
-func (d *DevAdm) RejectDevice(id DeviceID) error {
+func (d *DevAdm) RejectDevice(id AuthID) error {
 	return d.updateDeviceStatus(id, DevStatusRejected)
 }
 

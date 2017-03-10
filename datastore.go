@@ -30,7 +30,7 @@ type DataStore interface {
 
 	// find a device with given `id`, returns the device or nil,
 	// if device was not found, error is set to ErrDevNotFound
-	GetDevice(id DeviceID) (*Device, error)
+	GetDevice(id AuthID) (*Device, error)
 
 	// update or insert device into data store, only non-empty
 	// fields will be stored/updated, for instance, to update a
@@ -38,12 +38,13 @@ type DataStore interface {
 	//
 	// ds.PutDevice(&Device{
 	// 	ID: "foo",
+	//      DeviceId: "bar",
 	// 	Status: "accepted",
 	// })
 	PutDevice(dev *Device) error
 
 	// remove device
-	DeleteDevice(id DeviceID) error
+	DeleteDevice(id AuthID) error
 
 	// Run migrations
 	Migrate(version string, migrations []migrate.Migration) error
