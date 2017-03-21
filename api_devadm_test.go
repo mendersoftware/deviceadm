@@ -18,15 +18,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/ant0ine/go-json-rest/rest/test"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/mendersoftware/deviceadm/requestlog"
-	"github.com/mendersoftware/deviceadm/utils"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/mendersoftware/deviceadm/utils"
+
+	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/ant0ine/go-json-rest/rest/test"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/mendersoftware/go-lib-micro/requestlog"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockDevAdm struct {

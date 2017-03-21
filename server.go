@@ -14,12 +14,14 @@
 package main
 
 import (
-	"github.com/ant0ine/go-json-rest/rest"
+	"net/http"
+
 	"github.com/mendersoftware/deviceadm/config"
-	"github.com/mendersoftware/deviceadm/log"
+
+	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2"
-	"net/http"
 )
 
 func SetupAPI(stacktype string) (*rest.Api, error) {

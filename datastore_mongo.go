@@ -15,11 +15,12 @@
 package main
 
 import (
+	"context"
+
+	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-
-	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 )
 
 const (
@@ -168,7 +169,7 @@ func (db *DataStoreMongo) Migrate(version string, migrations []migrate.Migration
 		return errors.Wrap(err, "failed to parse service version")
 	}
 
-	err = m.Apply(ver, migrations)
+	err = m.Apply(context.Background(), *ver, migrations)
 	if err != nil {
 		return errors.Wrap(err, "failed to apply migrations")
 	}

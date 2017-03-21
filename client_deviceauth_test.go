@@ -14,12 +14,13 @@
 package main
 
 import (
-	"github.com/mendersoftware/deviceadm/log"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDevAuthClientUrl(t *testing.T) {

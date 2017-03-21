@@ -377,7 +377,7 @@ func TestMigrate(t *testing.T) {
 			session.DB(DbName).C(migrate.DbMigrationsColl).Find(nil).All(&out)
 			assert.Len(t, out, 1)
 			v, _ := migrate.NewVersion(tc.version)
-			assert.Equal(t, v, out[0].Version)
+			assert.Equal(t, *v, out[0].Version)
 		} else {
 			assert.EqualError(t, err, tc.err)
 		}

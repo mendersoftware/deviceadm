@@ -15,12 +15,12 @@ package main
 
 import (
 	"context"
-	"github.com/mendersoftware/deviceadm/log"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/mendersoftware/deviceadm/requestlog"
-	"github.com/pkg/errors"
 	"net/http"
 	"time"
+
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/pkg/errors"
 )
 
 // helper for obtaining API clients
@@ -149,7 +149,7 @@ func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
 		DevAdm: *d,
 		ctx:    ctx,
 	}
-	dwc.log = requestlog.RequestLoggerFromContext(ctx)
+	dwc.log = log.FromContext(ctx)
 	dwc.clientGetter = dwc.contextClientGetter
 	return dwc
 }

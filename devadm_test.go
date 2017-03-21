@@ -17,13 +17,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mendersoftware/deviceadm/log"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/mendersoftware/deviceadm/requestlog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/mendersoftware/go-lib-micro/requestlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

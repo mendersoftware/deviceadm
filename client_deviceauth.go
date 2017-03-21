@@ -16,12 +16,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/mendersoftware/deviceadm/log"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/pkg/errors"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+
+	"github.com/pkg/errors"
 )
 
 const (
