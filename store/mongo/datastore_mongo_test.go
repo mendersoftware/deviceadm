@@ -11,7 +11,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package mongo
 
 import (
 	"encoding/json"
@@ -20,6 +20,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
@@ -72,13 +75,13 @@ func wipe(db *DataStoreMongo) error {
 	return nil
 }
 
-func parseDevs(dataset string) ([]Device, error) {
+func parseDevs(dataset string) ([]model.Device, error) {
 	f, err := os.Open(filepath.Join(testDataFolder, dataset))
 	if err != nil {
 		return nil, err
 	}
 
-	var devs []Device
+	var devs []model.Device
 
 	j := json.NewDecoder(f)
 	if err = j.Decode(&devs); err != nil {
@@ -225,7 +228,7 @@ func TestMongoGetDevice(t *testing.T) {
 		// modify device ID by appending bogus string to it
 		dbdev, err = d.GetDevice(dev.ID + "-foobar")
 		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
-		assert.EqualError(t, err, ErrDevNotFound.Error(), "expected error")
+		assert.EqualError(t, err, store.ErrDevNotFound.Error(), "expected error")
 	}
 
 }
@@ -271,7 +274,7 @@ func TestMongoPutDevice(t *testing.T) {
 			dbdev, dev)
 
 		// modify device staus
-		ndev := Device{
+		ndev := model.Device{
 			Status: "accepted",
 			ID:     dbdev.ID,
 		}
@@ -311,14 +314,14 @@ func TestMongoPutDeviceTime(t *testing.T) {
 
 	dev, err := d.GetDevice("foobar")
 	assert.Nil(t, dev)
-	assert.EqualError(t, err, ErrDevNotFound.Error())
+	assert.EqualError(t, err, store.ErrDevNotFound.Error())
 
 	now := time.Now()
-	expdev := Device{
+	expdev := model.Device{
 		ID:          "foobar",
 		DeviceId:    "bar",
 		RequestTime: &now,
-		Attributes: DeviceAttributes{
+		Attributes: model.DeviceAttributes{
 			"foo": "bar",
 		},
 	}
@@ -392,15 +395,15 @@ func TestMongoDeleteDevice(t *testing.T) {
 		t.Skip("skipping TestMongoDeleteDevice in short mode.")
 	}
 
-	inDevs := []Device{
-		Device{
+	inDevs := []model.Device{
+		model.Device{
 			ID:             "0001",
 			DeviceId:       "0001",
 			DeviceIdentity: "0001-id",
 			Key:            "0001-key",
 			Status:         "pending",
 		},
-		Device{
+		model.Device{
 			ID:             "0002",
 			DeviceId:       "0002",
 			DeviceIdentity: "0002-id",
@@ -410,14 +413,14 @@ func TestMongoDeleteDevice(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		id  AuthID
-		out []Device
+		id  model.AuthID
+		out []model.Device
 		err error
 	}{
 		"exists 1": {
 			id: "0001",
-			out: []Device{
-				Device{
+			out: []model.Device{
+				model.Device{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -429,8 +432,8 @@ func TestMongoDeleteDevice(t *testing.T) {
 		},
 		"exists 2": {
 			id: "0002",
-			out: []Device{
-				Device{
+			out: []model.Device{
+				model.Device{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
@@ -442,15 +445,15 @@ func TestMongoDeleteDevice(t *testing.T) {
 		},
 		"doesn't exist": {
 			id: "foo",
-			out: []Device{
-				Device{
+			out: []model.Device{
+				model.Device{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
 					Key:            "0001-key",
 					Status:         "pending",
 				},
-				Device{
+				model.Device{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -458,7 +461,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 					Status:         "pending",
 				},
 			},
-			err: ErrDevNotFound,
+			err: store.ErrDevNotFound,
 		},
 	}
 
@@ -481,7 +484,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 			assert.NoError(t, err, "failed to delete device")
 		}
 
-		var outDevs []Device
+		var outDevs []model.Device
 		err = session.DB(DbName).C(DbDevicesColl).Find(nil).All(&outDevs)
 		assert.NoError(t, err, "failed to verify devices")
 

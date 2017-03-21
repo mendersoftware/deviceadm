@@ -11,7 +11,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package deviceauth
 
 import (
 	"bytes"
@@ -33,7 +33,7 @@ const (
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
 )
 
-type DevAuthClientConfig struct {
+type ClientConfig struct {
 	// root devauth address
 	DevauthUrl string
 	// template of update URL, string '{id}' will be replaced with
@@ -43,28 +43,28 @@ type DevAuthClientConfig struct {
 	Timeout time.Duration
 }
 
-type DevAuthClient struct {
+type Client struct {
 	client requestid.ApiRequester
 	log    *log.Logger
-	conf   DevAuthClientConfig
+	conf   ClientConfig
 }
 
 // devauth's status request
-type DevAuthStatusReq struct {
-	Status string `json:"status"`
+type StatusReq struct {
+	DeviceId string `json:"-"`
+	AuthId   string `json:"-"`
+	Status   string `json:"status"`
 }
 
 // TODO rename this and calling funcs to UpdateDeviceStatus etc.
 // perhaps change the interface - the whole Device isn't needed
 // leaving for later, requires large refact in tests etc.
-func (d *DevAuthClient) UpdateDevice(dev Device) error {
-	d.log.Debugf("update device %s", dev.ID)
+func (d *Client) UpdateDevice(sreq StatusReq) error {
+	d.log.Debugf("update device %s", sreq.DeviceId)
 
-	url := d.buildDevAuthUpdateUrl(dev)
+	url := d.buildDevAuthUpdateUrl(sreq)
 
-	statusReqJson, err := json.Marshal(DevAuthStatusReq{
-		Status: dev.Status,
-	})
+	statusReqJson, err := json.Marshal(sreq)
 	if err != nil {
 		return errors.Wrapf(err, "failed to prepare dev auth request")
 	}
@@ -91,29 +91,29 @@ func (d *DevAuthClient) UpdateDevice(dev Device) error {
 	return nil
 }
 
-func (d *DevAuthClient) UseLog(l *log.Logger) {
+func (d *Client) UseLog(l *log.Logger) {
 	d.log = l.F(log.Ctx{})
 }
 
-func NewDevAuthClient(c DevAuthClientConfig, client requestid.ApiRequester) *DevAuthClient {
+func NewClient(c ClientConfig, client requestid.ApiRequester) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
-	return &DevAuthClient{
+	return &Client{
 		client: client,
 		log:    log.New(log.Ctx{}),
 		conf:   c,
 	}
 }
 
-func NewDevAuthClientWithLogger(c DevAuthClientConfig, client requestid.ApiRequester, l *log.Logger) *DevAuthClient {
-	dac := NewDevAuthClient(c, client)
+func NewClientWithLogger(c ClientConfig, client requestid.ApiRequester, l *log.Logger) *Client {
+	dac := NewClient(c, client)
 	dac.UseLog(l)
 	return dac
 }
 
-func (d *DevAuthClient) buildDevAuthUpdateUrl(dev Device) string {
-	repl := strings.NewReplacer("{id}", dev.DeviceId.String(),
-		"{aid}", dev.ID.String())
+func (d *Client) buildDevAuthUpdateUrl(req StatusReq) string {
+	repl := strings.NewReplacer("{id}", req.DeviceId,
+		"{aid}", req.AuthId)
 
 	return repl.Replace(d.conf.UpdateUrl)
 }

@@ -17,6 +17,7 @@ import (
 	"flag"
 
 	"github.com/mendersoftware/deviceadm/config"
+	"github.com/mendersoftware/deviceadm/store/mongo"
 
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
@@ -58,12 +59,12 @@ func main() {
 	l.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
-	db, err := NewDataStoreMongo(conf.GetString(SettingDb))
+	db, err := mongo.NewDataStoreMongo(conf.GetString(SettingDb))
 	if err != nil {
 		l.Fatal("failed to connect to db")
 	}
 
-	err = db.Migrate(DbVersion, nil)
+	err = db.Migrate(mongo.DbVersion, nil)
 	if err != nil {
 		l.Fatal("failed to run migrations")
 	}

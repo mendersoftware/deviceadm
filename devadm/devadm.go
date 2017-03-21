@@ -11,12 +11,16 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package devadm
 
 import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/mendersoftware/deviceadm/client/deviceauth"
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
@@ -32,17 +36,17 @@ func simpleApiClientGetter() requestid.ApiRequester {
 
 // this device admission service interface
 type DevAdmApp interface {
-	ListDevices(skip int, limit int, status string) ([]Device, error)
-	SubmitDevice(d Device) error
-	GetDevice(id AuthID) (*Device, error)
-	AcceptDevice(id AuthID) error
-	RejectDevice(id AuthID) error
-	DeleteDevice(id AuthID) error
+	ListDevices(skip int, limit int, status string) ([]model.Device, error)
+	SubmitDevice(d model.Device) error
+	GetDevice(id model.AuthID) (*model.Device, error)
+	AcceptDevice(id model.AuthID) error
+	RejectDevice(id model.AuthID) error
+	DeleteDevice(id model.AuthID) error
 
 	WithContext(c context.Context) DevAdmApp
 }
 
-func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
+func NewDevAdm(d store.DataStore, authclientconf deviceauth.ClientConfig) DevAdmApp {
 	return &DevAdm{
 		log:            log.New(log.Ctx{}),
 		db:             d,
@@ -53,12 +57,12 @@ func NewDevAdm(d DataStore, authclientconf DevAuthClientConfig) DevAdmApp {
 
 type DevAdm struct {
 	log            *log.Logger
-	db             DataStore
-	authclientconf DevAuthClientConfig
+	db             store.DataStore
+	authclientconf deviceauth.ClientConfig
 	clientGetter   ApiClientGetter
 }
 
-func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, error) {
+func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.Device, error) {
 	devs, err := d.db.GetDevices(skip, limit, status)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch devices")
@@ -67,7 +71,7 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]Device, erro
 	return devs, nil
 }
 
-func (d *DevAdm) SubmitDevice(dev Device) error {
+func (d *DevAdm) SubmitDevice(dev model.Device) error {
 	now := time.Now()
 	dev.RequestTime = &now
 
@@ -78,7 +82,7 @@ func (d *DevAdm) SubmitDevice(dev Device) error {
 	return nil
 }
 
-func (d *DevAdm) GetDevice(id AuthID) (*Device, error) {
+func (d *DevAdm) GetDevice(id model.AuthID) (*model.Device, error) {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return nil, err
@@ -86,22 +90,26 @@ func (d *DevAdm) GetDevice(id AuthID) (*Device, error) {
 	return dev, nil
 }
 
-func (d *DevAdm) DeleteDevice(id AuthID) error {
+func (d *DevAdm) DeleteDevice(id model.AuthID) error {
 	err := d.db.DeleteDevice(id)
 	switch err {
 	case nil:
 		return nil
-	case ErrDevNotFound:
-		return ErrDevNotFound
+	case store.ErrDevNotFound:
+		return err
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}
 }
 
-func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
+func (d *DevAdm) propagateDeviceUpdate(dev *model.Device) error {
 	// forward device state to auth service
-	cl := NewDevAuthClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
-	err := cl.UpdateDevice(*dev)
+	cl := deviceauth.NewClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
+	err := cl.UpdateDevice(deviceauth.StatusReq{
+		AuthId:   dev.ID.String(),
+		DeviceId: dev.DeviceId.String(),
+		Status:   dev.Status,
+	})
 	if err != nil {
 		// no good if we cannot propagate device update
 		// further
@@ -110,7 +118,7 @@ func (d *DevAdm) propagateDeviceUpdate(dev *Device) error {
 	return nil
 }
 
-func (d *DevAdm) updateDeviceStatus(id AuthID, status string) error {
+func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return err
@@ -124,7 +132,7 @@ func (d *DevAdm) updateDeviceStatus(id AuthID, status string) error {
 	}
 
 	// update only status and attributes fields
-	err = d.db.PutDevice(&Device{
+	err = d.db.PutDevice(&model.Device{
 		ID:       dev.ID,
 		DeviceId: dev.DeviceId,
 		Status:   dev.Status,
@@ -136,12 +144,12 @@ func (d *DevAdm) updateDeviceStatus(id AuthID, status string) error {
 	return nil
 }
 
-func (d *DevAdm) AcceptDevice(id AuthID) error {
-	return d.updateDeviceStatus(id, DevStatusAccepted)
+func (d *DevAdm) AcceptDevice(id model.AuthID) error {
+	return d.updateDeviceStatus(id, model.DevStatusAccepted)
 }
 
-func (d *DevAdm) RejectDevice(id AuthID) error {
-	return d.updateDeviceStatus(id, DevStatusRejected)
+func (d *DevAdm) RejectDevice(id model.AuthID) error {
+	return d.updateDeviceStatus(id, model.DevStatusRejected)
 }
 
 func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
