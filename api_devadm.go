@@ -14,14 +14,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/log"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/mendersoftware/deviceadm/requestlog"
-	"github.com/mendersoftware/deviceadm/utils"
-	"github.com/pkg/errors"
 	"net/http"
+
+	"github.com/mendersoftware/deviceadm/utils"
+
+	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/mendersoftware/go-lib-micro/requestlog"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -75,7 +78,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 }
 
 func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.RequestLoggerFromContext(r.Context())
+	l := requestlog.GetRequestLogger(r.Env)
 
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
@@ -89,7 +92,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
-	da := d.DevAdm.WithContext(r.Context())
+	da := d.DevAdm.WithContext(restToContext(r))
 
 	//get one extra device to see if there's a 'next' page
 	devs, err := da.ListDevices(int((page-1)*perPage), int(perPage+1), status)
@@ -114,7 +117,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 }
 
 func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.RequestLoggerFromContext(r.Context())
+	l := requestlog.GetRequestLogger(r.Env)
 
 	dev, err := parseDevice(r)
 	if err != nil {
@@ -122,7 +125,7 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 
-	da := d.DevAdm.WithContext(r.Context())
+	da := d.DevAdm.WithContext(restToContext(r))
 
 	//save device in pending state
 	dev.Status = "pending"
@@ -182,11 +185,11 @@ func parseDevice(r *rest.Request) (*Device, error) {
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
-	l := requestlog.RequestLoggerFromContext(r.Context())
+	l := requestlog.GetRequestLogger(r.Env)
 
 	authid := r.PathParam("id")
 
-	da := d.DevAdm.WithContext(r.Context())
+	da := d.DevAdm.WithContext(restToContext(r))
 	dev, err := da.GetDevice(AuthID(authid))
 
 	if dev == nil {
@@ -212,7 +215,7 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 }
 
 func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.RequestLoggerFromContext(r.Context())
+	l := requestlog.GetRequestLogger(r.Env)
 
 	authid := r.PathParam("id")
 
@@ -229,7 +232,7 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 		return
 	}
 
-	da := d.DevAdm.WithContext(r.Context())
+	da := d.DevAdm.WithContext(restToContext(r))
 
 	if status.Status == DevStatusAccepted {
 		err = da.AcceptDevice(AuthID(authid))
@@ -261,11 +264,11 @@ func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.R
 }
 
 func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.RequestLoggerFromContext(r.Context())
+	l := requestlog.GetRequestLogger(r.Env)
 
 	devid := r.PathParam("id")
 
-	da := d.DevAdm.WithContext(r.Context())
+	da := d.DevAdm.WithContext(restToContext(r))
 	err := da.DeleteDevice(AuthID(devid))
 
 	switch err {
@@ -300,10 +303,18 @@ func restErrWithLogMsg(w rest.ResponseWriter, r *rest.Request, l *log.Logger, e 
 	w.WriteHeader(code)
 	err := w.WriteJson(map[string]string{
 		rest.ErrorFieldName: msg,
-		"request_id":        requestid.RequestIdFromContext(r.Context()),
+		"request_id":        requestid.GetReqId(r),
 	})
 	if err != nil {
 		panic(err)
 	}
 	l.F(log.Ctx{}).Error(errors.Wrap(e, msg).Error())
+}
+
+// unpack contextual request data into context.Context
+func restToContext(r *rest.Request) context.Context {
+	ctx := r.Context()
+	ctx = log.WithContext(ctx, requestlog.GetRequestLogger(r.Env))
+	ctx = requestid.WithContext(ctx, requestid.GetReqId(r))
+	return ctx
 }

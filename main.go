@@ -15,8 +15,10 @@ package main
 
 import (
 	"flag"
+
 	"github.com/mendersoftware/deviceadm/config"
-	"github.com/mendersoftware/deviceadm/log"
+
+	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )

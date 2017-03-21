@@ -18,11 +18,11 @@ import (
 	"net/http"
 
 	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/accesslog"
-	dlog "github.com/mendersoftware/deviceadm/log"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"github.com/mendersoftware/deviceadm/requestlog"
+	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/customheader"
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/mendersoftware/go-lib-micro/requestlog"
 )
 
 const (
@@ -83,7 +83,7 @@ var (
 
 func SetupMiddleware(api *rest.Api, mwtype string) error {
 
-	l := dlog.New(dlog.Ctx{})
+	l := log.New(log.Ctx{})
 
 	api.Use(&customheader.CustomHeaderMiddleware{
 		HeaderName:  "X-ADMISSION-VERSION",

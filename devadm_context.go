@@ -15,8 +15,8 @@ package main
 
 import (
 	"context"
-	"github.com/mendersoftware/deviceadm/requestid"
-	"net/http"
+
+	"github.com/mendersoftware/go-lib-micro/requestid"
 )
 
 type DevAdmWithContext struct {
@@ -25,7 +25,6 @@ type DevAdmWithContext struct {
 }
 
 func (d *DevAdmWithContext) contextClientGetter() requestid.ApiRequester {
-	httpClient := http.Client{Timeout: defaultDevAuthReqTimeout}
-	reqId := requestid.RequestIdFromContext(d.ctx)
-	return requestid.NewTrackingApiClient(reqId, &httpClient)
+	reqId := requestid.FromContext(d.ctx)
+	return requestid.NewTrackingApiClient(reqId)
 }
