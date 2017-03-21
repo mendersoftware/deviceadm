@@ -64,7 +64,8 @@ func main() {
 		l.Fatal("failed to connect to db")
 	}
 
-	err = db.Migrate(mongo.DbVersion, nil)
+	// TODO consider keeping DbVersion in data store
+	err = db.Migrate(mongo.DbVersion)
 	if err != nil {
 		l.Fatal("failed to run migrations")
 	}

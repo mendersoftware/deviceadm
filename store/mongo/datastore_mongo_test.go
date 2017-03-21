@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -352,12 +353,8 @@ func TestMigrate(t *testing.T) {
 		version string
 		err     string
 	}{
-		"0.1.0": {
-			version: "0.1.0",
-			err:     "",
-		},
-		"1.2.3": {
-			version: "1.2.3",
+		DbVersion: {
+			version: DbVersion,
 			err:     "",
 		},
 		"0.1 error": {
@@ -373,14 +370,18 @@ func TestMigrate(t *testing.T) {
 
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.Migrate(tc.version, nil)
+		err := store.Migrate(tc.version)
 		if tc.err == "" {
 			assert.NoError(t, err)
+			// list migrations
 			var out []migrate.MigrationEntry
 			session.DB(DbName).C(migrate.DbMigrationsColl).Find(nil).All(&out)
-			assert.Len(t, out, 1)
+			sort.Slice(out, func(i int, j int) bool {
+				return migrate.VersionIsLess(out[i].Version, out[j].Version)
+			})
+			// the last migration should match what we want
 			v, _ := migrate.NewVersion(tc.version)
-			assert.Equal(t, *v, out[0].Version)
+			assert.Equal(t, *v, out[len(out)-1].Version)
 		} else {
 			assert.EqualError(t, err, tc.err)
 		}

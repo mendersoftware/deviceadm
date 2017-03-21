@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	DbVersion     = "0.1.0"
+	DbVersion     = "1.1.0"
 	DbName        = "deviceadm"
 	DbDevicesColl = "devices"
 
@@ -161,8 +161,8 @@ func (db *DataStoreMongo) PutDevice(dev *model.Device) error {
 	return nil
 }
 
-func (db *DataStoreMongo) Migrate(version string, migrations []migrate.Migration) error {
-	m := migrate.DummyMigrator{
+func (db *DataStoreMongo) Migrate(version string) error {
+	m := migrate.SimpleMigrator{
 		Session: db.session,
 		Db:      DbName,
 	}
@@ -172,6 +172,9 @@ func (db *DataStoreMongo) Migrate(version string, migrations []migrate.Migration
 		return errors.Wrap(err, "failed to parse service version")
 	}
 
+	migrations := []migrate.Migration{
+		&migration_1_1_0{ms: db},
+	}
 	err = m.Apply(context.Background(), *ver, migrations)
 	if err != nil {
 		return errors.Wrap(err, "failed to apply migrations")

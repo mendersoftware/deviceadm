@@ -63,11 +63,6 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "database connection failed")
 	}
 
-	err = d.EnsureIndexes()
-	if err != nil {
-		return errors.Wrap(err, "database indexing failed")
-	}
-
 	devadm := devadm.NewDevAdm(d, deviceauth.ClientConfig{
 		DevauthUrl: c.GetString(SettingDevAuthUrl),
 	})
