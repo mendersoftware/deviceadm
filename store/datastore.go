@@ -45,7 +45,4 @@ type DataStore interface {
 
 	// remove device
 	DeleteDevice(id model.AuthID) error
-
-	// Setup necessary indexes
-	EnsureIndexes() error
 }
