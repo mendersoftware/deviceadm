@@ -12,10 +12,13 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package main
+package mongo
 
 import (
 	"context"
+
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/pkg/errors"
@@ -24,7 +27,7 @@ import (
 )
 
 const (
-	DbVersion     = "0.1.0"
+	DbVersion     = "1.1.0"
 	DbName        = "deviceadm"
 	DbDevicesColl = "devices"
 
@@ -48,11 +51,11 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, error) {
+func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.Device, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
-	res := []Device{}
+	res := []model.Device{}
 
 	var filter bson.M
 	if status != "" {
@@ -68,19 +71,19 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]Device, 
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDevice(id AuthID) (*Device, error) {
+func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.Device, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
 
 	filter := bson.M{"id": id}
-	res := Device{}
+	res := model.Device{}
 
 	err := c.Find(filter).One(&res)
 
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, ErrDevNotFound
+			return nil, store.ErrDevNotFound
 		} else {
 			return nil, errors.Wrap(err, "failed to fetch device")
 		}
@@ -89,7 +92,7 @@ func (db *DataStoreMongo) GetDevice(id AuthID) (*Device, error) {
 	return &res, nil
 }
 
-func (db *DataStoreMongo) DeleteDevice(id AuthID) error {
+func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -100,7 +103,7 @@ func (db *DataStoreMongo) DeleteDevice(id AuthID) error {
 	case nil:
 		return nil
 	case mgo.ErrNotFound:
-		return ErrDevNotFound
+		return store.ErrDevNotFound
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}
@@ -108,8 +111,8 @@ func (db *DataStoreMongo) DeleteDevice(id AuthID) error {
 
 // produce a Device wrapper suitable for passing in an Upsert() as
 // '$set' fields
-func genDeviceUpdate(dev *Device) *Device {
-	updev := Device{}
+func genDeviceUpdate(dev *model.Device) *model.Device {
+	updev := model.Device{}
 
 	if dev.DeviceId != "" {
 		updev.DeviceId = dev.DeviceId
@@ -140,7 +143,7 @@ func genDeviceUpdate(dev *Device) *Device {
 }
 
 //
-func (db *DataStoreMongo) PutDevice(dev *Device) error {
+func (db *DataStoreMongo) PutDevice(dev *model.Device) error {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -158,8 +161,8 @@ func (db *DataStoreMongo) PutDevice(dev *Device) error {
 	return nil
 }
 
-func (db *DataStoreMongo) Migrate(version string, migrations []migrate.Migration) error {
-	m := migrate.DummyMigrator{
+func (db *DataStoreMongo) Migrate(version string) error {
+	m := migrate.SimpleMigrator{
 		Session: db.session,
 		Db:      DbName,
 	}
@@ -169,6 +172,9 @@ func (db *DataStoreMongo) Migrate(version string, migrations []migrate.Migration
 		return errors.Wrap(err, "failed to parse service version")
 	}
 
+	migrations := []migrate.Migration{
+		&migration_1_1_0{ms: db},
+	}
 	err = m.Apply(context.Background(), *ver, migrations)
 	if err != nil {
 		return errors.Wrap(err, "failed to apply migrations")

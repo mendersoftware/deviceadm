@@ -11,13 +11,16 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package http
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 
+	"github.com/mendersoftware/deviceadm/devadm"
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 	"github.com/mendersoftware/deviceadm/utils"
 
 	"github.com/ant0ine/go-json-rest/rest"
@@ -41,11 +44,11 @@ type DevAdmApiStatus struct {
 }
 
 type DevAdmHandlers struct {
-	DevAdm DevAdmApp
+	DevAdm devadm.DevAdmApp
 }
 
 // return an ApiHandler for device admission app
-func NewDevAdmApiHandlers(devadm DevAdmApp) ApiHandler {
+func NewDevAdmApiHandlers(devadm devadm.DevAdmApp) ApiHandler {
 	return &DevAdmHandlers{
 		devadm,
 	}
@@ -138,8 +141,8 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseDevice(r *rest.Request) (*Device, error) {
-	dev := Device{}
+func parseDevice(r *rest.Request) (*model.Device, error) {
+	dev := model.Device{}
 
 	//decode body
 	err := r.DecodeJsonPayload(&dev)
@@ -152,7 +155,7 @@ func parseDevice(r *rest.Request) (*Device, error) {
 	if id == "" {
 		return nil, errors.New("'id' field required")
 	}
-	dev.ID = AuthID(id)
+	dev.ID = model.AuthID(id)
 
 	if dev.DeviceId == "" {
 		return nil, errors.New("'device_id' field required")
@@ -184,16 +187,16 @@ func parseDevice(r *rest.Request) (*Device, error) {
 // request 'r' and return it. If a device was not found returns nil
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
-func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *Device {
+func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.Device {
 	l := requestlog.GetRequestLogger(r.Env)
 
 	authid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	dev, err := da.GetDevice(AuthID(authid))
+	dev, err := da.GetDevice(model.AuthID(authid))
 
 	if dev == nil {
-		if err == ErrDevNotFound {
+		if err == store.ErrDevNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, err)
@@ -227,20 +230,20 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 	}
 
 	// validate status
-	if status.Status != DevStatusAccepted && status.Status != DevStatusRejected {
+	if status.Status != model.DevStatusAccepted && status.Status != model.DevStatusRejected {
 		restErrWithLog(w, r, l, errors.New("incorrect device status"), http.StatusBadRequest)
 		return
 	}
 
 	da := d.DevAdm.WithContext(restToContext(r))
 
-	if status.Status == DevStatusAccepted {
-		err = da.AcceptDevice(AuthID(authid))
-	} else if status.Status == DevStatusRejected {
-		err = da.RejectDevice(AuthID(authid))
+	if status.Status == model.DevStatusAccepted {
+		err = da.AcceptDevice(model.AuthID(authid))
+	} else if status.Status == model.DevStatusRejected {
+		err = da.RejectDevice(model.AuthID(authid))
 	}
 	if err != nil {
-		if err == ErrDevNotFound {
+		if err == store.ErrDevNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list change device status"))
@@ -269,13 +272,13 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	devid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	err := da.DeleteDevice(AuthID(devid))
+	err := da.DeleteDevice(model.AuthID(devid))
 
 	switch err {
 	case nil:
 		w.WriteHeader(http.StatusNoContent)
-	case ErrDevNotFound:
-		restErrWithLog(w, r, l, ErrDevNotFound, http.StatusNotFound)
+	case store.ErrDevNotFound:
+		restErrWithLog(w, r, l, store.ErrDevNotFound, http.StatusNotFound)
 	default:
 		restErrWithLogInternal(w, r, l, err)
 	}

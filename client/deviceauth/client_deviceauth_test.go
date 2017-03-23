@@ -11,7 +11,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package deviceauth
 
 import (
 	"net/http"
@@ -24,12 +24,12 @@ import (
 )
 
 func TestDevAuthClientUrl(t *testing.T) {
-	da := NewDevAuthClient(DevAuthClientConfig{
+	da := NewClient(ClientConfig{
 		DevauthUrl: "http://devauth:9999",
 	}, &http.Client{})
 
-	s := da.buildDevAuthUpdateUrl(Device{
-		ID:       "1",
+	s := da.buildDevAuthUpdateUrl(StatusReq{
+		AuthId:   "1",
 		DeviceId: "1234",
 	})
 
@@ -48,12 +48,12 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 	s := newMockServer(http.StatusNoContent)
 	defer s.Close()
 
-	c := NewDevAuthClient(DevAuthClientConfig{
+	c := NewClient(ClientConfig{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(Device{
-		ID: "123",
+	err := c.UpdateDevice(StatusReq{
+		AuthId: "123",
 	})
 	assert.NoError(t, err, "expected no errors")
 }
@@ -62,12 +62,12 @@ func TestDevAuthClientReqFail(t *testing.T) {
 	s := newMockServer(http.StatusBadRequest)
 	defer s.Close()
 
-	c := NewDevAuthClient(DevAuthClientConfig{
+	c := NewClient(ClientConfig{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(Device{
-		ID:       "123",
+	err := c.UpdateDevice(StatusReq{
+		AuthId:   "123",
 		DeviceId: "1",
 	})
 	assert.Error(t, err, "expected an error")
@@ -84,12 +84,12 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 	}))
 	defer s.Close()
 
-	c := NewDevAuthClient(DevAuthClientConfig{
+	c := NewClient(ClientConfig{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(Device{
-		ID:       "123",
+	err := c.UpdateDevice(StatusReq{
+		AuthId:   "123",
 		DeviceId: "1",
 	})
 
@@ -97,10 +97,10 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 }
 
 func TestDevAuthClientReqNoHost(t *testing.T) {
-	c := NewDevAuthClient(DevAuthClientConfig{}, &http.Client{})
+	c := NewClient(ClientConfig{}, &http.Client{})
 
-	err := c.UpdateDevice(Device{
-		ID:       "123",
+	err := c.UpdateDevice(StatusReq{
+		AuthId:   "123",
 		DeviceId: "1",
 	})
 
@@ -128,13 +128,13 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 	}))
 
-	c := NewDevAuthClient(DevAuthClientConfig{
+	c := NewClient(ClientConfig{
 		DevauthUrl: s.URL,
 	}, &http.Client{Timeout: defaultDevAuthReqTimeout})
 
 	t1 := time.Now()
-	err := c.UpdateDevice(Device{
-		ID:       "123",
+	err := c.UpdateDevice(StatusReq{
+		AuthId:   "123",
 		DeviceId: "1",
 	})
 	t2 := time.Now()
@@ -153,7 +153,7 @@ func TestDevAuthClientTImeout(t *testing.T) {
 }
 
 func TestUseLog(t *testing.T) {
-	c := NewDevAuthClient(DevAuthClientConfig{}, &http.Client{})
+	c := NewClient(ClientConfig{}, &http.Client{})
 
 	l2 := log.New(log.Ctx{"test": "test"})
 	c.UseLog(l2)

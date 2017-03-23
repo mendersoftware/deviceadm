@@ -12,12 +12,12 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package main
+package store
 
 import (
 	"errors"
 
-	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
+	"github.com/mendersoftware/deviceadm/model"
 )
 
 var (
@@ -26,11 +26,11 @@ var (
 )
 
 type DataStore interface {
-	GetDevices(skip, limit int, status string) ([]Device, error)
+	GetDevices(skip, limit int, status string) ([]model.Device, error)
 
 	// find a device with given `id`, returns the device or nil,
 	// if device was not found, error is set to ErrDevNotFound
-	GetDevice(id AuthID) (*Device, error)
+	GetDevice(id model.AuthID) (*model.Device, error)
 
 	// update or insert device into data store, only non-empty
 	// fields will be stored/updated, for instance, to update a
@@ -41,14 +41,8 @@ type DataStore interface {
 	//      DeviceId: "bar",
 	// 	Status: "accepted",
 	// })
-	PutDevice(dev *Device) error
+	PutDevice(dev *model.Device) error
 
 	// remove device
-	DeleteDevice(id AuthID) error
-
-	// Run migrations
-	Migrate(version string, migrations []migrate.Migration) error
-
-	// Setup necessary indexes
-	EnsureIndexes() error
+	DeleteDevice(id model.AuthID) error
 }

@@ -11,20 +11,28 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package devadm
 
 import (
 	"context"
+	"testing"
 
-	"github.com/mendersoftware/go-lib-micro/requestid"
+	mstore "github.com/mendersoftware/deviceadm/store/mocks"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type DevAdmWithContext struct {
-	DevAdm
-	ctx context.Context
-}
-
-func (d *DevAdmWithContext) contextClientGetter() requestid.ApiRequester {
-	reqId := requestid.FromContext(d.ctx)
-	return requestid.NewTrackingApiClient(reqId)
+func TestContextClientGetter(t *testing.T) {
+	d := DevAdm{
+		db:           &mstore.DataStore{},
+		clientGetter: simpleApiClientGetter,
+		log:          nil,
+	}
+	ctx := context.Background()
+	dwc := DevAdmWithContext{
+		d,
+		ctx,
+	}
+	client := dwc.contextClientGetter()
+	assert.NotNil(t, client)
 }

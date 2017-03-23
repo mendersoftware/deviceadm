@@ -16,7 +16,11 @@ package main
 import (
 	"net/http"
 
+	api_http "github.com/mendersoftware/deviceadm/api/http"
+	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/config"
+	"github.com/mendersoftware/deviceadm/devadm"
+	"github.com/mendersoftware/deviceadm/store/mongo"
 
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/log"
@@ -39,14 +43,14 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 	return api, nil
 }
 
-func SetupDataStore(url string) (*DataStoreMongo, error) {
+func SetupDataStore(url string) (*mongo.DataStoreMongo, error) {
 	dbSession, err := mgo.Dial(url)
 	if err != nil {
 		return nil, err
 	}
 	dbSession.SetSafe(&mgo.Safe{})
 
-	d := NewDataStoreMongoWithSession(dbSession)
+	d := mongo.NewDataStoreMongoWithSession(dbSession)
 	return d, nil
 }
 
@@ -59,12 +63,7 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "database connection failed")
 	}
 
-	err = d.EnsureIndexes()
-	if err != nil {
-		return errors.Wrap(err, "database indexing failed")
-	}
-
-	devadm := NewDevAdm(d, DevAuthClientConfig{
+	devadm := devadm.NewDevAdm(d, deviceauth.ClientConfig{
 		DevauthUrl: c.GetString(SettingDevAuthUrl),
 	})
 
@@ -73,7 +72,7 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "API setup failed")
 	}
 
-	devadmapi := NewDevAdmApiHandlers(devadm)
+	devadmapi := api_http.NewDevAdmApiHandlers(devadm)
 
 	apph, err := devadmapi.GetApp()
 	if err != nil {
