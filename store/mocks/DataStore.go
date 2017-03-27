@@ -22,8 +22,8 @@ type DataStore struct {
 	mock.Mock
 }
 
-// DeleteDevice provides a mock function with given fields: id
-func (_m *DataStore) DeleteDevice(id model.AuthID) error {
+// DeleteDeviceAuth provides a mock function with given fields: id
+func (_m *DataStore) DeleteDeviceAuth(id model.AuthID) error {
 	ret := _m.Called(id)
 
 	var r0 error
@@ -36,8 +36,8 @@ func (_m *DataStore) DeleteDevice(id model.AuthID) error {
 	return r0
 }
 
-// GetDevice provides a mock function with given fields: id
-func (_m *DataStore) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
+// GetDeviceAuth provides a mock function with given fields: id
+func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	ret := _m.Called(id)
 
 	var r0 *model.DeviceAuth
@@ -59,8 +59,8 @@ func (_m *DataStore) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 	return r0, r1
 }
 
-// GetDevices provides a mock function with given fields: skip, limit, status
-func (_m *DataStore) GetDevices(skip int, limit int, status string) ([]model.DeviceAuth, error) {
+// GetDeviceAuths provides a mock function with given fields: skip, limit, status
+func (_m *DataStore) GetDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 	ret := _m.Called(skip, limit, status)
 
 	var r0 []model.DeviceAuth
@@ -82,8 +82,8 @@ func (_m *DataStore) GetDevices(skip int, limit int, status string) ([]model.Dev
 	return r0, r1
 }
 
-// PutDevice provides a mock function with given fields: dev
-func (_m *DataStore) PutDevice(dev *model.DeviceAuth) error {
+// PutDeviceAuth provides a mock function with given fields: dev
+func (_m *DataStore) PutDeviceAuth(dev *model.DeviceAuth) error {
 	ret := _m.Called(dev)
 
 	var r0 error

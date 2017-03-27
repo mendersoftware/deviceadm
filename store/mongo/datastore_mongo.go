@@ -51,7 +51,7 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.DeviceAuth, error) {
+func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, status string) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -71,7 +71,7 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.De
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
+func (db *DataStoreMongo) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -92,7 +92,7 @@ func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.DeviceAuth, error) 
 	return &res, nil
 }
 
-func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
+func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -109,9 +109,9 @@ func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
 	}
 }
 
-// produce a Device wrapper suitable for passing in an Upsert() as
+// produce a DeviceAuth wrapper suitable for passing in an Upsert() as
 // '$set' fields
-func genDeviceUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
+func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 	updev := model.DeviceAuth{}
 
 	if dev.DeviceId != "" {
@@ -143,7 +143,7 @@ func genDeviceUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 }
 
 //
-func (db *DataStoreMongo) PutDevice(dev *model.DeviceAuth) error {
+func (db *DataStoreMongo) PutDeviceAuth(dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -151,7 +151,7 @@ func (db *DataStoreMongo) PutDevice(dev *model.DeviceAuth) error {
 	filter := bson.M{"id": dev.ID}
 
 	// use $set operator so that fields values are replaced
-	data := bson.M{"$set": genDeviceUpdate(dev)}
+	data := bson.M{"$set": genDeviceAuthUpdate(dev)}
 
 	// does insert or update
 	_, err := c.Upsert(filter, data)

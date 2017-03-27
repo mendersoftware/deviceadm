@@ -109,7 +109,7 @@ func TestMigration_1_0_0(t *testing.T) {
 
 	// verify that DeviceId was set for every device
 	for _, dev := range data.devices {
-		dbdev, err := db.GetDevice(dev.ID)
+		dbdev, err := db.GetDeviceAuth(dev.ID)
 		assert.NoError(t, err)
 
 		// DeviceId should have been set to the value of ID

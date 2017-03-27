@@ -103,7 +103,7 @@ func TestMongoGetDevices(t *testing.T) {
 
 	var err error
 
-	_, err = d.GetDevices(0, 5, "")
+	_, err = d.GetDeviceAuths(0, 5, "")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -177,7 +177,7 @@ func TestMongoGetDevices(t *testing.T) {
 		assert.NoError(t, err, "failed to parse expected devs %s", tc.expected)
 
 		//test
-		devs, err := d.GetDevices(tc.skip, tc.limit, tc.status)
+		devs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.status)
 		assert.NoError(t, err, "failed to get devices")
 
 		if !reflect.DeepEqual(expected, devs) {
@@ -203,7 +203,7 @@ func TestMongoGetDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDevice("")
+	_, err = d.GetDeviceAuth("")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
@@ -218,7 +218,7 @@ func TestMongoGetDevice(t *testing.T) {
 	for _, dev := range expected {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDevice(dev.ID)
+		dbdev, err := d.GetDeviceAuth(dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -227,7 +227,7 @@ func TestMongoGetDevice(t *testing.T) {
 			dbdev, dev)
 
 		// modify device ID by appending bogus string to it
-		dbdev, err = d.GetDevice(dev.ID + "-foobar")
+		dbdev, err = d.GetDeviceAuth(dev.ID + "-foobar")
 		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
 		assert.EqualError(t, err, store.ErrDevNotFound.Error(), "expected error")
 	}
@@ -243,7 +243,7 @@ func TestMongoPutDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDevice("")
+	_, err = d.GetDeviceAuth("")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
@@ -256,7 +256,7 @@ func TestMongoPutDevice(t *testing.T) {
 
 	// insert all devices to DB
 	for _, dev := range devs {
-		err := d.PutDevice(&dev)
+		err := d.PutDeviceAuth(&dev)
 		assert.NoError(t, err, "expected no error inserting to data store")
 	}
 
@@ -264,7 +264,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDevice(dev.ID)
+		dbdev, err := d.GetDeviceAuth(dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -281,7 +281,7 @@ func TestMongoPutDevice(t *testing.T) {
 		}
 
 		// update device key
-		err = d.PutDevice(&ndev)
+		err = d.PutDeviceAuth(&ndev)
 		assert.NoError(t, err, "expected no error updating devices in DB")
 	}
 
@@ -289,7 +289,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDevice(dev.ID)
+		dbdev, err := d.GetDeviceAuth(dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -313,7 +313,7 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	dev, err := d.GetDevice("foobar")
+	dev, err := d.GetDeviceAuth("foobar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, store.ErrDevNotFound.Error())
 
@@ -326,10 +326,10 @@ func TestMongoPutDeviceTime(t *testing.T) {
 			"foo": "bar",
 		},
 	}
-	err = d.PutDevice(&expdev)
+	err = d.PutDeviceAuth(&expdev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDevice("foobar")
+	dev, err = d.GetDeviceAuth("foobar")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
@@ -478,7 +478,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.DeleteDevice(tc.id)
+		err := store.DeleteDeviceAuth(tc.id)
 		if tc.err != nil {
 			assert.EqualError(t, err, tc.err.Error())
 		} else {

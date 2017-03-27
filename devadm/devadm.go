@@ -63,7 +63,7 @@ type DevAdm struct {
 }
 
 func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.DeviceAuth, error) {
-	devs, err := d.db.GetDevices(skip, limit, status)
+	devs, err := d.db.GetDeviceAuths(skip, limit, status)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch devices")
 	}
@@ -75,7 +75,7 @@ func (d *DevAdm) SubmitDevice(dev model.DeviceAuth) error {
 	now := time.Now()
 	dev.RequestTime = &now
 
-	err := d.db.PutDevice(&dev)
+	err := d.db.PutDeviceAuth(&dev)
 	if err != nil {
 		return errors.Wrap(err, "failed to put device")
 	}
@@ -83,7 +83,7 @@ func (d *DevAdm) SubmitDevice(dev model.DeviceAuth) error {
 }
 
 func (d *DevAdm) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
-	dev, err := d.db.GetDevice(id)
+	dev, err := d.db.GetDeviceAuth(id)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (d *DevAdm) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 }
 
 func (d *DevAdm) DeleteDevice(id model.AuthID) error {
-	err := d.db.DeleteDevice(id)
+	err := d.db.DeleteDeviceAuth(id)
 	switch err {
 	case nil:
 		return nil
@@ -119,7 +119,7 @@ func (d *DevAdm) propagateDeviceUpdate(dev *model.DeviceAuth) error {
 }
 
 func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
-	dev, err := d.db.GetDevice(id)
+	dev, err := d.db.GetDeviceAuth(id)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
 	}
 
 	// update only status and attributes fields
-	err = d.db.PutDevice(&model.DeviceAuth{
+	err = d.db.PutDeviceAuth(&model.DeviceAuth{
 		ID:       dev.ID,
 		DeviceId: dev.DeviceId,
 		Status:   dev.Status,
