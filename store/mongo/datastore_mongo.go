@@ -51,11 +51,11 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.Device, error) {
+func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
-	res := []model.Device{}
+	res := []model.DeviceAuth{}
 
 	var filter bson.M
 	if status != "" {
@@ -71,13 +71,13 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.De
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.Device, error) {
+func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
 
 	filter := bson.M{"id": id}
-	res := model.Device{}
+	res := model.DeviceAuth{}
 
 	err := c.Find(filter).One(&res)
 
@@ -111,8 +111,8 @@ func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
 
 // produce a Device wrapper suitable for passing in an Upsert() as
 // '$set' fields
-func genDeviceUpdate(dev *model.Device) *model.Device {
-	updev := model.Device{}
+func genDeviceUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
+	updev := model.DeviceAuth{}
 
 	if dev.DeviceId != "" {
 		updev.DeviceId = dev.DeviceId
@@ -143,7 +143,7 @@ func genDeviceUpdate(dev *model.Device) *model.Device {
 }
 
 //
-func (db *DataStoreMongo) PutDevice(dev *model.Device) error {
+func (db *DataStoreMongo) PutDevice(dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)

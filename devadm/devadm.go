@@ -36,9 +36,9 @@ func simpleApiClientGetter() requestid.ApiRequester {
 
 // this device admission service interface
 type DevAdmApp interface {
-	ListDevices(skip int, limit int, status string) ([]model.Device, error)
-	SubmitDevice(d model.Device) error
-	GetDevice(id model.AuthID) (*model.Device, error)
+	ListDevices(skip int, limit int, status string) ([]model.DeviceAuth, error)
+	SubmitDevice(d model.DeviceAuth) error
+	GetDevice(id model.AuthID) (*model.DeviceAuth, error)
 	AcceptDevice(id model.AuthID) error
 	RejectDevice(id model.AuthID) error
 	DeleteDevice(id model.AuthID) error
@@ -62,7 +62,7 @@ type DevAdm struct {
 	clientGetter   ApiClientGetter
 }
 
-func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.Device, error) {
+func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 	devs, err := d.db.GetDevices(skip, limit, status)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch devices")
@@ -71,7 +71,7 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.Device
 	return devs, nil
 }
 
-func (d *DevAdm) SubmitDevice(dev model.Device) error {
+func (d *DevAdm) SubmitDevice(dev model.DeviceAuth) error {
 	now := time.Now()
 	dev.RequestTime = &now
 
@@ -82,7 +82,7 @@ func (d *DevAdm) SubmitDevice(dev model.Device) error {
 	return nil
 }
 
-func (d *DevAdm) GetDevice(id model.AuthID) (*model.Device, error) {
+func (d *DevAdm) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 	dev, err := d.db.GetDevice(id)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (d *DevAdm) DeleteDevice(id model.AuthID) error {
 	}
 }
 
-func (d *DevAdm) propagateDeviceUpdate(dev *model.Device) error {
+func (d *DevAdm) propagateDeviceUpdate(dev *model.DeviceAuth) error {
 	// forward device state to auth service
 	cl := deviceauth.NewClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
 	err := cl.UpdateDevice(deviceauth.StatusReq{
@@ -132,7 +132,7 @@ func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
 	}
 
 	// update only status and attributes fields
-	err = d.db.PutDevice(&model.Device{
+	err = d.db.PutDevice(&model.DeviceAuth{
 		ID:       dev.ID,
 		DeviceId: dev.DeviceId,
 		Status:   dev.Status,

@@ -35,24 +35,24 @@ import (
 )
 
 type MockDevAdm struct {
-	mockListDevices  func(skip int, limit int, status string) ([]model.Device, error)
-	mockGetDevice    func(id model.AuthID) (*model.Device, error)
+	mockListDevices  func(skip int, limit int, status string) ([]model.DeviceAuth, error)
+	mockGetDevice    func(id model.AuthID) (*model.DeviceAuth, error)
 	mockAcceptDevice func(id model.AuthID) error
 	mockRejectDevice func(id model.AuthID) error
-	mockSubmitDevice func(d model.Device) error
+	mockSubmitDevice func(d model.DeviceAuth) error
 	mockDeleteDevice func(id model.AuthID) error
 	mockWithContext  func(c context.Context) devadm.DevAdmApp
 }
 
-func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]model.Device, error) {
+func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 	return mda.mockListDevices(skip, limit, status)
 }
 
-func (mda *MockDevAdm) SubmitDevice(dev model.Device) error {
+func (mda *MockDevAdm) SubmitDevice(dev model.DeviceAuth) error {
 	return mda.mockSubmitDevice(dev)
 }
 
-func (mda *MockDevAdm) GetDevice(id model.AuthID) (*model.Device, error) {
+func (mda *MockDevAdm) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 	return mda.mockGetDevice(id)
 }
 
@@ -72,10 +72,10 @@ func (mda *MockDevAdm) WithContext(c context.Context) devadm.DevAdmApp {
 	return mda
 }
 
-func mockListDevices(num int) []model.Device {
-	var devs []model.Device
+func mockListDevices(num int) []model.DeviceAuth {
+	var devs []model.DeviceAuth
 	for i := 0; i < num; i++ {
-		devs = append(devs, model.Device{
+		devs = append(devs, model.DeviceAuth{
 			ID:       model.AuthID(strconv.Itoa(i)),
 			DeviceId: model.DeviceID(strconv.Itoa(i)),
 		})
@@ -219,7 +219,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 
 	for _, testCase := range testCases {
 		devadm := MockDevAdm{
-			mockListDevices: func(skip int, limit int, status string) ([]model.Device, error) {
+			mockListDevices: func(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 				if testCase.listDevicesErr != nil {
 					return nil, testCase.listDevicesErr
 				}
@@ -271,11 +271,11 @@ func makeMockApiHandler(t *testing.T, mocka *MockDevAdm) http.Handler {
 
 func TestApiDevAdmGetDevice(t *testing.T) {
 	devs := map[string]struct {
-		dev *model.Device
+		dev *model.DeviceAuth
 		err error
 	}{
 		"foo": {
-			&model.Device{
+			&model.DeviceAuth{
 				ID:             "foo",
 				Key:            "foobar",
 				Status:         "accepted",
@@ -290,7 +290,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 
 	devadm := MockDevAdm{
-		mockGetDevice: func(id model.AuthID) (*model.Device, error) {
+		mockGetDevice: func(id model.AuthID) (*model.DeviceAuth, error) {
 			d, ok := devs[id.String()]
 			if ok == false {
 				return nil, store.ErrDevNotFound
@@ -354,11 +354,11 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 
 func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	devs := map[string]struct {
-		dev *model.Device
+		dev *model.DeviceAuth
 		err error
 	}{
 		"foo": {
-			&model.Device{
+			&model.DeviceAuth{
 				ID:             "foo",
 				DeviceId:       "bar",
 				Key:            "foobar",
@@ -491,7 +491,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 				"foo bar"),
 			devAdmErr: "",
 			respCode:  400,
-			respBody:  RestError("failed to decode request body: json: cannot unmarshal string into Go value of type model.Device"),
+			respBody:  RestError("failed to decode request body: json: cannot unmarshal string into Go value of type model.DeviceAuth"),
 		},
 		"body formatted ok, all fields present": {
 			req: test.MakeSimpleRequest("PUT",
@@ -598,7 +598,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 	for name, tc := range testCases {
 		t.Logf("test case: %s", name)
 		devadm := MockDevAdm{
-			mockSubmitDevice: func(d model.Device) error {
+			mockSubmitDevice: func(d model.DeviceAuth) error {
 				if tc.devAdmErr != "" {
 					return errors.New(tc.devAdmErr)
 				}

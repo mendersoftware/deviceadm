@@ -44,10 +44,10 @@ func randDevStatus() string {
 
 type migration_1_0_0_TestData struct {
 	// devices by device index
-	devices map[int]*model.Device
+	devices map[int]*model.DeviceAuth
 }
 
-func (m *migration_1_0_0_TestData) GetDev(idx int) *model.Device {
+func (m *migration_1_0_0_TestData) GetDev(idx int) *model.DeviceAuth {
 	return m.devices[idx]
 }
 
@@ -55,7 +55,7 @@ func (m *migration_1_0_0_TestData) GetDev(idx int) *model.Device {
 func populateDevices(t *testing.T, s *mgo.Session, count int) migration_1_0_0_TestData {
 
 	td := migration_1_0_0_TestData{
-		devices: map[int]*model.Device{},
+		devices: map[int]*model.DeviceAuth{},
 	}
 
 	now := time.Now()
@@ -64,13 +64,13 @@ func populateDevices(t *testing.T, s *mgo.Session, count int) migration_1_0_0_Te
 
 		tm := randTime(now)
 		// devices in pre 1.1.0 version had DeviceId unset
-		dev := model.Device{
+		dev := model.DeviceAuth{
 			ID:             model.AuthID(devid),
 			Key:            fmt.Sprintf("pubkey-0.1.0-%d", i),
 			DeviceIdentity: fmt.Sprintf("id-data-0.1.0-%d", i),
 			Status:         randDevStatus(),
 			RequestTime:    &tm,
-			Attributes: model.DeviceAttributes{
+			Attributes: model.DeviceAuthAttributes{
 				"foo": fmt.Sprintf("attr-0.1.0-%d", i),
 			},
 		}
@@ -102,7 +102,7 @@ func TestMigration_1_0_0(t *testing.T) {
 	assert.Equal(t, devCount, cnt)
 
 	// trying to add a device auth set with same ID should raise conflict
-	err = s.DB(DbName).C(DbDevicesColl).Insert(&model.Device{
+	err = s.DB(DbName).C(DbDevicesColl).Insert(&model.DeviceAuth{
 		ID: data.GetDev(10).ID,
 	})
 	assert.True(t, mgo.IsDup(err))

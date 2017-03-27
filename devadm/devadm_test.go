@@ -67,7 +67,7 @@ func devadmForTest(d store.DataStore) DevAdmApp {
 func TestDevAdmListDevicesEmpty(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevices", 0, 1, "").
-		Return([]model.Device{}, nil)
+		Return([]model.DeviceAuth{}, nil)
 
 	d := devadmForTest(db)
 
@@ -78,7 +78,7 @@ func TestDevAdmListDevicesEmpty(t *testing.T) {
 func TestDevAdmListDevices(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevices", 0, 1, "").
-		Return([]model.Device{{}, {}, {}}, nil)
+		Return([]model.DeviceAuth{{}, {}, {}}, nil)
 
 	d := devadmForTest(db)
 
@@ -89,7 +89,7 @@ func TestDevAdmListDevices(t *testing.T) {
 func TestDevAdmListDevicesErr(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevices", 0, 1, "").
-		Return([]model.Device{}, errors.New("error"))
+		Return([]model.DeviceAuth{}, errors.New("error"))
 
 	d := devadmForTest(db)
 
@@ -99,32 +99,32 @@ func TestDevAdmListDevicesErr(t *testing.T) {
 
 func TestDevAdmSubmitDevice(t *testing.T) {
 	db := &mstore.DataStore{}
-	db.On("PutDevice", mock.AnythingOfType("*model.Device")).
+	db.On("PutDevice", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDevice(model.Device{})
+	err := d.SubmitDevice(model.DeviceAuth{})
 
 	assert.NoError(t, err)
 }
 
 func TestDevAdmSubmitDeviceErr(t *testing.T) {
 	db := &mstore.DataStore{}
-	db.On("PutDevice", mock.AnythingOfType("*model.Device")).
+	db.On("PutDevice", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(errors.New("db connection failed"))
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDevice(model.Device{})
+	err := d.SubmitDevice(model.DeviceAuth{})
 
 	if assert.Error(t, err) {
 		assert.EqualError(t, err, "failed to put device: db connection failed")
 	}
 }
 
-func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.Device, error) {
-	return func(aid model.AuthID) (*model.Device, error) {
+func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.DeviceAuth, error) {
+	return func(aid model.AuthID) (*model.DeviceAuth, error) {
 		if aid == "" {
 			return nil, errors.New("unsupported device auth ID")
 		}
@@ -132,7 +132,7 @@ func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.Device, error)
 		if aid != id {
 			return nil, store.ErrDevNotFound
 		}
-		return &model.Device{
+		return &model.DeviceAuth{
 			ID:       id,
 			DeviceId: model.DeviceID(id),
 		}, nil
@@ -142,7 +142,7 @@ func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.Device, error)
 func TestDevAdmGetDevice(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevice", model.AuthID("foo")).
-		Return(&model.Device{ID: "foo", DeviceId: "foo"}, nil)
+		Return(&model.DeviceAuth{ID: "foo", DeviceId: "foo"}, nil)
 	db.On("GetDevice", model.AuthID("bar")).
 		Return(nil, store.ErrDevNotFound)
 	db.On("GetDevice", model.AuthID("baz")).
@@ -166,10 +166,10 @@ func TestDevAdmGetDevice(t *testing.T) {
 func TestDevAdmAcceptDevice(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevice", model.AuthID("foo")).
-		Return(&model.Device{ID: "foo"}, nil)
+		Return(&model.DeviceAuth{ID: "foo"}, nil)
 	db.On("GetDevice", model.AuthID("bar")).
 		Return(nil, store.ErrDevNotFound)
-	db.On("PutDevice", mock.AnythingOfType("*model.Device")).
+	db.On("PutDevice", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
@@ -229,10 +229,10 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 func TestDevAdmRejectDevice(t *testing.T) {
 	db := &mstore.DataStore{}
 	db.On("GetDevice", model.AuthID("foo")).
-		Return(&model.Device{ID: "foo"}, nil)
+		Return(&model.DeviceAuth{ID: "foo"}, nil)
 	db.On("GetDevice", model.AuthID("bar")).
 		Return(nil, store.ErrDevNotFound)
-	db.On("PutDevice", mock.AnythingOfType("*model.Device")).
+	db.On("PutDevice", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)

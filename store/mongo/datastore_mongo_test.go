@@ -76,13 +76,13 @@ func wipe(db *DataStoreMongo) error {
 	return nil
 }
 
-func parseDevs(dataset string) ([]model.Device, error) {
+func parseDevs(dataset string) ([]model.DeviceAuth, error) {
 	f, err := os.Open(filepath.Join(testDataFolder, dataset))
 	if err != nil {
 		return nil, err
 	}
 
-	var devs []model.Device
+	var devs []model.DeviceAuth
 
 	j := json.NewDecoder(f)
 	if err = j.Decode(&devs); err != nil {
@@ -275,7 +275,7 @@ func TestMongoPutDevice(t *testing.T) {
 			dbdev, dev)
 
 		// modify device staus
-		ndev := model.Device{
+		ndev := model.DeviceAuth{
 			Status: "accepted",
 			ID:     dbdev.ID,
 		}
@@ -318,11 +318,11 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	assert.EqualError(t, err, store.ErrDevNotFound.Error())
 
 	now := time.Now()
-	expdev := model.Device{
+	expdev := model.DeviceAuth{
 		ID:          "foobar",
 		DeviceId:    "bar",
 		RequestTime: &now,
-		Attributes: model.DeviceAttributes{
+		Attributes: model.DeviceAuthAttributes{
 			"foo": "bar",
 		},
 	}
@@ -396,15 +396,15 @@ func TestMongoDeleteDevice(t *testing.T) {
 		t.Skip("skipping TestMongoDeleteDevice in short mode.")
 	}
 
-	inDevs := []model.Device{
-		model.Device{
+	inDevs := []model.DeviceAuth{
+		model.DeviceAuth{
 			ID:             "0001",
 			DeviceId:       "0001",
 			DeviceIdentity: "0001-id",
 			Key:            "0001-key",
 			Status:         "pending",
 		},
-		model.Device{
+		model.DeviceAuth{
 			ID:             "0002",
 			DeviceId:       "0002",
 			DeviceIdentity: "0002-id",
@@ -415,13 +415,13 @@ func TestMongoDeleteDevice(t *testing.T) {
 
 	testCases := map[string]struct {
 		id  model.AuthID
-		out []model.Device
+		out []model.DeviceAuth
 		err error
 	}{
 		"exists 1": {
 			id: "0001",
-			out: []model.Device{
-				model.Device{
+			out: []model.DeviceAuth{
+				model.DeviceAuth{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -433,8 +433,8 @@ func TestMongoDeleteDevice(t *testing.T) {
 		},
 		"exists 2": {
 			id: "0002",
-			out: []model.Device{
-				model.Device{
+			out: []model.DeviceAuth{
+				model.DeviceAuth{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
@@ -446,15 +446,15 @@ func TestMongoDeleteDevice(t *testing.T) {
 		},
 		"doesn't exist": {
 			id: "foo",
-			out: []model.Device{
-				model.Device{
+			out: []model.DeviceAuth{
+				model.DeviceAuth{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
 					Key:            "0001-key",
 					Status:         "pending",
 				},
-				model.Device{
+				model.DeviceAuth{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -485,7 +485,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 			assert.NoError(t, err, "failed to delete device")
 		}
 
-		var outDevs []model.Device
+		var outDevs []model.DeviceAuth
 		err = session.DB(DbName).C(DbDevicesColl).Find(nil).All(&outDevs)
 		assert.NoError(t, err, "failed to verify devices")
 

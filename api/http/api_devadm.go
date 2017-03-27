@@ -141,8 +141,8 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseDevice(r *rest.Request) (*model.Device, error) {
-	dev := model.Device{}
+func parseDevice(r *rest.Request) (*model.DeviceAuth, error) {
+	dev := model.DeviceAuth{}
 
 	//decode body
 	err := r.DecodeJsonPayload(&dev)
@@ -187,7 +187,7 @@ func parseDevice(r *rest.Request) (*model.Device, error) {
 // request 'r' and return it. If a device was not found returns nil
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
-func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.Device {
+func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.DeviceAuth {
 	l := requestlog.GetRequestLogger(r.Env)
 
 	authid := r.PathParam("id")

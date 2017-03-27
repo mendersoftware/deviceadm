@@ -26,23 +26,23 @@ var (
 )
 
 type DataStore interface {
-	GetDevices(skip, limit int, status string) ([]model.Device, error)
+	GetDevices(skip, limit int, status string) ([]model.DeviceAuth, error)
 
-	// find a device with given `id`, returns the device or nil,
-	// if device was not found, error is set to ErrDevNotFound
-	GetDevice(id model.AuthID) (*model.Device, error)
+	// find a device auth set with given `id`, returns the device auth set
+	// or nil, if auth set was not found, error is set to ErrDevNotFound
+	GetDevice(id model.AuthID) (*model.DeviceAuth, error)
 
-	// update or insert device into data store, only non-empty
-	// fields will be stored/updated, for instance, to update a
-	// status of device "foo":
+	// update or insert device auth set into data store, only non-empty
+	// fields will be stored/updated, for instance, to update a status of
+	// device auth set with ID "foo":
 	//
-	// ds.PutDevice(&Device{
+	// ds.PutDevice(&DeviceAuth{
 	// 	ID: "foo",
 	//      DeviceId: "bar",
 	// 	Status: "accepted",
 	// })
-	PutDevice(dev *model.Device) error
+	PutDevice(dev *model.DeviceAuth) error
 
-	// remove device
+	// remove device auth set
 	DeleteDevice(id model.AuthID) error
 }

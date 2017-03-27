@@ -37,15 +37,15 @@ func (_m *DataStore) DeleteDevice(id model.AuthID) error {
 }
 
 // GetDevice provides a mock function with given fields: id
-func (_m *DataStore) GetDevice(id model.AuthID) (*model.Device, error) {
+func (_m *DataStore) GetDevice(id model.AuthID) (*model.DeviceAuth, error) {
 	ret := _m.Called(id)
 
-	var r0 *model.Device
-	if rf, ok := ret.Get(0).(func(model.AuthID) *model.Device); ok {
+	var r0 *model.DeviceAuth
+	if rf, ok := ret.Get(0).(func(model.AuthID) *model.DeviceAuth); ok {
 		r0 = rf(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Device)
+			r0 = ret.Get(0).(*model.DeviceAuth)
 		}
 	}
 
@@ -60,15 +60,15 @@ func (_m *DataStore) GetDevice(id model.AuthID) (*model.Device, error) {
 }
 
 // GetDevices provides a mock function with given fields: skip, limit, status
-func (_m *DataStore) GetDevices(skip int, limit int, status string) ([]model.Device, error) {
+func (_m *DataStore) GetDevices(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 	ret := _m.Called(skip, limit, status)
 
-	var r0 []model.Device
-	if rf, ok := ret.Get(0).(func(int, int, string) []model.Device); ok {
+	var r0 []model.DeviceAuth
+	if rf, ok := ret.Get(0).(func(int, int, string) []model.DeviceAuth); ok {
 		r0 = rf(skip, limit, status)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Device)
+			r0 = ret.Get(0).([]model.DeviceAuth)
 		}
 	}
 
@@ -83,11 +83,11 @@ func (_m *DataStore) GetDevices(skip int, limit int, status string) ([]model.Dev
 }
 
 // PutDevice provides a mock function with given fields: dev
-func (_m *DataStore) PutDevice(dev *model.Device) error {
+func (_m *DataStore) PutDevice(dev *model.DeviceAuth) error {
 	ret := _m.Called(dev)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.Device) error); ok {
+	if rf, ok := ret.Get(0).(func(*model.DeviceAuth) error); ok {
 		r0 = rf(dev)
 	} else {
 		r0 = ret.Error(0)
