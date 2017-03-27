@@ -98,7 +98,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	//get one extra device to see if there's a 'next' page
-	devs, err := da.ListDevices(int((page-1)*perPage), int(perPage+1), status)
+	devs, err := da.ListDeviceAuths(int((page-1)*perPage), int(perPage+1), status)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list devices"))
 		return
@@ -132,7 +132,7 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 
 	//save device in pending state
 	dev.Status = "pending"
-	err = da.SubmitDevice(*dev)
+	err = da.SubmitDeviceAuth(*dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)
 		return
@@ -193,7 +193,7 @@ func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request)
 	authid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	dev, err := da.GetDevice(model.AuthID(authid))
+	dev, err := da.GetDeviceAuth(model.AuthID(authid))
 
 	if dev == nil {
 		if err == store.ErrNotFound {
@@ -238,9 +238,9 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	if status.Status == model.DevStatusAccepted {
-		err = da.AcceptDevice(model.AuthID(authid))
+		err = da.AcceptDeviceAuth(model.AuthID(authid))
 	} else if status.Status == model.DevStatusRejected {
-		err = da.RejectDevice(model.AuthID(authid))
+		err = da.RejectDeviceAuth(model.AuthID(authid))
 	}
 	if err != nil {
 		if err == store.ErrNotFound {
@@ -272,7 +272,7 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	devid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	err := da.DeleteDevice(model.AuthID(devid))
+	err := da.DeleteDeviceAuth(model.AuthID(devid))
 
 	switch err {
 	case nil:

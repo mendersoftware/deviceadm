@@ -71,7 +71,7 @@ func TestDevAdmListDevicesEmpty(t *testing.T) {
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDevices(0, 1, "")
+	l, _ := d.ListDeviceAuths(0, 1, "")
 	assert.Len(t, l, 0)
 }
 
@@ -82,7 +82,7 @@ func TestDevAdmListDevices(t *testing.T) {
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDevices(0, 1, "")
+	l, _ := d.ListDeviceAuths(0, 1, "")
 	assert.Len(t, l, 3)
 }
 
@@ -93,7 +93,7 @@ func TestDevAdmListDevicesErr(t *testing.T) {
 
 	d := devadmForTest(db)
 
-	_, err := d.ListDevices(0, 1, "")
+	_, err := d.ListDeviceAuths(0, 1, "")
 	assert.NotNil(t, err)
 }
 
@@ -104,7 +104,7 @@ func TestDevAdmSubmitDevice(t *testing.T) {
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDevice(model.DeviceAuth{})
+	err := d.SubmitDeviceAuth(model.DeviceAuth{})
 
 	assert.NoError(t, err)
 }
@@ -116,7 +116,7 @@ func TestDevAdmSubmitDeviceErr(t *testing.T) {
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDevice(model.DeviceAuth{})
+	err := d.SubmitDeviceAuth(model.DeviceAuth{})
 
 	if assert.Error(t, err) {
 		assert.EqualError(t, err, "failed to put device: db connection failed")
@@ -150,15 +150,15 @@ func TestDevAdmGetDevice(t *testing.T) {
 
 	d := devadmForTest(db)
 
-	dev, err := d.GetDevice("foo")
+	dev, err := d.GetDeviceAuth("foo")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDevice("bar")
+	dev, err = d.GetDeviceAuth("bar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 
-	dev, err = d.GetDevice("baz")
+	dev, err = d.GetDeviceAuth("baz")
 	assert.Nil(t, dev)
 	assert.Error(t, err)
 }
@@ -174,11 +174,11 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.AcceptDevice("foo")
+	err := d.AcceptDeviceAuth("foo")
 
 	assert.NoError(t, err)
 
-	err = d.AcceptDevice("bar")
+	err = d.AcceptDeviceAuth("bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
@@ -213,7 +213,7 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 			).Return(tc.datastoreError)
 			i := devadmForTest(db)
 
-			err := i.DeleteDevice("foo")
+			err := i.DeleteDeviceAuth("foo")
 
 			if tc.outError != nil {
 				if assert.Error(t, err) {
@@ -237,11 +237,11 @@ func TestDevAdmRejectDevice(t *testing.T) {
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.RejectDevice("foo")
+	err := d.RejectDeviceAuth("foo")
 
 	assert.NoError(t, err)
 
-	err = d.RejectDevice("bar")
+	err = d.RejectDeviceAuth("bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
