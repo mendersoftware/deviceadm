@@ -229,7 +229,7 @@ func TestMongoGetDevice(t *testing.T) {
 		// modify device ID by appending bogus string to it
 		dbdev, err = d.GetDeviceAuth(dev.ID + "-foobar")
 		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
-		assert.EqualError(t, err, store.ErrDevNotFound.Error(), "expected error")
+		assert.EqualError(t, err, store.ErrNotFound.Error(), "expected error")
 	}
 
 }
@@ -315,7 +315,7 @@ func TestMongoPutDeviceTime(t *testing.T) {
 
 	dev, err := d.GetDeviceAuth("foobar")
 	assert.Nil(t, dev)
-	assert.EqualError(t, err, store.ErrDevNotFound.Error())
+	assert.EqualError(t, err, store.ErrNotFound.Error())
 
 	now := time.Now()
 	expdev := model.DeviceAuth{
@@ -462,7 +462,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 					Status:         "pending",
 				},
 			},
-			err: store.ErrDevNotFound,
+			err: store.ErrNotFound,
 		},
 	}
 

@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	// device not found
-	ErrDevNotFound = errors.New("not found")
+	// object not found
+	ErrNotFound = errors.New("not found")
 )
 
 type DataStore interface {

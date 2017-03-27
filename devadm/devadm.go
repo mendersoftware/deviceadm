@@ -95,7 +95,7 @@ func (d *DevAdm) DeleteDevice(id model.AuthID) error {
 	switch err {
 	case nil:
 		return nil
-	case store.ErrDevNotFound:
+	case store.ErrNotFound:
 		return err
 	default:
 		return errors.Wrap(err, "failed to delete device")

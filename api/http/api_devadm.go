@@ -196,7 +196,7 @@ func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request)
 	dev, err := da.GetDevice(model.AuthID(authid))
 
 	if dev == nil {
-		if err == store.ErrDevNotFound {
+		if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, err)
@@ -243,7 +243,7 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 		err = da.RejectDevice(model.AuthID(authid))
 	}
 	if err != nil {
-		if err == store.ErrDevNotFound {
+		if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list change device status"))
@@ -277,8 +277,8 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	switch err {
 	case nil:
 		w.WriteHeader(http.StatusNoContent)
-	case store.ErrDevNotFound:
-		restErrWithLog(w, r, l, store.ErrDevNotFound, http.StatusNotFound)
+	case store.ErrNotFound:
+		restErrWithLog(w, r, l, store.ErrNotFound, http.StatusNotFound)
 	default:
 		restErrWithLogInternal(w, r, l, err)
 	}

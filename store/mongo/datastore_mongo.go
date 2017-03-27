@@ -83,7 +83,7 @@ func (db *DataStoreMongo) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, err
 
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, store.ErrDevNotFound
+			return nil, store.ErrNotFound
 		} else {
 			return nil, errors.Wrap(err, "failed to fetch device")
 		}
@@ -103,7 +103,7 @@ func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
 	case nil:
 		return nil
 	case mgo.ErrNotFound:
-		return store.ErrDevNotFound
+		return store.ErrNotFound
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}

@@ -293,7 +293,7 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 		mockGetDevice: func(id model.AuthID) (*model.DeviceAuth, error) {
 			d, ok := devs[id.String()]
 			if ok == false {
-				return nil, store.ErrDevNotFound
+				return nil, store.ErrNotFound
 			}
 			if d.err != nil {
 				return nil, d.err
@@ -338,12 +338,12 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 			test.MakeSimpleRequest("GET",
 				"http://1.2.3.4/api/0.1.0/devices/baz", nil),
 			404,
-			RestError(store.ErrDevNotFound.Error()),
+			RestError(store.ErrNotFound.Error()),
 		},
 		{
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz/status", nil),
 			404,
-			RestError(store.ErrDevNotFound.Error()),
+			RestError(store.ErrNotFound.Error()),
 		},
 	}
 
@@ -376,7 +376,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	mockaction := func(id model.AuthID) error {
 		d, ok := devs[id.String()]
 		if ok == false {
-			return store.ErrDevNotFound
+			return store.ErrNotFound
 		}
 		if d.err != nil {
 			return d.err
@@ -432,7 +432,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 				"http://1.2.3.4/api/0.1.0/devices/baz/status",
 				accstatus),
 			code: 404,
-			body: RestError(store.ErrDevNotFound.Error()),
+			body: RestError(store.ErrNotFound.Error()),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
@@ -637,10 +637,10 @@ func TestApiDeleteDevice(t *testing.T) {
 		"error: no device": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/1", nil),
 
-			devadmErr: store.ErrDevNotFound,
+			devadmErr: store.ErrNotFound,
 
 			code: http.StatusNotFound,
-			body: RestError(store.ErrDevNotFound.Error()),
+			body: RestError(store.ErrNotFound.Error()),
 		},
 		"error: generic": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/3", nil),

@@ -130,7 +130,7 @@ func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.DeviceAuth, er
 		}
 
 		if aid != id {
-			return nil, store.ErrDevNotFound
+			return nil, store.ErrNotFound
 		}
 		return &model.DeviceAuth{
 			ID:       id,
@@ -144,7 +144,7 @@ func TestDevAdmGetDevice(t *testing.T) {
 	db.On("GetDeviceAuth", model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo", DeviceId: "foo"}, nil)
 	db.On("GetDeviceAuth", model.AuthID("bar")).
-		Return(nil, store.ErrDevNotFound)
+		Return(nil, store.ErrNotFound)
 	db.On("GetDeviceAuth", model.AuthID("baz")).
 		Return(nil, errors.New("error"))
 
@@ -156,7 +156,7 @@ func TestDevAdmGetDevice(t *testing.T) {
 
 	dev, err = d.GetDevice("bar")
 	assert.Nil(t, dev)
-	assert.EqualError(t, err, store.ErrDevNotFound.Error())
+	assert.EqualError(t, err, store.ErrNotFound.Error())
 
 	dev, err = d.GetDevice("baz")
 	assert.Nil(t, dev)
@@ -168,7 +168,7 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 	db.On("GetDeviceAuth", model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo"}, nil)
 	db.On("GetDeviceAuth", model.AuthID("bar")).
-		Return(nil, store.ErrDevNotFound)
+		Return(nil, store.ErrNotFound)
 	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
@@ -180,7 +180,7 @@ func TestDevAdmAcceptDevice(t *testing.T) {
 
 	err = d.AcceptDevice("bar")
 	assert.Error(t, err)
-	assert.EqualError(t, err, store.ErrDevNotFound.Error())
+	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
 
 func TestDevAdmDeleteDevice(t *testing.T) {
@@ -195,8 +195,8 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 			outError:       nil,
 		},
 		"no device": {
-			datastoreError: store.ErrDevNotFound,
-			outError:       store.ErrDevNotFound,
+			datastoreError: store.ErrNotFound,
+			outError:       store.ErrNotFound,
 		},
 		"datastore error": {
 			datastoreError: errors.New("db connection failed"),
@@ -231,7 +231,7 @@ func TestDevAdmRejectDevice(t *testing.T) {
 	db.On("GetDeviceAuth", model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo"}, nil)
 	db.On("GetDeviceAuth", model.AuthID("bar")).
-		Return(nil, store.ErrDevNotFound)
+		Return(nil, store.ErrNotFound)
 	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
@@ -243,7 +243,7 @@ func TestDevAdmRejectDevice(t *testing.T) {
 
 	err = d.RejectDevice("bar")
 	assert.Error(t, err)
-	assert.EqualError(t, err, store.ErrDevNotFound.Error())
+	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
 
 func TestNewDevAdm(t *testing.T) {
