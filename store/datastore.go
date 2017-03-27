@@ -45,4 +45,7 @@ type DataStore interface {
 
 	// remove device auth set
 	DeleteDeviceAuth(id model.AuthID) error
+
+	// remove auth sets owned by device
+	DeleteDeviceAuthByDevice(id model.DeviceID) error
 }

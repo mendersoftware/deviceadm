@@ -36,6 +36,20 @@ func (_m *DataStore) DeleteDeviceAuth(id model.AuthID) error {
 	return r0
 }
 
+// DeleteDeviceAuthByDevice provides a mock function with given fields: id
+func (_m *DataStore) DeleteDeviceAuthByDevice(id model.DeviceID) error {
+	ret := _m.Called(id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(model.DeviceID) error); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetDeviceAuth provides a mock function with given fields: id
 func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	ret := _m.Called(id)

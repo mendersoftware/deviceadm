@@ -496,6 +496,62 @@ func TestMongoDeleteDevice(t *testing.T) {
 
 }
 
+func TestMongoDeleteDeviceAuthsByDevice(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode.")
+	}
+
+	inDevs := []model.DeviceAuth{
+		model.DeviceAuth{
+			ID:             "0001",
+			DeviceId:       "0001",
+			DeviceIdentity: "0001-id",
+			Key:            "0001-key",
+			Status:         "pending",
+		},
+		model.DeviceAuth{
+			ID:             "0002",
+			DeviceId:       "0001",
+			DeviceIdentity: "0002-id",
+			Key:            "0002-key",
+			Status:         "pending",
+		},
+		model.DeviceAuth{
+			ID:             "0003",
+			DeviceId:       "0002",
+			DeviceIdentity: "0002-id",
+			Key:            "0002-key",
+			Status:         "pending",
+		},
+	}
+
+	db.Wipe()
+	session := db.Session()
+	defer session.Close()
+
+	dbstore := NewDataStoreMongoWithSession(session)
+
+	for _, d := range inDevs {
+		err := dbstore.PutDeviceAuth(&d)
+		assert.NoError(t, err)
+	}
+
+	err := dbstore.DeleteDeviceAuthByDevice("0001")
+	assert.NoError(t, err)
+
+	for _, aid := range []model.AuthID{"0001", "0002"} {
+		_, err := dbstore.GetDeviceAuth(aid)
+		assert.EqualError(t, err, store.ErrNotFound.Error())
+	}
+
+	aset, err := dbstore.GetDeviceAuth("0003")
+	assert.NoError(t, err)
+	assert.NotNil(t, aset)
+
+	err = dbstore.DeleteDeviceAuthByDevice("0004")
+	assert.EqualError(t, err, store.ErrNotFound.Error())
+}
+
 func TestMongoEnsureIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestMongoEnsureIndexes in short mode.")

@@ -109,6 +109,23 @@ func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
 	}
 }
 
+func (db *DataStoreMongo) DeleteDeviceAuthByDevice(id model.DeviceID) error {
+	s := db.session.Copy()
+	defer s.Close()
+
+	filter := model.DeviceAuth{DeviceId: id}
+	ci, err := s.DB(DbName).C(DbDevicesColl).RemoveAll(filter)
+
+	switch {
+	case err != nil:
+		return nil
+	case ci != nil && ci.Removed == 0:
+		return store.ErrNotFound
+	default:
+		return errors.Wrap(err, "failed to delete device")
+	}
+}
+
 // produce a DeviceAuth wrapper suitable for passing in an Upsert() as
 // '$set' fields
 func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
