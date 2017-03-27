@@ -48,18 +48,18 @@ paths:
   /devices/{id}:
     delete:
       summary: Remove device authentication data set
-      description: Removes all authentication set data
+      description: Removes all device authentication data set data.
       parameters:
         - name: id
           in: path
-          description: Authentication data set identifier
+          description: device authentication data set identifier
           required: true
           type: string
       responses:
         204:
           description: The device authentication data set was removed.
         404:
-         description: The authentication data set was not found.
+         description: The device authentication data set was not found.
          schema:
            $ref: "#/definitions/Error"
         500:

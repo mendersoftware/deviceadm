@@ -15,7 +15,7 @@ schemes:
 paths:
   /devices:
     get:
-      summary: List known device data sets
+      summary: List known device  data sets
       description: |
         Returns a paged collection of device authentication data sets registered
         for admission, and optionally filters by device admission status.
@@ -157,7 +157,7 @@ paths:
                 sn:  "SN1234567890"
               request_time: "2016-10-03T16:58:51.639Z"
         404:
-          description: The device was not found.
+          description: The device authentication data set was not found.
           schema:
             $ref: "#/definitions/Error"
         500:
@@ -166,8 +166,8 @@ paths:
             $ref: "#/definitions/Error"
   /devices/{id}/status:
     get:
-      summary: Check the admission status of a selected device
-      description: Returns the admission status of a particular device.
+      summary: Check the admission status of a selected device authentication data set
+      description: Returns the admission status of a particular device authentication data set.
       parameters:
         - name: Authorization
           in: header
@@ -190,7 +190,7 @@ paths:
             application/json:
               status: "accepted"
         404:
-          description: The device was not found.
+          description: The device authentication data set was not found.
           schema:
             $ref: "#/definitions/Error"
         500:
@@ -238,7 +238,7 @@ paths:
           schema:
             $ref: "#/definitions/Error"
         404:
-          description: The device was not found.
+          description: The device authentication data set was not found.
           schema:
             $ref: "#/definitions/Error"
         500:
@@ -308,7 +308,7 @@ definitions:
         description: Device public key
         type: string
       status:
-        description: Status of the admission process for the device
+        description: Status of the admission process for device authentication data set
         type: string
         enum:
           - pending
@@ -334,7 +334,7 @@ definitions:
         request_time: "2016-10-03T16:58:51.639Z"
 
   Status:
-    description: Admission status of the device.
+    description: Admission status of device authentication data set.
     type: object
     properties:
       status:
