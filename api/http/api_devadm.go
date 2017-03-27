@@ -57,8 +57,9 @@ func NewDevAdmApiHandlers(devadm devadm.DevAdmApp) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
-		rest.Put(uriDevice, d.SubmitDeviceHandler),
+		rest.Delete(uriDevices, d.DeleteDevicesHandler),
 
+		rest.Put(uriDevice, d.SubmitDeviceHandler),
 		rest.Get(uriDevice, d.GetDeviceHandler),
 		rest.Delete(uriDevice, d.DeleteDeviceHandler),
 
@@ -117,6 +118,28 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 		w.Header().Add("Link", l)
 	}
 	w.WriteJson(devs[:len])
+}
+
+func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.GetRequestLogger(r.Env)
+
+	devid, err := utils.ParseQueryParmStr(r, "device_id", true, nil)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
+	da := d.DevAdm.WithContext(restToContext(r))
+
+	err = da.DeleteDeviceData(model.DeviceID(devid))
+	switch {
+	case err == store.ErrNotFound:
+		restErrWithLog(w, r, l, err, http.StatusNotFound)
+	case err != nil:
+		restErrWithLogInternal(w, r, l, err)
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {

@@ -41,6 +41,7 @@ type MockDevAdm struct {
 	mockRejectDeviceAuth func(id model.AuthID) error
 	mockSubmitDeviceAuth func(d model.DeviceAuth) error
 	mockDeleteDeviceAuth func(id model.AuthID) error
+	mockDeleteDeviceData func(id model.DeviceID) error
 	mockWithContext      func(c context.Context) devadm.DevAdmApp
 }
 
@@ -66,6 +67,10 @@ func (mda *MockDevAdm) RejectDeviceAuth(id model.AuthID) error {
 
 func (mda *MockDevAdm) DeleteDeviceAuth(id model.AuthID) error {
 	return mda.mockDeleteDeviceAuth(id)
+}
+
+func (mda *MockDevAdm) DeleteDeviceData(id model.DeviceID) error {
+	return mda.mockDeleteDeviceData(id)
 }
 
 func (mda *MockDevAdm) WithContext(c context.Context) devadm.DevAdmApp {
@@ -656,6 +661,64 @@ func TestApiDeleteDevice(t *testing.T) {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
 			devadm := MockDevAdm{
 				mockDeleteDeviceAuth: func(id model.AuthID) error {
+					return tc.devadmErr
+				},
+			}
+
+			apih := makeMockApiHandler(t, &devadm)
+
+			runTestRequest(t, apih, tc.req, tc.code, tc.body)
+		})
+	}
+}
+
+func TestApiDeleteDeviceData(t *testing.T) {
+	t.Parallel()
+	rest.ErrorFieldName = "error"
+
+	tcases := map[string]struct {
+		req *http.Request
+
+		devadmErr error
+		devid     model.DeviceID
+
+		code int
+		body string
+	}{
+		"success": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=2", nil),
+
+			devadmErr: nil,
+			devid:     "2",
+
+			code: http.StatusNoContent,
+			body: "",
+		},
+		"error: no device": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=1", nil),
+
+			devadmErr: store.ErrNotFound,
+			devid:     "1",
+
+			code: http.StatusNotFound,
+			body: RestError(store.ErrNotFound.Error()),
+		},
+		"error: generic": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=3", nil),
+
+			devadmErr: errors.New("some internal error"),
+			devid:     "3",
+
+			code: http.StatusInternalServerError,
+			body: RestError("internal error"),
+		},
+	}
+
+	for name, tc := range tcases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			devadm := MockDevAdm{
+				mockDeleteDeviceData: func(id model.DeviceID) error {
+					assert.Equal(t, tc.devid, id)
 					return tc.devadmErr
 				},
 			}

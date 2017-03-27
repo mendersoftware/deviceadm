@@ -43,6 +43,8 @@ type DevAdmApp interface {
 	RejectDeviceAuth(id model.AuthID) error
 	DeleteDeviceAuth(id model.AuthID) error
 
+	DeleteDeviceData(id model.DeviceID) error
+
 	WithContext(c context.Context) DevAdmApp
 }
 
@@ -150,6 +152,10 @@ func (d *DevAdm) AcceptDeviceAuth(id model.AuthID) error {
 
 func (d *DevAdm) RejectDeviceAuth(id model.AuthID) error {
 	return d.updateDeviceAuthStatus(id, model.DevStatusRejected)
+}
+
+func (d *DevAdm) DeleteDeviceData(devid model.DeviceID) error {
+	return d.db.DeleteDeviceAuthByDevice(devid)
 }
 
 func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
