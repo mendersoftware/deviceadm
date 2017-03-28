@@ -132,14 +132,13 @@ func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Req
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	err = da.DeleteDeviceData(model.DeviceID(devid))
-	switch {
-	case err == store.ErrNotFound:
-		restErrWithLog(w, r, l, err, http.StatusNotFound)
-	case err != nil:
+
+	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)
-	default:
-		w.WriteHeader(http.StatusNoContent)
+		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
@@ -297,16 +296,12 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	da := d.DevAdm.WithContext(restToContext(r))
 	err := da.DeleteDeviceAuth(model.AuthID(devid))
 
-	switch err {
-	case nil:
-		w.WriteHeader(http.StatusNoContent)
-	case store.ErrNotFound:
-		restErrWithLog(w, r, l, store.ErrNotFound, http.StatusNotFound)
-	default:
+	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)
+		return
 	}
 
-	return
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // return selected http code + error message directly taken from error

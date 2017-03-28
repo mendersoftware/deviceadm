@@ -644,8 +644,7 @@ func TestApiDeleteDevice(t *testing.T) {
 
 			devadmErr: store.ErrNotFound,
 
-			code: http.StatusNotFound,
-			body: RestError(store.ErrNotFound.Error()),
+			code: http.StatusNoContent,
 		},
 		"error: generic": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/3", nil),
@@ -700,8 +699,7 @@ func TestApiDeleteDeviceData(t *testing.T) {
 			devadmErr: store.ErrNotFound,
 			devid:     "1",
 
-			code: http.StatusNotFound,
-			body: RestError(store.ErrNotFound.Error()),
+			code: http.StatusNoContent,
 		},
 		"error: generic": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=3", nil),
