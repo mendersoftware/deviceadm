@@ -36,12 +36,14 @@ func simpleApiClientGetter() requestid.ApiRequester {
 
 // this device admission service interface
 type DevAdmApp interface {
-	ListDevices(skip int, limit int, status string) ([]model.Device, error)
-	SubmitDevice(d model.Device) error
-	GetDevice(id model.AuthID) (*model.Device, error)
-	AcceptDevice(id model.AuthID) error
-	RejectDevice(id model.AuthID) error
-	DeleteDevice(id model.AuthID) error
+	ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error)
+	SubmitDeviceAuth(d model.DeviceAuth) error
+	GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error)
+	AcceptDeviceAuth(id model.AuthID) error
+	RejectDeviceAuth(id model.AuthID) error
+	DeleteDeviceAuth(id model.AuthID) error
+
+	DeleteDeviceData(id model.DeviceID) error
 
 	WithContext(c context.Context) DevAdmApp
 }
@@ -62,8 +64,8 @@ type DevAdm struct {
 	clientGetter   ApiClientGetter
 }
 
-func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.Device, error) {
-	devs, err := d.db.GetDevices(skip, limit, status)
+func (d *DevAdm) ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
+	devs, err := d.db.GetDeviceAuths(skip, limit, status)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch devices")
 	}
@@ -71,38 +73,38 @@ func (d *DevAdm) ListDevices(skip int, limit int, status string) ([]model.Device
 	return devs, nil
 }
 
-func (d *DevAdm) SubmitDevice(dev model.Device) error {
+func (d *DevAdm) SubmitDeviceAuth(dev model.DeviceAuth) error {
 	now := time.Now()
 	dev.RequestTime = &now
 
-	err := d.db.PutDevice(&dev)
+	err := d.db.PutDeviceAuth(&dev)
 	if err != nil {
 		return errors.Wrap(err, "failed to put device")
 	}
 	return nil
 }
 
-func (d *DevAdm) GetDevice(id model.AuthID) (*model.Device, error) {
-	dev, err := d.db.GetDevice(id)
+func (d *DevAdm) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
+	dev, err := d.db.GetDeviceAuth(id)
 	if err != nil {
 		return nil, err
 	}
 	return dev, nil
 }
 
-func (d *DevAdm) DeleteDevice(id model.AuthID) error {
-	err := d.db.DeleteDevice(id)
+func (d *DevAdm) DeleteDeviceAuth(id model.AuthID) error {
+	err := d.db.DeleteDeviceAuth(id)
 	switch err {
 	case nil:
 		return nil
-	case store.ErrDevNotFound:
+	case store.ErrNotFound:
 		return err
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}
 }
 
-func (d *DevAdm) propagateDeviceUpdate(dev *model.Device) error {
+func (d *DevAdm) propagateDeviceAuthUpdate(dev *model.DeviceAuth) error {
 	// forward device state to auth service
 	cl := deviceauth.NewClientWithLogger(d.authclientconf, d.clientGetter(), d.log)
 	err := cl.UpdateDevice(deviceauth.StatusReq{
@@ -118,21 +120,21 @@ func (d *DevAdm) propagateDeviceUpdate(dev *model.Device) error {
 	return nil
 }
 
-func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
-	dev, err := d.db.GetDevice(id)
+func (d *DevAdm) updateDeviceAuthStatus(id model.AuthID, status string) error {
+	dev, err := d.db.GetDeviceAuth(id)
 	if err != nil {
 		return err
 	}
 
 	dev.Status = status
 
-	err = d.propagateDeviceUpdate(dev)
+	err = d.propagateDeviceAuthUpdate(dev)
 	if err != nil {
 		return err
 	}
 
 	// update only status and attributes fields
-	err = d.db.PutDevice(&model.Device{
+	err = d.db.PutDeviceAuth(&model.DeviceAuth{
 		ID:       dev.ID,
 		DeviceId: dev.DeviceId,
 		Status:   dev.Status,
@@ -144,12 +146,16 @@ func (d *DevAdm) updateDeviceStatus(id model.AuthID, status string) error {
 	return nil
 }
 
-func (d *DevAdm) AcceptDevice(id model.AuthID) error {
-	return d.updateDeviceStatus(id, model.DevStatusAccepted)
+func (d *DevAdm) AcceptDeviceAuth(id model.AuthID) error {
+	return d.updateDeviceAuthStatus(id, model.DevStatusAccepted)
 }
 
-func (d *DevAdm) RejectDevice(id model.AuthID) error {
-	return d.updateDeviceStatus(id, model.DevStatusRejected)
+func (d *DevAdm) RejectDeviceAuth(id model.AuthID) error {
+	return d.updateDeviceAuthStatus(id, model.DevStatusRejected)
+}
+
+func (d *DevAdm) DeleteDeviceData(devid model.DeviceID) error {
+	return d.db.DeleteDeviceAuthByDevice(devid)
 }
 
 func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {

@@ -20,8 +20,8 @@ import (
 type DeviceID string
 type AuthID string
 
-// wrapper for device attributes data
-type DeviceAttributes map[string]string
+// wrapper for device attributes data in authentication data set
+type DeviceAuthAttributes map[string]string
 
 const (
 	DevStatusAccepted = "accepted"
@@ -29,8 +29,8 @@ const (
 	DevStatusPending  = "pending"
 )
 
-// Device wrapper
-type Device struct {
+// Device authentication data set wrapper
+type DeviceAuth struct {
 	//system-generated authentication data set ID
 	ID AuthID `json:"id" bson:",omitempty"`
 
@@ -40,14 +40,14 @@ type Device struct {
 	//blob of encrypted identity attributes
 	DeviceIdentity string `json:"device_identity" bson:",omitempty"`
 
-	//device's public key
+	//public key passed in authentication request
 	Key string `json:"key" bson:",omitempty"`
 
 	//admission status('accepted', 'rejected', 'pending')
 	Status string `json:"status" bson:",omitempty"`
 
 	//decoded, human-readable identity attribute set
-	Attributes DeviceAttributes `json:"attributes" bson:",omitempty"`
+	Attributes DeviceAuthAttributes `json:"attributes" bson:",omitempty"`
 
 	//admission request reception time
 	RequestTime *time.Time `json:"request_time" bson:"request_time,omitempty"`

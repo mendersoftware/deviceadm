@@ -51,11 +51,11 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.Device, error) {
+func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, status string) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
-	res := []model.Device{}
+	res := []model.DeviceAuth{}
 
 	var filter bson.M
 	if status != "" {
@@ -71,19 +71,19 @@ func (db *DataStoreMongo) GetDevices(skip, limit int, status string) ([]model.De
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.Device, error) {
+func (db *DataStoreMongo) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
 
 	filter := bson.M{"id": id}
-	res := model.Device{}
+	res := model.DeviceAuth{}
 
 	err := c.Find(filter).One(&res)
 
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return nil, store.ErrDevNotFound
+			return nil, store.ErrNotFound
 		} else {
 			return nil, errors.Wrap(err, "failed to fetch device")
 		}
@@ -92,7 +92,7 @@ func (db *DataStoreMongo) GetDevice(id model.AuthID) (*model.Device, error) {
 	return &res, nil
 }
 
-func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
+func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -103,16 +103,33 @@ func (db *DataStoreMongo) DeleteDevice(id model.AuthID) error {
 	case nil:
 		return nil
 	case mgo.ErrNotFound:
-		return store.ErrDevNotFound
+		return store.ErrNotFound
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}
 }
 
-// produce a Device wrapper suitable for passing in an Upsert() as
+func (db *DataStoreMongo) DeleteDeviceAuthByDevice(id model.DeviceID) error {
+	s := db.session.Copy()
+	defer s.Close()
+
+	filter := model.DeviceAuth{DeviceId: id}
+	ci, err := s.DB(DbName).C(DbDevicesColl).RemoveAll(filter)
+
+	switch {
+	case err != nil:
+		return nil
+	case ci != nil && ci.Removed == 0:
+		return store.ErrNotFound
+	default:
+		return errors.Wrap(err, "failed to delete device")
+	}
+}
+
+// produce a DeviceAuth wrapper suitable for passing in an Upsert() as
 // '$set' fields
-func genDeviceUpdate(dev *model.Device) *model.Device {
-	updev := model.Device{}
+func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
+	updev := model.DeviceAuth{}
 
 	if dev.DeviceId != "" {
 		updev.DeviceId = dev.DeviceId
@@ -143,7 +160,7 @@ func genDeviceUpdate(dev *model.Device) *model.Device {
 }
 
 //
-func (db *DataStoreMongo) PutDevice(dev *model.Device) error {
+func (db *DataStoreMongo) PutDeviceAuth(dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -151,7 +168,7 @@ func (db *DataStoreMongo) PutDevice(dev *model.Device) error {
 	filter := bson.M{"id": dev.ID}
 
 	// use $set operator so that fields values are replaced
-	data := bson.M{"$set": genDeviceUpdate(dev)}
+	data := bson.M{"$set": genDeviceAuthUpdate(dev)}
 
 	// does insert or update
 	_, err := c.Upsert(filter, data)

@@ -31,7 +31,7 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 
 	iter := s.DB(DbName).C(DbDevicesColl).Find(nil).Iter()
 
-	var olddev model.Device
+	var olddev model.DeviceAuth
 
 	for iter.Next(&olddev) {
 		newdev := olddev

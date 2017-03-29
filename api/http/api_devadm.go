@@ -57,8 +57,9 @@ func NewDevAdmApiHandlers(devadm devadm.DevAdmApp) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
-		rest.Put(uriDevice, d.SubmitDeviceHandler),
+		rest.Delete(uriDevices, d.DeleteDevicesHandler),
 
+		rest.Put(uriDevice, d.SubmitDeviceHandler),
 		rest.Get(uriDevice, d.GetDeviceHandler),
 		rest.Delete(uriDevice, d.DeleteDeviceHandler),
 
@@ -98,7 +99,7 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	//get one extra device to see if there's a 'next' page
-	devs, err := da.ListDevices(int((page-1)*perPage), int(perPage+1), status)
+	devs, err := da.ListDeviceAuths(int((page-1)*perPage), int(perPage+1), status)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list devices"))
 		return
@@ -119,6 +120,27 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	w.WriteJson(devs[:len])
 }
 
+func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
+	l := requestlog.GetRequestLogger(r.Env)
+
+	devid, err := utils.ParseQueryParmStr(r, "device_id", true, nil)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
+	da := d.DevAdm.WithContext(restToContext(r))
+
+	err = da.DeleteDeviceData(model.DeviceID(devid))
+
+	if err != nil && err != store.ErrNotFound {
+		restErrWithLogInternal(w, r, l, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
 	l := requestlog.GetRequestLogger(r.Env)
 
@@ -132,7 +154,7 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 
 	//save device in pending state
 	dev.Status = "pending"
-	err = da.SubmitDevice(*dev)
+	err = da.SubmitDeviceAuth(*dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)
 		return
@@ -141,8 +163,8 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseDevice(r *rest.Request) (*model.Device, error) {
-	dev := model.Device{}
+func parseDevice(r *rest.Request) (*model.DeviceAuth, error) {
+	dev := model.DeviceAuth{}
 
 	//decode body
 	err := r.DecodeJsonPayload(&dev)
@@ -187,16 +209,16 @@ func parseDevice(r *rest.Request) (*model.Device, error) {
 // request 'r' and return it. If a device was not found returns nil
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
-func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.Device {
+func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.DeviceAuth {
 	l := requestlog.GetRequestLogger(r.Env)
 
 	authid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	dev, err := da.GetDevice(model.AuthID(authid))
+	dev, err := da.GetDeviceAuth(model.AuthID(authid))
 
 	if dev == nil {
-		if err == store.ErrDevNotFound {
+		if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, err)
@@ -238,12 +260,12 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	if status.Status == model.DevStatusAccepted {
-		err = da.AcceptDevice(model.AuthID(authid))
+		err = da.AcceptDeviceAuth(model.AuthID(authid))
 	} else if status.Status == model.DevStatusRejected {
-		err = da.RejectDevice(model.AuthID(authid))
+		err = da.RejectDeviceAuth(model.AuthID(authid))
 	}
 	if err != nil {
-		if err == store.ErrDevNotFound {
+		if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list change device status"))
@@ -272,18 +294,14 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	devid := r.PathParam("id")
 
 	da := d.DevAdm.WithContext(restToContext(r))
-	err := da.DeleteDevice(model.AuthID(devid))
+	err := da.DeleteDeviceAuth(model.AuthID(devid))
 
-	switch err {
-	case nil:
-		w.WriteHeader(http.StatusNoContent)
-	case store.ErrDevNotFound:
-		restErrWithLog(w, r, l, store.ErrDevNotFound, http.StatusNotFound)
-	default:
+	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)
+		return
 	}
 
-	return
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // return selected http code + error message directly taken from error

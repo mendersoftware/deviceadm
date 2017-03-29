@@ -35,47 +35,52 @@ import (
 )
 
 type MockDevAdm struct {
-	mockListDevices  func(skip int, limit int, status string) ([]model.Device, error)
-	mockGetDevice    func(id model.AuthID) (*model.Device, error)
-	mockAcceptDevice func(id model.AuthID) error
-	mockRejectDevice func(id model.AuthID) error
-	mockSubmitDevice func(d model.Device) error
-	mockDeleteDevice func(id model.AuthID) error
-	mockWithContext  func(c context.Context) devadm.DevAdmApp
+	mockListDeviceAuths  func(skip int, limit int, status string) ([]model.DeviceAuth, error)
+	mockGetDeviceAuth    func(id model.AuthID) (*model.DeviceAuth, error)
+	mockAcceptDeviceAuth func(id model.AuthID) error
+	mockRejectDeviceAuth func(id model.AuthID) error
+	mockSubmitDeviceAuth func(d model.DeviceAuth) error
+	mockDeleteDeviceAuth func(id model.AuthID) error
+	mockDeleteDeviceData func(id model.DeviceID) error
+	mockWithContext      func(c context.Context) devadm.DevAdmApp
 }
 
-func (mda *MockDevAdm) ListDevices(skip int, limit int, status string) ([]model.Device, error) {
-	return mda.mockListDevices(skip, limit, status)
+func (mda *MockDevAdm) ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
+	return mda.mockListDeviceAuths(skip, limit, status)
 }
 
-func (mda *MockDevAdm) SubmitDevice(dev model.Device) error {
-	return mda.mockSubmitDevice(dev)
+func (mda *MockDevAdm) SubmitDeviceAuth(dev model.DeviceAuth) error {
+	return mda.mockSubmitDeviceAuth(dev)
 }
 
-func (mda *MockDevAdm) GetDevice(id model.AuthID) (*model.Device, error) {
-	return mda.mockGetDevice(id)
+func (mda *MockDevAdm) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
+	return mda.mockGetDeviceAuth(id)
 }
 
-func (mda *MockDevAdm) AcceptDevice(id model.AuthID) error {
-	return mda.mockAcceptDevice(id)
+func (mda *MockDevAdm) AcceptDeviceAuth(id model.AuthID) error {
+	return mda.mockAcceptDeviceAuth(id)
 }
 
-func (mda *MockDevAdm) RejectDevice(id model.AuthID) error {
-	return mda.mockRejectDevice(id)
+func (mda *MockDevAdm) RejectDeviceAuth(id model.AuthID) error {
+	return mda.mockRejectDeviceAuth(id)
 }
 
-func (mda *MockDevAdm) DeleteDevice(id model.AuthID) error {
-	return mda.mockDeleteDevice(id)
+func (mda *MockDevAdm) DeleteDeviceAuth(id model.AuthID) error {
+	return mda.mockDeleteDeviceAuth(id)
+}
+
+func (mda *MockDevAdm) DeleteDeviceData(id model.DeviceID) error {
+	return mda.mockDeleteDeviceData(id)
 }
 
 func (mda *MockDevAdm) WithContext(c context.Context) devadm.DevAdmApp {
 	return mda
 }
 
-func mockListDevices(num int) []model.Device {
-	var devs []model.Device
+func mockListDeviceAuths(num int) []model.DeviceAuth {
+	var devs []model.DeviceAuth
 	for i := 0; i < num; i++ {
-		devs = append(devs, model.Device{
+		devs = append(devs, model.DeviceAuth{
 			ID:       model.AuthID(strconv.Itoa(i)),
 			DeviceId: model.DeviceID(strconv.Itoa(i)),
 		})
@@ -140,7 +145,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			nil,
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5", nil),
 			200,
-			ToJson(mockListDevices(5)),
+			ToJson(mockListDeviceAuths(5)),
 			[]string{
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
@@ -152,7 +157,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			nil,
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5", nil),
 			200,
-			ToJson(mockListDevices(5)),
+			ToJson(mockListDeviceAuths(5)),
 			[]string{
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
@@ -191,7 +196,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			nil,
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5&status=allowed", nil),
 			200,
-			ToJson(mockListDevices(5)),
+			ToJson(mockListDeviceAuths(5)),
 			[]string{
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5&status=allowed", "prev"),
 				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5&status=allowed", "first"),
@@ -219,12 +224,12 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 
 	for _, testCase := range testCases {
 		devadm := MockDevAdm{
-			mockListDevices: func(skip int, limit int, status string) ([]model.Device, error) {
+			mockListDeviceAuths: func(skip int, limit int, status string) ([]model.DeviceAuth, error) {
 				if testCase.listDevicesErr != nil {
 					return nil, testCase.listDevicesErr
 				}
 
-				return mockListDevices(testCase.listDevicesNum), nil
+				return mockListDeviceAuths(testCase.listDevicesNum), nil
 			},
 		}
 
@@ -271,11 +276,11 @@ func makeMockApiHandler(t *testing.T, mocka *MockDevAdm) http.Handler {
 
 func TestApiDevAdmGetDevice(t *testing.T) {
 	devs := map[string]struct {
-		dev *model.Device
+		dev *model.DeviceAuth
 		err error
 	}{
 		"foo": {
-			&model.Device{
+			&model.DeviceAuth{
 				ID:             "foo",
 				Key:            "foobar",
 				Status:         "accepted",
@@ -290,10 +295,10 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}
 
 	devadm := MockDevAdm{
-		mockGetDevice: func(id model.AuthID) (*model.Device, error) {
+		mockGetDeviceAuth: func(id model.AuthID) (*model.DeviceAuth, error) {
 			d, ok := devs[id.String()]
 			if ok == false {
-				return nil, store.ErrDevNotFound
+				return nil, store.ErrNotFound
 			}
 			if d.err != nil {
 				return nil, d.err
@@ -338,12 +343,12 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 			test.MakeSimpleRequest("GET",
 				"http://1.2.3.4/api/0.1.0/devices/baz", nil),
 			404,
-			RestError(store.ErrDevNotFound.Error()),
+			RestError(store.ErrNotFound.Error()),
 		},
 		{
 			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz/status", nil),
 			404,
-			RestError(store.ErrDevNotFound.Error()),
+			RestError(store.ErrNotFound.Error()),
 		},
 	}
 
@@ -354,11 +359,11 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 
 func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	devs := map[string]struct {
-		dev *model.Device
+		dev *model.DeviceAuth
 		err error
 	}{
 		"foo": {
-			&model.Device{
+			&model.DeviceAuth{
 				ID:             "foo",
 				DeviceId:       "bar",
 				Key:            "foobar",
@@ -376,7 +381,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	mockaction := func(id model.AuthID) error {
 		d, ok := devs[id.String()]
 		if ok == false {
-			return store.ErrDevNotFound
+			return store.ErrNotFound
 		}
 		if d.err != nil {
 			return d.err
@@ -384,8 +389,8 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		return nil
 	}
 	devadm := MockDevAdm{
-		mockAcceptDevice: mockaction,
-		mockRejectDevice: mockaction,
+		mockAcceptDeviceAuth: mockaction,
+		mockRejectDeviceAuth: mockaction,
 	}
 
 	apih := makeMockApiHandler(t, &devadm)
@@ -432,7 +437,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 				"http://1.2.3.4/api/0.1.0/devices/baz/status",
 				accstatus),
 			code: 404,
-			body: RestError(store.ErrDevNotFound.Error()),
+			body: RestError(store.ErrNotFound.Error()),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
@@ -491,7 +496,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 				"foo bar"),
 			devAdmErr: "",
 			respCode:  400,
-			respBody:  RestError("failed to decode request body: json: cannot unmarshal string into Go value of type model.Device"),
+			respBody:  RestError("failed to decode request body: json: cannot unmarshal string into Go value of type model.DeviceAuth"),
 		},
 		"body formatted ok, all fields present": {
 			req: test.MakeSimpleRequest("PUT",
@@ -598,7 +603,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 	for name, tc := range testCases {
 		t.Logf("test case: %s", name)
 		devadm := MockDevAdm{
-			mockSubmitDevice: func(d model.Device) error {
+			mockSubmitDeviceAuth: func(d model.DeviceAuth) error {
 				if tc.devAdmErr != "" {
 					return errors.New(tc.devAdmErr)
 				}
@@ -637,10 +642,9 @@ func TestApiDeleteDevice(t *testing.T) {
 		"error: no device": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/1", nil),
 
-			devadmErr: store.ErrDevNotFound,
+			devadmErr: store.ErrNotFound,
 
-			code: http.StatusNotFound,
-			body: RestError(store.ErrDevNotFound.Error()),
+			code: http.StatusNoContent,
 		},
 		"error: generic": {
 			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/3", nil),
@@ -655,7 +659,64 @@ func TestApiDeleteDevice(t *testing.T) {
 	for name, tc := range tcases {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
 			devadm := MockDevAdm{
-				mockDeleteDevice: func(id model.AuthID) error {
+				mockDeleteDeviceAuth: func(id model.AuthID) error {
+					return tc.devadmErr
+				},
+			}
+
+			apih := makeMockApiHandler(t, &devadm)
+
+			runTestRequest(t, apih, tc.req, tc.code, tc.body)
+		})
+	}
+}
+
+func TestApiDeleteDeviceData(t *testing.T) {
+	t.Parallel()
+	rest.ErrorFieldName = "error"
+
+	tcases := map[string]struct {
+		req *http.Request
+
+		devadmErr error
+		devid     model.DeviceID
+
+		code int
+		body string
+	}{
+		"success": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=2", nil),
+
+			devadmErr: nil,
+			devid:     "2",
+
+			code: http.StatusNoContent,
+			body: "",
+		},
+		"error: no device": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=1", nil),
+
+			devadmErr: store.ErrNotFound,
+			devid:     "1",
+
+			code: http.StatusNoContent,
+		},
+		"error: generic": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=3", nil),
+
+			devadmErr: errors.New("some internal error"),
+			devid:     "3",
+
+			code: http.StatusInternalServerError,
+			body: RestError("internal error"),
+		},
+	}
+
+	for name, tc := range tcases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			devadm := MockDevAdm{
+				mockDeleteDeviceData: func(id model.DeviceID) error {
+					assert.Equal(t, tc.devid, id)
 					return tc.devadmErr
 				},
 			}

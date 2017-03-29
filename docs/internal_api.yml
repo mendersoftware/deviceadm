@@ -13,23 +13,47 @@ schemes:
   - http
 
 paths:
+  /devices:
+    delete:
+      summary: Delete device data sets
+      description: Removes device authentication data sets
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
+        - name: device_id
+          in: query
+          description: Delete all auth sets owned by given device
+          required: true
+          type: string
+      responses:
+        204:
+          description: Authentication data sets removed.
+        400:
+          description: |
+            Invalid parameters. See error message for details.
+          schema:
+            $ref: "#/definitions/Error"
+        500:
+          description: Internal server error.
+          schema:
+            $ref: "#/definitions/Error"
   /devices/{id}:
     delete:
       summary: Remove device authentication data set
-      description: Removes all authentication set data
+      description: Removes all device authentication data set data.
       parameters:
         - name: id
           in: path
-          description: Authentication data set identifier
+          description: device authentication data set identifier
           required: true
           type: string
       responses:
         204:
           description: The device authentication data set was removed.
-        404:
-         description: The authentication data set was not found.
-         schema:
-           $ref: "#/definitions/Error"
         500:
           description: Internal server error.
           schema:
