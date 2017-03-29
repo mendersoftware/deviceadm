@@ -19,7 +19,8 @@ def pytest_addoption(parser):
     parser.addoption("--devauth-host", action="store", default="mender-device-auth:8080", help="host of devauth service")
     parser.addoption("--host", action="store", default="localhost", help="host running API")
     parser.addoption("--devices", action="store", default="1001", help="# of devices to test with")
-    parser.addoption("--spec", action="store", default="../docs/management_api.yml", help="management API spec")
+    parser.addoption("--management-spec", action="store", default="../docs/management_api.yml", help="management API spec")
+    parser.addoption("--internal-spec", action="store", default="../docs/internal_api.yml", help="internal API spec")
 
 
 def pytest_configure(config):

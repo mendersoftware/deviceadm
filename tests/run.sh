@@ -14,6 +14,7 @@ DEVICEAUTH_HOST=${DEVICEAUTH_HOST="mender-device-auth:8080"}
 py.test-3 -s --tb=short --api=0.1.0  --host $HOST \
           --devauth-host $DEVICEAUTH_HOST \
           --devices 101 \
-          --spec $DIR/management_api.yml \
+          --management-spec $DIR/management_api.yml \
+          --internal-spec $DIR/internal_api.yml \
           --verbose --junitxml=$DIR/results.xml \
           $DIR/tests/test_*.py "$@"
