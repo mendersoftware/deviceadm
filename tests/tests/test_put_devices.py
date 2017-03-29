@@ -1,10 +1,10 @@
-from client import Client
+from client import ManagementClient
 import bravado
 from common import create_devices
 import pytest
 
 @pytest.mark.usefixtures("create_devices")
-class TestPrebootstrap(Client):
+class TestPrebootstrap(ManagementClient):
 
     def change_status(self, device_id, expected_initial, expected_final, expected_error_code=None):
         Status = self.client.get_model('Status')
