@@ -15,19 +15,19 @@ schemes:
 paths:
   /devices/{id}:
     delete:
-      summary: Remove device
-      description: Removes all device data.
+      summary: Remove device authentication data set
+      description: Removes all authentication set data
       parameters:
         - name: id
           in: path
-          description: Device identifier (SHA256 over identity data).
+          description: Authentication data set identifier
           required: true
           type: string
       responses:
         204:
-          description: The device was removed.
+          description: The device authentication data set was removed.
         404:
-         description: The device was not found.
+         description: The authentication data set was not found.
          schema:
            $ref: "#/definitions/Error"
         500:
