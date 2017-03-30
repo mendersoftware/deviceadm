@@ -66,3 +66,9 @@ class ManagementClient(SwaggerApiClient):
                 return r + self.get_all_devices(page=page)
         else:
             return r
+
+class ManagementClientSimple(ManagementClient):
+    log = logging.getLogger('client.ManagementClientSimple')
+
+    def __init__(self):
+        self.setup_swagger()
