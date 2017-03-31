@@ -1,10 +1,10 @@
-from client import Client
+from client import ManagementClient
 import bravado
 from common import create_devices
 import pytest
 
 @pytest.mark.usefixtures("create_devices")
-class TestPrebootstrap(Client):
+class TestPrebootstrap(ManagementClient):
 
     def test_get_all_devices(self, expected_total=pytest.config.getoption("devices")):
         """

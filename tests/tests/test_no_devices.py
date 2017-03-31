@@ -1,10 +1,10 @@
-from client import Client
+from client import ManagementClient
 import bravado
 from common import create_devices
 import pytest
 
 
-class TestPrebootstrap(Client):
+class TestPrebootstrap(ManagementClient):
 
 
     def test_get_non_existant_device(self):
