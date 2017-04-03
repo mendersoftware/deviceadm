@@ -22,16 +22,16 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/mendersoftware/deviceadm/devadm"
-	"github.com/mendersoftware/deviceadm/model"
-	"github.com/mendersoftware/deviceadm/store"
-	"github.com/mendersoftware/deviceadm/utils"
-
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/ant0ine/go-json-rest/rest/test"
 	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/mendersoftware/go-lib-micro/requestlog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mendersoftware/deviceadm/devadm"
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 type MockDevAdm struct {
