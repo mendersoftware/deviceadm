@@ -293,7 +293,6 @@ func TestMongoPutDevice(t *testing.T) {
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
-		t.Logf("stored dev: %+v", dbdev)
 
 		// obviously the found device should be identical
 		assert.True(t, reflect.DeepEqual(dev, *dbdev), "expected dev %+v to be equal to %+v",
@@ -318,7 +317,6 @@ func TestMongoPutDevice(t *testing.T) {
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
-		t.Logf("updated dev: %+v", dbdev)
 
 		assert.Equal(t, "accepted", dbdev.Status)
 		// other fields should be identical
