@@ -422,14 +422,14 @@ func TestMongoDeleteDevice(t *testing.T) {
 	}
 
 	inDevs := []model.DeviceAuth{
-		model.DeviceAuth{
+		{
 			ID:             "0001",
 			DeviceId:       "0001",
 			DeviceIdentity: "0001-id",
 			Key:            "0001-key",
 			Status:         "pending",
 		},
-		model.DeviceAuth{
+		{
 			ID:             "0002",
 			DeviceId:       "0002",
 			DeviceIdentity: "0002-id",
@@ -446,7 +446,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 		"exists 1": {
 			id: "0001",
 			out: []model.DeviceAuth{
-				model.DeviceAuth{
+				{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -459,7 +459,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 		"exists 2": {
 			id: "0002",
 			out: []model.DeviceAuth{
-				model.DeviceAuth{
+				{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
@@ -472,14 +472,14 @@ func TestMongoDeleteDevice(t *testing.T) {
 		"doesn't exist": {
 			id: "foo",
 			out: []model.DeviceAuth{
-				model.DeviceAuth{
+				{
 					ID:             "0001",
 					DeviceId:       "0001",
 					DeviceIdentity: "0001-id",
 					Key:            "0001-key",
 					Status:         "pending",
 				},
-				model.DeviceAuth{
+				{
 					ID:             "0002",
 					DeviceId:       "0002",
 					DeviceIdentity: "0002-id",
@@ -527,21 +527,21 @@ func TestMongoDeleteDeviceAuthsByDevice(t *testing.T) {
 	}
 
 	inDevs := []model.DeviceAuth{
-		model.DeviceAuth{
+		{
 			ID:             "0001",
 			DeviceId:       "0001",
 			DeviceIdentity: "0001-id",
 			Key:            "0001-key",
 			Status:         "pending",
 		},
-		model.DeviceAuth{
+		{
 			ID:             "0002",
 			DeviceId:       "0001",
 			DeviceIdentity: "0002-id",
 			Key:            "0002-key",
 			Status:         "pending",
 		},
-		model.DeviceAuth{
+		{
 			ID:             "0003",
 			DeviceId:       "0002",
 			DeviceIdentity: "0002-id",
