@@ -15,6 +15,8 @@ package mongo
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -41,19 +43,56 @@ func getDb() *DataStoreMongo {
 	return NewDataStoreMongoWithSession(db.Session())
 }
 
-func setUp(db *DataStoreMongo, dataset string) error {
-	devs, err := parseDevs(dataset)
-	if err != nil {
-		return err
+// randStatus returns a randomly chosen status
+func randStatus() string {
+	statuses := []string{
+		model.DevStatusAccepted,
+		model.DevStatusPending,
+		model.DevStatusRejected,
 	}
+	idx := rand.Int() % len(statuses)
+	return statuses[idx]
+}
 
+// makeDevs generates `count` distinct devices, with `auts`PerDevice` auth data
+// sets for each device. Within a device, auth sets have different device key,
+// identity data remains the same. Each auth set is given an ID with 0000-0000
+// format (<dev-idx>-<auth-for-dev-idx>), eg. 0002-0003 is 3rd device, 4th auth
+// set of this device. Device auth statuses are picked randomly.
+func makeDevs(count int, authsPerDevice int) []model.DeviceAuth {
+	devs := make([]model.DeviceAuth, count*authsPerDevice)
+
+	for i := 0; i < count; i++ {
+		base_id := fmt.Sprintf("%04d", i)
+		identity := fmt.Sprintf("device-identity-%s", base_id)
+		attrs := model.DeviceAuthAttributes{
+			"someattr": fmt.Sprintf("00:00:%s", base_id),
+		}
+		devid := model.DeviceID(fmt.Sprintf("devid-%s", base_id))
+
+		for j := 0; j < authsPerDevice; j++ {
+			auth_id := fmt.Sprintf("%s-%04d", base_id, j)
+			devs[i*authsPerDevice+j] = model.DeviceAuth{
+				ID:             model.AuthID(auth_id),
+				DeviceId:       devid,
+				DeviceIdentity: identity,
+				Key:            fmt.Sprintf("key-%s", auth_id),
+				Status:         randStatus(),
+				Attributes:     attrs,
+			}
+		}
+	}
+	return devs
+}
+
+func setUp(db *DataStoreMongo, devs []model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 
 	c := s.DB(DbName).C(DbDevicesColl)
 
 	for _, d := range devs {
-		err = c.Insert(d)
+		err := c.Insert(d)
 		if err != nil {
 			return err
 		}
@@ -109,79 +148,68 @@ func TestMongoGetDevices(t *testing.T) {
 	}
 
 	testCases := []struct {
-		input    string
-		expected string
-		skip     int
-		limit    int
-		status   string
+		skip   int
+		limit  int
+		status string
 	}{
 		{
-			//all devs, no skip, no limit
-			"get_devices_input.json",
-			"get_devices_input.json",
 			0,
 			20,
 			"",
 		},
 		{
-			//all devs, with skip
-			"get_devices_input.json",
-			"get_devices_expected_skip.json",
 			7,
 			20,
 			"",
 		},
 		{
-			//all devs, no skip, with limit
-			"get_devices_input.json",
-			"get_devices_expected_limit.json",
 			0,
 			3,
 			"",
 		},
 		{
-			//skip + limit
-			"get_devices_input.json",
-			"get_devices_expected_skip_limit.json",
 			3,
 			5,
 			"",
 		},
 		{
-			//status = accepted
-			"get_devices_input.json",
-			"get_devices_expected_status_acc.json",
 			0,
 			20,
 			"accepted",
 		},
 		{
-			//status = pending, skip, limit
-			"get_devices_input.json",
-			"get_devices_expected_status_skip_limit.json",
 			3,
 			2,
 			"pending",
 		},
 	}
 
-	for _, tc := range testCases {
+	// 300 devauths, 3 for every device
+	devs := makeDevs(100, 3)
+
+	for idx, tc := range testCases {
+		t.Logf("tc: %v", idx)
 		//setup
 		err = wipe(d)
 		assert.NoError(t, err, "failed to wipe data")
 
-		err = setUp(d, tc.input)
-		assert.NoError(t, err, "failed to setup input data %s", tc.expected)
-
-		expected, err := parseDevs(tc.expected)
-		assert.NoError(t, err, "failed to parse expected devs %s", tc.expected)
+		err = setUp(d, devs)
+		assert.NoError(t, err, "failed to setup input data")
 
 		//test
-		devs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.status)
+		dbdevs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.status)
 		assert.NoError(t, err, "failed to get devices")
 
-		if !reflect.DeepEqual(expected, devs) {
-			assert.Fail(t, "expected: %v\nhave: %v", expected, devs)
+		if tc.limit != 0 {
+			assert.Len(t, dbdevs, tc.limit)
+		} else {
+			assert.NotEmpty(t, dbdevs)
+		}
+
+		if tc.status != "" {
+			for _, d := range dbdevs {
+				assert.Equal(t, tc.status, d.Status)
+			}
 		}
 	}
 }
@@ -207,13 +235,13 @@ func TestMongoGetDevice(t *testing.T) {
 	assert.Error(t, err, "expected error")
 
 	// populate DB
-	err = setUp(d, allDevsInputSet)
-	assert.NoError(t, err, "failed to setup input data %s", allDevsInputSet)
+	devs := makeDevs(100, 3)
+	err = setUp(d, devs)
+	assert.NoError(t, err, "failed to setup input data")
 
 	// we're going to go through all expected devices just for the
 	// sake of it
-	expected, err := parseDevs(allDevsInputSet)
-	assert.NoError(t, err, "failed to parse expected devs %s", allDevsInputSet)
+	expected := devs
 
 	for _, dev := range expected {
 		// we expect to find a device that was present in the
@@ -247,12 +275,9 @@ func TestMongoPutDevice(t *testing.T) {
 	assert.Error(t, err, "expected error")
 
 	// populate DB
-	err = setUp(d, allDevsInputSet)
-	assert.NoError(t, err, "failed to setup input data %s", allDevsInputSet)
-
-	// all dataset of all devices
-	devs, err := parseDevs(allDevsInputSet)
-	assert.NoError(t, err, "failed to parse expected devs %s", allDevsInputSet)
+	devs := makeDevs(100, 3)
+	err = setUp(d, devs)
+	assert.NoError(t, err, "failed to setup input data")
 
 	// insert all devices to DB
 	for _, dev := range devs {
