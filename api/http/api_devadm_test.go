@@ -91,7 +91,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 	testCases := []struct {
 		skip   int
 		limit  int
-		status string
+		filter store.Filter
 
 		listDevices    []model.DeviceAuth
 		listDevicesErr error
@@ -150,7 +150,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			//valid status
 			skip:        15,
 			limit:       6,
-			status:      "accepted",
+			filter:      store.Filter{Status: "accepted"},
 			listDevices: mockListDeviceAuths(6),
 			req: test.MakeSimpleRequest("GET",
 				"http://1.2.3.4/r?page=4&per_page=5&status=accepted", nil),
@@ -178,6 +178,14 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			code: 500,
 			body: RestError("internal error"),
 		},
+		{
+			limit:       21,
+			filter:      store.Filter{DeviceID: "foo"},
+			listDevices: mockListDeviceAuths(2),
+			req:         test.MakeSimpleRequest("GET", "http://1.2.3.4/r?device_id=foo", nil),
+			code:        200,
+			body:        ToJson(mockListDeviceAuths(2)),
+		},
 	}
 
 	for idx, tc := range testCases {
@@ -185,7 +193,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		devadm := &mdevadm.App{}
 		devadm.On("WithContext", mock.Anything).Return(devadm)
 		devadm.On("ListDeviceAuths",
-			tc.skip, tc.limit, tc.status).Return(tc.listDevices, tc.listDevicesErr)
+			tc.skip, tc.limit, tc.filter).Return(tc.listDevices, tc.listDevicesErr)
 
 		handlers := DevAdmHandlers{devadm}
 		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevicesHandler))

@@ -73,13 +73,13 @@ func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	return r0, r1
 }
 
-// GetDeviceAuths provides a mock function with given fields: skip, limit, status
-func (_m *DataStore) GetDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
-	ret := _m.Called(skip, limit, status)
+// GetDeviceAuths provides a mock function with given fields: skip, limit, filter
+func (_m *DataStore) GetDeviceAuths(skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
+	ret := _m.Called(skip, limit, filter)
 
 	var r0 []model.DeviceAuth
-	if rf, ok := ret.Get(0).(func(int, int, string) []model.DeviceAuth); ok {
-		r0 = rf(skip, limit, status)
+	if rf, ok := ret.Get(0).(func(int, int, store.Filter) []model.DeviceAuth); ok {
+		r0 = rf(skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.DeviceAuth)
@@ -87,8 +87,8 @@ func (_m *DataStore) GetDeviceAuths(skip int, limit int, status string) ([]model
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, int, string) error); ok {
-		r1 = rf(skip, limit, status)
+	if rf, ok := ret.Get(1).(func(int, int, store.Filter) error); ok {
+		r1 = rf(skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -109,5 +109,3 @@ func (_m *DataStore) PutDeviceAuth(dev *model.DeviceAuth) error {
 
 	return r0
 }
-
-var _ store.DataStore = (*DataStore)(nil)

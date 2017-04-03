@@ -36,7 +36,7 @@ func simpleApiClientGetter() requestid.ApiRequester {
 
 // this device admission service interface
 type App interface {
-	ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error)
+	ListDeviceAuths(skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error)
 	SubmitDeviceAuth(d model.DeviceAuth) error
 	GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error)
 	AcceptDeviceAuth(id model.AuthID) error
@@ -64,8 +64,8 @@ type DevAdm struct {
 	clientGetter   ApiClientGetter
 }
 
-func (d *DevAdm) ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
-	devs, err := d.db.GetDeviceAuths(skip, limit, status)
+func (d *DevAdm) ListDeviceAuths(skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
+	devs, err := d.db.GetDeviceAuths(skip, limit, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch devices")
 	}

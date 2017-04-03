@@ -66,34 +66,34 @@ func devadmForTest(d store.DataStore) App {
 
 func TestDevAdmListDevicesEmpty(t *testing.T) {
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, "").
+	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{}, nil)
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDeviceAuths(0, 1, "")
+	l, _ := d.ListDeviceAuths(0, 1, store.Filter{})
 	assert.Len(t, l, 0)
 }
 
 func TestDevAdmListDevices(t *testing.T) {
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, "").
+	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{{}, {}, {}}, nil)
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDeviceAuths(0, 1, "")
+	l, _ := d.ListDeviceAuths(0, 1, store.Filter{})
 	assert.Len(t, l, 3)
 }
 
 func TestDevAdmListDevicesErr(t *testing.T) {
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, "").
+	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{}, errors.New("error"))
 
 	d := devadmForTest(db)
 
-	_, err := d.ListDeviceAuths(0, 1, "")
+	_, err := d.ListDeviceAuths(0, 1, store.Filter{})
 	assert.NotNil(t, err)
 }
 

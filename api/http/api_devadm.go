@@ -96,10 +96,20 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
+	deviceId, err := utils.ParseQueryParmStr(r, "device_id", false, nil)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
 	da := d.DevAdm.WithContext(restToContext(r))
 
 	//get one extra device to see if there's a 'next' page
-	devs, err := da.ListDeviceAuths(int((page-1)*perPage), int(perPage+1), status)
+	devs, err := da.ListDeviceAuths(int((page-1)*perPage), int(perPage+1),
+		store.Filter{
+			Status:   status,
+			DeviceID: model.DeviceID(deviceId),
+		})
 	if err != nil {
 		restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list devices"))
 		return

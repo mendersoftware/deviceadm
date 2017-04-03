@@ -142,7 +142,7 @@ func TestMongoGetDevices(t *testing.T) {
 
 	var err error
 
-	_, err = d.GetDeviceAuths(0, 5, "")
+	_, err = d.GetDeviceAuths(0, 5, store.Filter{})
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -150,42 +150,62 @@ func TestMongoGetDevices(t *testing.T) {
 	testCases := []struct {
 		skip   int
 		limit  int
-		status string
+		filter store.Filter
 	}{
 		{
 			0,
 			20,
-			"",
+			store.Filter{},
 		},
 		{
 			7,
 			20,
-			"",
+			store.Filter{},
 		},
 		{
 			0,
 			3,
-			"",
+			store.Filter{},
 		},
 		{
 			3,
 			5,
-			"",
+			store.Filter{},
 		},
 		{
 			0,
 			20,
-			"accepted",
+			store.Filter{Status: model.DevStatusAccepted},
 		},
 		{
 			3,
 			2,
-			"pending",
+			store.Filter{Status: model.DevStatusPending},
+		},
+		{
+			0,
+			0,
+			store.Filter{DeviceID: "devid-0001"},
+		},
+		{
+			0,
+			0,
+			store.Filter{
+				DeviceID: "devid-0000",
+				Status:   model.DevStatusAccepted,
+			},
 		},
 	}
 
-	// 300 devauths, 3 for every device
-	devs := makeDevs(100, 3)
+	// 30 devauths, 6 for every device
+	devs := makeDevs(5, 6)
+	// auth statuses are random, so we need to add an entry for devid-0000
+	// with known status 'accepted'
+	known := devs[0]
+	known.Key = known.Key + "-known"
+	known.ID = known.ID + "-known"
+	known.Status = model.DevStatusAccepted
+	devs = append(devs, known)
 
 	for idx, tc := range testCases {
 		t.Logf("tc: %v", idx)
@@ -197,18 +217,23 @@ func TestMongoGetDevices(t *testing.T) {
 		assert.NoError(t, err, "failed to setup input data")
 
 		//test
-		dbdevs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.status)
+		dbdevs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.filter)
 		assert.NoError(t, err, "failed to get devices")
 
 		if tc.limit != 0 {
-			assert.Len(t, dbdevs, tc.limit)
+			assert.True(t, len(dbdevs) > 0 && len(dbdevs) <= tc.limit)
 		} else {
 			assert.NotEmpty(t, dbdevs)
 		}
 
-		if tc.status != "" {
+		if tc.filter.Status != "" {
 			for _, d := range dbdevs {
-				assert.Equal(t, tc.status, d.Status)
+				assert.Equal(t, tc.filter.Status, d.Status)
+			}
+		}
+		if tc.filter.DeviceID != "" {
+			for _, d := range dbdevs {
+				assert.Equal(t, tc.filter.DeviceID, d.DeviceId)
 			}
 		}
 	}
