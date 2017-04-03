@@ -24,7 +24,7 @@ import (
 )
 
 func TestDevAuthClientUrl(t *testing.T) {
-	da := NewClient(ClientConfig{
+	da := NewClient(Config{
 		DevauthUrl: "http://devauth:9999",
 	}, &http.Client{})
 
@@ -48,7 +48,7 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 	s := newMockServer(http.StatusNoContent)
 	defer s.Close()
 
-	c := NewClient(ClientConfig{
+	c := NewClient(Config{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
@@ -62,7 +62,7 @@ func TestDevAuthClientReqFail(t *testing.T) {
 	s := newMockServer(http.StatusBadRequest)
 	defer s.Close()
 
-	c := NewClient(ClientConfig{
+	c := NewClient(Config{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
@@ -84,7 +84,7 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 	}))
 	defer s.Close()
 
-	c := NewClient(ClientConfig{
+	c := NewClient(Config{
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
@@ -97,7 +97,7 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 }
 
 func TestDevAuthClientReqNoHost(t *testing.T) {
-	c := NewClient(ClientConfig{}, &http.Client{})
+	c := NewClient(Config{}, &http.Client{})
 
 	err := c.UpdateDevice(StatusReq{
 		AuthId:   "123",
@@ -128,7 +128,7 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 	}))
 
-	c := NewClient(ClientConfig{
+	c := NewClient(Config{
 		DevauthUrl: s.URL,
 	}, &http.Client{Timeout: defaultDevAuthReqTimeout})
 
@@ -153,7 +153,7 @@ func TestDevAuthClientTImeout(t *testing.T) {
 }
 
 func TestUseLog(t *testing.T) {
-	c := NewClient(ClientConfig{}, &http.Client{})
+	c := NewClient(Config{}, &http.Client{})
 
 	l2 := log.New(log.Ctx{"test": "test"})
 	c.UseLog(l2)

@@ -33,7 +33,7 @@ const (
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
 )
 
-type ClientConfig struct {
+type Config struct {
 	// root devauth address
 	DevauthUrl string
 	// template of update URL, string '{id}' will be replaced with
@@ -46,7 +46,7 @@ type ClientConfig struct {
 type Client struct {
 	client requestid.ApiRequester
 	log    *log.Logger
-	conf   ClientConfig
+	conf   Config
 }
 
 // devauth's status request
@@ -95,7 +95,7 @@ func (d *Client) UseLog(l *log.Logger) {
 	d.log = l.F(log.Ctx{})
 }
 
-func NewClient(c ClientConfig, client requestid.ApiRequester) *Client {
+func NewClient(c Config, client requestid.ApiRequester) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	return &Client{
@@ -105,7 +105,7 @@ func NewClient(c ClientConfig, client requestid.ApiRequester) *Client {
 	}
 }
 
-func NewClientWithLogger(c ClientConfig, client requestid.ApiRequester, l *log.Logger) *Client {
+func NewClientWithLogger(c Config, client requestid.ApiRequester, l *log.Logger) *Client {
 	dac := NewClient(c, client)
 	dac.UseLog(l)
 	return dac

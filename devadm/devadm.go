@@ -48,7 +48,7 @@ type App interface {
 	WithContext(c context.Context) App
 }
 
-func NewDevAdm(d store.DataStore, authclientconf deviceauth.ClientConfig) App {
+func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
 	return &DevAdm{
 		log:            log.New(log.Ctx{}),
 		db:             d,
@@ -60,7 +60,7 @@ func NewDevAdm(d store.DataStore, authclientconf deviceauth.ClientConfig) App {
 type DevAdm struct {
 	log            *log.Logger
 	db             store.DataStore
-	authclientconf deviceauth.ClientConfig
+	authclientconf deviceauth.Config
 	clientGetter   ApiClientGetter
 }
 

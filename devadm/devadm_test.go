@@ -247,7 +247,7 @@ func TestDevAdmRejectDevice(t *testing.T) {
 }
 
 func TestNewDevAdm(t *testing.T) {
-	d := NewDevAdm(&mstore.DataStore{}, deviceauth.ClientConfig{})
+	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{})
 
 	assert.NotNil(t, d)
 }

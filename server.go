@@ -63,7 +63,7 @@ func RunServer(c config.Reader) error {
 		return errors.Wrap(err, "database connection failed")
 	}
 
-	devadm := devadm.NewDevAdm(d, deviceauth.ClientConfig{
+	devadm := devadm.NewDevAdm(d, deviceauth.Config{
 		DevauthUrl: c.GetString(SettingDevAuthUrl),
 	})
 
