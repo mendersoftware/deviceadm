@@ -47,7 +47,7 @@ func (f FakeApiRequester) Do(r *http.Request) (*http.Response, error) {
 	return res, err
 }
 
-func devadmWithClientForTest(d store.DataStore, clientRespStatus int) DevAdmApp {
+func devadmWithClientForTest(d store.DataStore, clientRespStatus int) App {
 	clientGetter := func() requestid.ApiRequester {
 		return FakeApiRequester{clientRespStatus}
 	}
@@ -57,7 +57,7 @@ func devadmWithClientForTest(d store.DataStore, clientRespStatus int) DevAdmApp 
 		log:          log.New(log.Ctx{})}
 }
 
-func devadmForTest(d store.DataStore) DevAdmApp {
+func devadmForTest(d store.DataStore) App {
 	return &DevAdm{
 		db:           d,
 		clientGetter: simpleApiClientGetter,

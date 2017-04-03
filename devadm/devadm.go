@@ -35,7 +35,7 @@ func simpleApiClientGetter() requestid.ApiRequester {
 }
 
 // this device admission service interface
-type DevAdmApp interface {
+type App interface {
 	ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error)
 	SubmitDeviceAuth(d model.DeviceAuth) error
 	GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error)
@@ -45,10 +45,10 @@ type DevAdmApp interface {
 
 	DeleteDeviceData(id model.DeviceID) error
 
-	WithContext(c context.Context) DevAdmApp
+	WithContext(c context.Context) App
 }
 
-func NewDevAdm(d store.DataStore, authclientconf deviceauth.ClientConfig) DevAdmApp {
+func NewDevAdm(d store.DataStore, authclientconf deviceauth.ClientConfig) App {
 	return &DevAdm{
 		log:            log.New(log.Ctx{}),
 		db:             d,
@@ -158,7 +158,7 @@ func (d *DevAdm) DeleteDeviceData(devid model.DeviceID) error {
 	return d.db.DeleteDeviceAuthByDevice(devid)
 }
 
-func (d *DevAdm) WithContext(ctx context.Context) DevAdmApp {
+func (d *DevAdm) WithContext(ctx context.Context) App {
 	dwc := &DevAdmWithContext{
 		DevAdm: *d,
 		ctx:    ctx,

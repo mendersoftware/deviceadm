@@ -44,11 +44,11 @@ type DevAdmApiStatus struct {
 }
 
 type DevAdmHandlers struct {
-	DevAdm devadm.DevAdmApp
+	DevAdm devadm.App
 }
 
 // return an ApiHandler for device admission app
-func NewDevAdmApiHandlers(devadm devadm.DevAdmApp) ApiHandler {
+func NewDevAdmApiHandlers(devadm devadm.App) ApiHandler {
 	return &DevAdmHandlers{
 		devadm,
 	}

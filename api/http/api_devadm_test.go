@@ -42,7 +42,7 @@ type MockDevAdm struct {
 	mockSubmitDeviceAuth func(d model.DeviceAuth) error
 	mockDeleteDeviceAuth func(id model.AuthID) error
 	mockDeleteDeviceData func(id model.DeviceID) error
-	mockWithContext      func(c context.Context) devadm.DevAdmApp
+	mockWithContext      func(c context.Context) devadm.App
 }
 
 func (mda *MockDevAdm) ListDeviceAuths(skip int, limit int, status string) ([]model.DeviceAuth, error) {
@@ -73,7 +73,7 @@ func (mda *MockDevAdm) DeleteDeviceData(id model.DeviceID) error {
 	return mda.mockDeleteDeviceData(id)
 }
 
-func (mda *MockDevAdm) WithContext(c context.Context) devadm.DevAdmApp {
+func (mda *MockDevAdm) WithContext(c context.Context) devadm.App {
 	return mda
 }
 
