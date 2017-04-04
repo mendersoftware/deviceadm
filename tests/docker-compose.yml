@@ -12,4 +12,7 @@ services:
             - mender-inventory
     mender-device-adm:
             # built/tagged locally and only used for testing
-            image: mendersoftware/deviceadm:pr
+            image: mendersoftware/deviceadm:prtest
+            volumes:
+                - "${TESTS_DIR}:/testing"
+
