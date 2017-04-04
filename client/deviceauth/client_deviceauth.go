@@ -79,7 +79,10 @@ func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	rsp, err := d.client.Do(req)
+	// set request timeout and setup cancellation
+	ctx, cancel := context.WithTimeout(ctx, d.conf.Timeout)
+	defer cancel()
+	rsp, err := d.client.Do(req.WithContext(ctx))
 	if err != nil {
 		return errors.Wrapf(err, "failed to update device status")
 	}
@@ -95,6 +98,10 @@ func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
 func NewClient(c Config, client requestid.ApiRequester) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
+	// use default timeout if none was provided
+	if c.Timeout == 0 {
+		c.Timeout = defaultDevAuthReqTimeout
+	}
 	return &Client{
 		client: client,
 		conf:   c,
