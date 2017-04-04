@@ -14,7 +14,7 @@
 package mocks
 
 import context "context"
-import devadm "github.com/mendersoftware/deviceadm/devadm"
+
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/mendersoftware/deviceadm/model"
 import store "github.com/mendersoftware/deviceadm/store"
@@ -24,13 +24,13 @@ type App struct {
 	mock.Mock
 }
 
-// AcceptDeviceAuth provides a mock function with given fields: id
-func (_m *App) AcceptDeviceAuth(id model.AuthID) error {
-	ret := _m.Called(id)
+// AcceptDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *App) AcceptDeviceAuth(ctx context.Context, id model.AuthID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AuthID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -38,13 +38,13 @@ func (_m *App) AcceptDeviceAuth(id model.AuthID) error {
 	return r0
 }
 
-// DeleteDeviceAuth provides a mock function with given fields: id
-func (_m *App) DeleteDeviceAuth(id model.AuthID) error {
-	ret := _m.Called(id)
+// DeleteDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *App) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AuthID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -52,13 +52,13 @@ func (_m *App) DeleteDeviceAuth(id model.AuthID) error {
 	return r0
 }
 
-// DeleteDeviceData provides a mock function with given fields: id
-func (_m *App) DeleteDeviceData(id model.DeviceID) error {
-	ret := _m.Called(id)
+// DeleteDeviceData provides a mock function with given fields: ctx, id
+func (_m *App) DeleteDeviceData(ctx context.Context, id model.DeviceID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.DeviceID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.DeviceID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -66,13 +66,13 @@ func (_m *App) DeleteDeviceData(id model.DeviceID) error {
 	return r0
 }
 
-// GetDeviceAuth provides a mock function with given fields: id
-func (_m *App) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
-	ret := _m.Called(id)
+// GetDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *App) GetDeviceAuth(ctx context.Context, id model.AuthID) (*model.DeviceAuth, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *model.DeviceAuth
-	if rf, ok := ret.Get(0).(func(model.AuthID) *model.DeviceAuth); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) *model.DeviceAuth); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.DeviceAuth)
@@ -80,8 +80,8 @@ func (_m *App) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.AuthID) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, model.AuthID) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -89,13 +89,13 @@ func (_m *App) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	return r0, r1
 }
 
-// ListDeviceAuths provides a mock function with given fields: skip, limit, filter
-func (_m *App) ListDeviceAuths(skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
-	ret := _m.Called(skip, limit, filter)
+// ListDeviceAuths provides a mock function with given fields: ctx, skip, limit, filter
+func (_m *App) ListDeviceAuths(ctx context.Context, skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
+	ret := _m.Called(ctx, skip, limit, filter)
 
 	var r0 []model.DeviceAuth
-	if rf, ok := ret.Get(0).(func(int, int, store.Filter) []model.DeviceAuth); ok {
-		r0 = rf(skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, store.Filter) []model.DeviceAuth); ok {
+		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.DeviceAuth)
@@ -103,8 +103,8 @@ func (_m *App) ListDeviceAuths(skip int, limit int, filter store.Filter) ([]mode
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, int, store.Filter) error); ok {
-		r1 = rf(skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, store.Filter) error); ok {
+		r1 = rf(ctx, skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -112,13 +112,13 @@ func (_m *App) ListDeviceAuths(skip int, limit int, filter store.Filter) ([]mode
 	return r0, r1
 }
 
-// RejectDeviceAuth provides a mock function with given fields: id
-func (_m *App) RejectDeviceAuth(id model.AuthID) error {
-	ret := _m.Called(id)
+// RejectDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *App) RejectDeviceAuth(ctx context.Context, id model.AuthID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AuthID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -126,34 +126,16 @@ func (_m *App) RejectDeviceAuth(id model.AuthID) error {
 	return r0
 }
 
-// SubmitDeviceAuth provides a mock function with given fields: d
-func (_m *App) SubmitDeviceAuth(d model.DeviceAuth) error {
-	ret := _m.Called(d)
+// SubmitDeviceAuth provides a mock function with given fields: ctx, d
+func (_m *App) SubmitDeviceAuth(ctx context.Context, d model.DeviceAuth) error {
+	ret := _m.Called(ctx, d)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.DeviceAuth) error); ok {
-		r0 = rf(d)
+	if rf, ok := ret.Get(0).(func(context.Context, model.DeviceAuth) error); ok {
+		r0 = rf(ctx, d)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
 }
-
-// WithContext provides a mock function with given fields: c
-func (_m *App) WithContext(c context.Context) devadm.App {
-	ret := _m.Called(c)
-
-	var r0 devadm.App
-	if rf, ok := ret.Get(0).(func(context.Context) devadm.App); ok {
-		r0 = rf(c)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(devadm.App)
-		}
-	}
-
-	return r0
-}
-
-var _ devadm.App = (*App)(nil)

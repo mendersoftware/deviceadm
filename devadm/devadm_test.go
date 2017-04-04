@@ -26,9 +26,7 @@ import (
 	"github.com/mendersoftware/deviceadm/store"
 	mstore "github.com/mendersoftware/deviceadm/store/mocks"
 
-	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
-	"github.com/mendersoftware/go-lib-micro/requestlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -54,69 +52,81 @@ func devadmWithClientForTest(d store.DataStore, clientRespStatus int) App {
 	return &DevAdm{
 		db:           d,
 		clientGetter: clientGetter,
-		log:          log.New(log.Ctx{})}
+	}
 }
 
 func devadmForTest(d store.DataStore) App {
 	return &DevAdm{
 		db:           d,
 		clientGetter: simpleApiClientGetter,
-		log:          log.New(log.Ctx{})}
+	}
 }
 
 func TestDevAdmListDevicesEmpty(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
+	db.On("GetDeviceAuths", ctx, 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{}, nil)
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDeviceAuths(0, 1, store.Filter{})
+	l, _ := d.ListDeviceAuths(ctx, 0, 1, store.Filter{})
 	assert.Len(t, l, 0)
 }
 
 func TestDevAdmListDevices(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
+	db.On("GetDeviceAuths", ctx, 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{{}, {}, {}}, nil)
 
 	d := devadmForTest(db)
 
-	l, _ := d.ListDeviceAuths(0, 1, store.Filter{})
+	l, _ := d.ListDeviceAuths(ctx, 0, 1, store.Filter{})
 	assert.Len(t, l, 3)
 }
 
 func TestDevAdmListDevicesErr(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuths", 0, 1, store.Filter{}).
+	db.On("GetDeviceAuths", ctx, 0, 1, store.Filter{}).
 		Return([]model.DeviceAuth{}, errors.New("error"))
 
 	d := devadmForTest(db)
 
-	_, err := d.ListDeviceAuths(0, 1, store.Filter{})
+	_, err := d.ListDeviceAuths(ctx, 0, 1, store.Filter{})
 	assert.NotNil(t, err)
 }
 
 func TestDevAdmSubmitDevice(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
+	db.On("PutDeviceAuth", ctx,
+		mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDeviceAuth(model.DeviceAuth{})
+	err := d.SubmitDeviceAuth(ctx, model.DeviceAuth{})
 
 	assert.NoError(t, err)
 }
 
 func TestDevAdmSubmitDeviceErr(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
+	db.On("PutDeviceAuth", ctx,
+		mock.AnythingOfType("*model.DeviceAuth")).
 		Return(errors.New("db connection failed"))
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.SubmitDeviceAuth(model.DeviceAuth{})
+	err := d.SubmitDeviceAuth(ctx, model.DeviceAuth{})
 
 	if assert.Error(t, err) {
 		assert.EqualError(t, err, "failed to put device: db connection failed")
@@ -140,45 +150,50 @@ func makeGetDevice(id model.AuthID) func(id model.AuthID) (*model.DeviceAuth, er
 }
 
 func TestDevAdmGetDevice(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuth", model.AuthID("foo")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo", DeviceId: "foo"}, nil)
-	db.On("GetDeviceAuth", model.AuthID("bar")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("bar")).
 		Return(nil, store.ErrNotFound)
-	db.On("GetDeviceAuth", model.AuthID("baz")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("baz")).
 		Return(nil, errors.New("error"))
 
 	d := devadmForTest(db)
 
-	dev, err := d.GetDeviceAuth("foo")
+	dev, err := d.GetDeviceAuth(ctx, "foo")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDeviceAuth("bar")
+	dev, err = d.GetDeviceAuth(ctx, "bar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 
-	dev, err = d.GetDeviceAuth("baz")
+	dev, err = d.GetDeviceAuth(ctx, "baz")
 	assert.Nil(t, dev)
 	assert.Error(t, err)
 }
 
 func TestDevAdmAcceptDevice(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuth", model.AuthID("foo")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo"}, nil)
-	db.On("GetDeviceAuth", model.AuthID("bar")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("bar")).
 		Return(nil, store.ErrNotFound)
-	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
+	db.On("PutDeviceAuth", ctx,
+		mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.AcceptDeviceAuth("foo")
+	err := d.AcceptDeviceAuth(ctx, "foo")
 
 	assert.NoError(t, err)
 
-	err = d.AcceptDeviceAuth("bar")
+	err = d.AcceptDeviceAuth(ctx, "bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
@@ -206,14 +221,15 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			ctx := context.Background()
 
 			db := &mstore.DataStore{}
-			db.On("DeleteDeviceAuth",
+			db.On("DeleteDeviceAuth", ctx,
 				mock.AnythingOfType("model.AuthID"),
 			).Return(tc.datastoreError)
 			i := devadmForTest(db)
 
-			err := i.DeleteDeviceAuth("foo")
+			err := i.DeleteDeviceAuth(ctx, "foo")
 
 			if tc.outError != nil {
 				if assert.Error(t, err) {
@@ -227,21 +243,24 @@ func TestDevAdmDeleteDevice(t *testing.T) {
 }
 
 func TestDevAdmRejectDevice(t *testing.T) {
+	ctx := context.Background()
+
 	db := &mstore.DataStore{}
-	db.On("GetDeviceAuth", model.AuthID("foo")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("foo")).
 		Return(&model.DeviceAuth{ID: "foo"}, nil)
-	db.On("GetDeviceAuth", model.AuthID("bar")).
+	db.On("GetDeviceAuth", ctx, model.AuthID("bar")).
 		Return(nil, store.ErrNotFound)
-	db.On("PutDeviceAuth", mock.AnythingOfType("*model.DeviceAuth")).
+	db.On("PutDeviceAuth", ctx,
+		mock.AnythingOfType("*model.DeviceAuth")).
 		Return(nil)
 
 	d := devadmWithClientForTest(db, http.StatusNoContent)
 
-	err := d.RejectDeviceAuth("foo")
+	err := d.RejectDeviceAuth(ctx, "foo")
 
 	assert.NoError(t, err)
 
-	err = d.RejectDeviceAuth("bar")
+	err = d.RejectDeviceAuth(ctx, "bar")
 	assert.Error(t, err)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
@@ -250,16 +269,4 @@ func TestNewDevAdm(t *testing.T) {
 	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{})
 
 	assert.NotNil(t, d)
-}
-
-func TestDevAdmWithContext(t *testing.T) {
-	d := devadmForTest(&mstore.DataStore{})
-
-	l := log.New(log.Ctx{})
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, requestlog.ReqLog, l)
-	dwc := d.WithContext(ctx).(*DevAdmWithContext)
-	assert.NotNil(t, dwc)
-	assert.NotNil(t, dwc.log)
-	assert.Equal(t, dwc.log, l)
 }

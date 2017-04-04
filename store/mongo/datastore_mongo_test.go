@@ -14,6 +14,7 @@
 package mongo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -142,7 +143,7 @@ func TestMongoGetDevices(t *testing.T) {
 
 	var err error
 
-	_, err = d.GetDeviceAuths(0, 5, store.Filter{})
+	_, err = d.GetDeviceAuths(context.Background(), 0, 5, store.Filter{})
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -217,7 +218,8 @@ func TestMongoGetDevices(t *testing.T) {
 		assert.NoError(t, err, "failed to setup input data")
 
 		//test
-		dbdevs, err := d.GetDeviceAuths(tc.skip, tc.limit, tc.filter)
+		dbdevs, err := d.GetDeviceAuths(context.Background(),
+			tc.skip, tc.limit, tc.filter)
 		assert.NoError(t, err, "failed to get devices")
 
 		if tc.limit != 0 {
@@ -256,7 +258,7 @@ func TestMongoGetDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDeviceAuth("")
+	_, err = d.GetDeviceAuth(context.Background(), "")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
@@ -271,7 +273,7 @@ func TestMongoGetDevice(t *testing.T) {
 	for _, dev := range expected {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(dev.ID)
+		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -280,7 +282,7 @@ func TestMongoGetDevice(t *testing.T) {
 			dbdev, dev)
 
 		// modify device ID by appending bogus string to it
-		dbdev, err = d.GetDeviceAuth(dev.ID + "-foobar")
+		dbdev, err = d.GetDeviceAuth(context.Background(), dev.ID+"-foobar")
 		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
 		assert.EqualError(t, err, store.ErrNotFound.Error(), "expected error")
 	}
@@ -296,7 +298,7 @@ func TestMongoPutDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDeviceAuth("")
+	_, err = d.GetDeviceAuth(context.Background(), "")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
@@ -306,7 +308,7 @@ func TestMongoPutDevice(t *testing.T) {
 
 	// insert all devices to DB
 	for _, dev := range devs {
-		err := d.PutDeviceAuth(&dev)
+		err := d.PutDeviceAuth(context.Background(), &dev)
 		assert.NoError(t, err, "expected no error inserting to data store")
 	}
 
@@ -314,7 +316,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(dev.ID)
+		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -330,7 +332,7 @@ func TestMongoPutDevice(t *testing.T) {
 		}
 
 		// update device key
-		err = d.PutDeviceAuth(&ndev)
+		err = d.PutDeviceAuth(context.Background(), &ndev)
 		assert.NoError(t, err, "expected no error updating devices in DB")
 	}
 
@@ -338,7 +340,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(dev.ID)
+		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -361,7 +363,7 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	dev, err := d.GetDeviceAuth("foobar")
+	dev, err := d.GetDeviceAuth(context.Background(), "foobar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 
@@ -374,10 +376,10 @@ func TestMongoPutDeviceTime(t *testing.T) {
 			"foo": "bar",
 		},
 	}
-	err = d.PutDeviceAuth(&expdev)
+	err = d.PutDeviceAuth(context.Background(), &expdev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDeviceAuth("foobar")
+	dev, err = d.GetDeviceAuth(context.Background(), "foobar")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
@@ -418,7 +420,7 @@ func TestMigrate(t *testing.T) {
 
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.Migrate(tc.version)
+		err := store.Migrate(context.Background(), tc.version)
 		if tc.err == "" {
 			assert.NoError(t, err)
 			// list migrations
@@ -526,7 +528,7 @@ func TestMongoDeleteDevice(t *testing.T) {
 
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.DeleteDeviceAuth(tc.id)
+		err := store.DeleteDeviceAuth(context.Background(), tc.id)
 		if tc.err != nil {
 			assert.EqualError(t, err, tc.err.Error())
 		} else {
@@ -580,23 +582,23 @@ func TestMongoDeleteDeviceAuthsByDevice(t *testing.T) {
 	dbstore := NewDataStoreMongoWithSession(session)
 
 	for _, d := range inDevs {
-		err := dbstore.PutDeviceAuth(&d)
+		err := dbstore.PutDeviceAuth(context.Background(), &d)
 		assert.NoError(t, err)
 	}
 
-	err := dbstore.DeleteDeviceAuthByDevice("0001")
+	err := dbstore.DeleteDeviceAuthByDevice(context.Background(), "0001")
 	assert.NoError(t, err)
 
 	for _, aid := range []model.AuthID{"0001", "0002"} {
-		_, err := dbstore.GetDeviceAuth(aid)
+		_, err := dbstore.GetDeviceAuth(context.Background(), aid)
 		assert.EqualError(t, err, store.ErrNotFound.Error())
 	}
 
-	aset, err := dbstore.GetDeviceAuth("0003")
+	aset, err := dbstore.GetDeviceAuth(context.Background(), "0003")
 	assert.NoError(t, err)
 	assert.NotNil(t, aset)
 
-	err = dbstore.DeleteDeviceAuthByDevice("0004")
+	err = dbstore.DeleteDeviceAuthByDevice(context.Background(), "0004")
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
 
@@ -610,7 +612,7 @@ func TestMongoEnsureIndexes(t *testing.T) {
 
 	store := NewDataStoreMongoWithSession(session)
 
-	err := store.EnsureIndexes()
+	err := store.EnsureIndexes(context.Background())
 	assert.NoError(t, err, "EnsureIndexes() failed")
 
 	// verify index exists

@@ -13,6 +13,7 @@
 //    limitations under the License.
 package mocks
 
+import context "context"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/mendersoftware/deviceadm/model"
 import store "github.com/mendersoftware/deviceadm/store"
@@ -22,13 +23,13 @@ type DataStore struct {
 	mock.Mock
 }
 
-// DeleteDeviceAuth provides a mock function with given fields: id
-func (_m *DataStore) DeleteDeviceAuth(id model.AuthID) error {
-	ret := _m.Called(id)
+// DeleteDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *DataStore) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.AuthID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -36,13 +37,13 @@ func (_m *DataStore) DeleteDeviceAuth(id model.AuthID) error {
 	return r0
 }
 
-// DeleteDeviceAuthByDevice provides a mock function with given fields: id
-func (_m *DataStore) DeleteDeviceAuthByDevice(id model.DeviceID) error {
-	ret := _m.Called(id)
+// DeleteDeviceAuthByDevice provides a mock function with given fields: ctx, id
+func (_m *DataStore) DeleteDeviceAuthByDevice(ctx context.Context, id model.DeviceID) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(model.DeviceID) error); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.DeviceID) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -50,13 +51,13 @@ func (_m *DataStore) DeleteDeviceAuthByDevice(id model.DeviceID) error {
 	return r0
 }
 
-// GetDeviceAuth provides a mock function with given fields: id
-func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
-	ret := _m.Called(id)
+// GetDeviceAuth provides a mock function with given fields: ctx, id
+func (_m *DataStore) GetDeviceAuth(ctx context.Context, id model.AuthID) (*model.DeviceAuth, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *model.DeviceAuth
-	if rf, ok := ret.Get(0).(func(model.AuthID) *model.DeviceAuth); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) *model.DeviceAuth); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.DeviceAuth)
@@ -64,8 +65,8 @@ func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.AuthID) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(context.Context, model.AuthID) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -73,13 +74,13 @@ func (_m *DataStore) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
 	return r0, r1
 }
 
-// GetDeviceAuths provides a mock function with given fields: skip, limit, filter
-func (_m *DataStore) GetDeviceAuths(skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
-	ret := _m.Called(skip, limit, filter)
+// GetDeviceAuths provides a mock function with given fields: ctx, skip, limit, filter
+func (_m *DataStore) GetDeviceAuths(ctx context.Context, skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
+	ret := _m.Called(ctx, skip, limit, filter)
 
 	var r0 []model.DeviceAuth
-	if rf, ok := ret.Get(0).(func(int, int, store.Filter) []model.DeviceAuth); ok {
-		r0 = rf(skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, store.Filter) []model.DeviceAuth); ok {
+		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.DeviceAuth)
@@ -87,8 +88,8 @@ func (_m *DataStore) GetDeviceAuths(skip int, limit int, filter store.Filter) ([
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, int, store.Filter) error); ok {
-		r1 = rf(skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, store.Filter) error); ok {
+		r1 = rf(ctx, skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,16 +97,18 @@ func (_m *DataStore) GetDeviceAuths(skip int, limit int, filter store.Filter) ([
 	return r0, r1
 }
 
-// PutDeviceAuth provides a mock function with given fields: dev
-func (_m *DataStore) PutDeviceAuth(dev *model.DeviceAuth) error {
-	ret := _m.Called(dev)
+// PutDeviceAuth provides a mock function with given fields: ctx, dev
+func (_m *DataStore) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+	ret := _m.Called(ctx, dev)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*model.DeviceAuth) error); ok {
-		r0 = rf(dev)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeviceAuth) error); ok {
+		r0 = rf(ctx, dev)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
 }
+
+var _ store.DataStore = (*DataStore)(nil)

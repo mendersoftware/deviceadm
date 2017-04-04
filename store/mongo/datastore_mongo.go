@@ -51,7 +51,7 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
+func (db *DataStoreMongo) GetDeviceAuths(ctx context.Context, skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -73,7 +73,7 @@ func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, filter store.Filter) (
 	return res, nil
 }
 
-func (db *DataStoreMongo) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error) {
+func (db *DataStoreMongo) GetDeviceAuth(ctx context.Context, id model.AuthID) (*model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -94,7 +94,7 @@ func (db *DataStoreMongo) GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, err
 	return &res, nil
 }
 
-func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
+func (db *DataStoreMongo) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -111,7 +111,7 @@ func (db *DataStoreMongo) DeleteDeviceAuth(id model.AuthID) error {
 	}
 }
 
-func (db *DataStoreMongo) DeleteDeviceAuthByDevice(id model.DeviceID) error {
+func (db *DataStoreMongo) DeleteDeviceAuthByDevice(ctx context.Context, id model.DeviceID) error {
 	s := db.session.Copy()
 	defer s.Close()
 
@@ -162,7 +162,7 @@ func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 }
 
 //
-func (db *DataStoreMongo) PutDeviceAuth(dev *model.DeviceAuth) error {
+func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
@@ -180,7 +180,7 @@ func (db *DataStoreMongo) PutDeviceAuth(dev *model.DeviceAuth) error {
 	return nil
 }
 
-func (db *DataStoreMongo) Migrate(version string) error {
+func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	m := migrate.SimpleMigrator{
 		Session: db.session,
 		Db:      DbName,
@@ -194,7 +194,7 @@ func (db *DataStoreMongo) Migrate(version string) error {
 	migrations := []migrate.Migration{
 		&migration_1_1_0{ms: db},
 	}
-	err = m.Apply(context.Background(), *ver, migrations)
+	err = m.Apply(ctx, *ver, migrations)
 	if err != nil {
 		return errors.Wrap(err, "failed to apply migrations")
 	}
@@ -202,7 +202,7 @@ func (db *DataStoreMongo) Migrate(version string) error {
 	return nil
 }
 
-func (db *DataStoreMongo) EnsureIndexes() error {
+func (db *DataStoreMongo) EnsureIndexes(ctx context.Context) error {
 	s := db.session.Copy()
 	defer s.Close()
 

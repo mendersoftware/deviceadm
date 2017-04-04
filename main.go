@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 
 	"github.com/mendersoftware/deviceadm/config"
@@ -46,6 +47,8 @@ func main() {
 
 	l := log.New(log.Ctx{})
 
+	ctx := context.Background()
+
 	conf, err := HandleConfigFile(configPath)
 	if err != nil {
 		l.Fatalf("error loading configuration: %s", err)
@@ -65,7 +68,7 @@ func main() {
 	}
 
 	// TODO consider keeping DbVersion in data store
-	err = db.Migrate(mongo.DbVersion)
+	err = db.Migrate(ctx, mongo.DbVersion)
 	if err != nil {
 		l.Fatal("failed to run migrations")
 	}

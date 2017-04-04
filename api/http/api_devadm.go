@@ -82,7 +82,8 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 }
 
 func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	page, perPage, err := utils.ParsePagination(r)
 	if err != nil {
@@ -102,10 +103,9 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
-	da := d.DevAdm.WithContext(restToContext(r))
-
 	//get one extra device to see if there's a 'next' page
-	devs, err := da.ListDeviceAuths(int((page-1)*perPage), int(perPage+1),
+	devs, err := d.DevAdm.ListDeviceAuths(ctx,
+		int((page-1)*perPage), int(perPage+1),
 		store.Filter{
 			Status:   status,
 			DeviceID: model.DeviceID(deviceId),
@@ -131,7 +131,8 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 }
 
 func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	devid, err := utils.ParseQueryParmStr(r, "device_id", true, nil)
 	if err != nil {
@@ -139,9 +140,7 @@ func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Req
 		return
 	}
 
-	da := d.DevAdm.WithContext(restToContext(r))
-
-	err = da.DeleteDeviceData(model.DeviceID(devid))
+	err = d.DevAdm.DeleteDeviceData(ctx, model.DeviceID(devid))
 
 	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)
@@ -152,7 +151,8 @@ func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Req
 }
 
 func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	dev, err := parseDevice(r)
 	if err != nil {
@@ -160,11 +160,9 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 
-	da := d.DevAdm.WithContext(restToContext(r))
-
 	//save device in pending state
 	dev.Status = "pending"
-	err = da.SubmitDeviceAuth(*dev)
+	err = d.DevAdm.SubmitDeviceAuth(ctx, *dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)
 		return
@@ -220,12 +218,12 @@ func parseDevice(r *rest.Request) (*model.DeviceAuth, error) {
 // and produces a sutabie error response using provided
 // rest.ResponseWriter
 func (d *DevAdmHandlers) getDeviceOrFail(w rest.ResponseWriter, r *rest.Request) *model.DeviceAuth {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	authid := r.PathParam("id")
 
-	da := d.DevAdm.WithContext(restToContext(r))
-	dev, err := da.GetDeviceAuth(model.AuthID(authid))
+	dev, err := d.DevAdm.GetDeviceAuth(ctx, model.AuthID(authid))
 
 	if dev == nil {
 		if err == store.ErrNotFound {
@@ -250,35 +248,41 @@ func (d *DevAdmHandlers) GetDeviceHandler(w rest.ResponseWriter, r *rest.Request
 }
 
 func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	authid := r.PathParam("id")
 
 	var status DevAdmApiStatus
 	err := r.DecodeJsonPayload(&status)
 	if err != nil {
-		restErrWithLog(w, r, l, errors.Wrap(err, "failed to decode status data"), http.StatusBadRequest)
+		restErrWithLog(w, r, l,
+			errors.Wrap(err, "failed to decode status data"),
+			http.StatusBadRequest)
 		return
 	}
 
 	// validate status
-	if status.Status != model.DevStatusAccepted && status.Status != model.DevStatusRejected {
-		restErrWithLog(w, r, l, errors.New("incorrect device status"), http.StatusBadRequest)
+	if status.Status != model.DevStatusAccepted &&
+		status.Status != model.DevStatusRejected {
+		restErrWithLog(w, r, l,
+			errors.New("incorrect device status"),
+			http.StatusBadRequest)
 		return
 	}
 
-	da := d.DevAdm.WithContext(restToContext(r))
-
 	if status.Status == model.DevStatusAccepted {
-		err = da.AcceptDeviceAuth(model.AuthID(authid))
+		err = d.DevAdm.AcceptDeviceAuth(ctx, model.AuthID(authid))
 	} else if status.Status == model.DevStatusRejected {
-		err = da.RejectDeviceAuth(model.AuthID(authid))
+		err = d.DevAdm.RejectDeviceAuth(ctx, model.AuthID(authid))
 	}
 	if err != nil {
 		if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
-			restErrWithLogInternal(w, r, l, errors.Wrap(err, "failed to list change device status"))
+			restErrWithLogInternal(w, r, l,
+				errors.Wrap(err,
+					"failed to list change device status"))
 		}
 		return
 	}
@@ -299,12 +303,12 @@ func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.R
 }
 
 func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Request) {
-	l := requestlog.GetRequestLogger(r.Env)
+	ctx := r.Context()
+	l := log.FromContext(ctx)
 
 	devid := r.PathParam("id")
 
-	da := d.DevAdm.WithContext(restToContext(r))
-	err := da.DeleteDeviceAuth(model.AuthID(devid))
+	err := d.DevAdm.DeleteDeviceAuth(ctx, model.AuthID(devid))
 
 	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)

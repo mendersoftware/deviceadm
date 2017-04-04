@@ -14,6 +14,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -191,8 +192,8 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 	for idx, tc := range testCases {
 		t.Logf("tc: %v", idx)
 		devadm := &mdevadm.App{}
-		devadm.On("WithContext", mock.Anything).Return(devadm)
 		devadm.On("ListDeviceAuths",
+			mock.MatchedBy(func(c context.Context) bool { return true }),
 			tc.skip, tc.limit, tc.filter).Return(tc.listDevices, tc.listDevicesErr)
 
 		handlers := DevAdmHandlers{devadm}
@@ -266,13 +267,14 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 		return d.dev, nil
 	}
 	devadm := &mdevadm.App{}
-	devadm.On("WithContext", mock.Anything).Return(devadm)
-	devadm.On("GetDeviceAuth", mock.AnythingOfType("model.AuthID")).Return(
-		func(id model.AuthID) *model.DeviceAuth {
+	devadm.On("GetDeviceAuth",
+		mock.MatchedBy(func(c context.Context) bool { return true }),
+		mock.AnythingOfType("model.AuthID")).Return(
+		func(_ context.Context, id model.AuthID) *model.DeviceAuth {
 			da, _ := getDeviceAuth(id)
 			return da
 		},
-		func(id model.AuthID) error {
+		func(_ context.Context, id model.AuthID) error {
 			_, err := getDeviceAuth(id)
 			return err
 		},
@@ -349,7 +351,7 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		},
 	}
 
-	mockaction := func(id model.AuthID) error {
+	mockaction := func(_ context.Context, id model.AuthID) error {
 		d, ok := devs[id.String()]
 		if ok == false {
 			return store.ErrNotFound
@@ -360,10 +362,11 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		return nil
 	}
 	devadm := &mdevadm.App{}
-	devadm.On("WithContext", mock.Anything).Return(devadm)
 	devadm.On("AcceptDeviceAuth",
+		mock.MatchedBy(func(c context.Context) bool { return true }),
 		mock.AnythingOfType("model.AuthID")).Return(mockaction)
 	devadm.On("RejectDeviceAuth",
+		mock.MatchedBy(func(c context.Context) bool { return true }),
 		mock.AnythingOfType("model.AuthID")).Return(mockaction)
 
 	apih := makeMockApiHandler(t, devadm)
@@ -578,13 +581,14 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 	for name, tc := range testCases {
 		t.Logf("test case: %s", name)
 		devadm := &mdevadm.App{}
-		devadm.On("WithContext", mock.Anything).Return(devadm)
-		devadm.On("SubmitDeviceAuth", mock.MatchedBy(
-			func(d model.DeviceAuth) bool {
-				return assert.NotEmpty(t, d.Attributes) &&
-					assert.NotEmpty(t, d.DeviceId) &&
-					assert.Equal(t, tc.id, d.ID)
-			})).Return(tc.devAdmErr)
+		devadm.On("SubmitDeviceAuth",
+			mock.MatchedBy(func(c context.Context) bool { return true }),
+			mock.MatchedBy(
+				func(d model.DeviceAuth) bool {
+					return assert.NotEmpty(t, d.Attributes) &&
+						assert.NotEmpty(t, d.DeviceId) &&
+						assert.Equal(t, tc.id, d.ID)
+				})).Return(tc.devAdmErr)
 
 		apih := makeMockApiHandler(t, devadm)
 
@@ -638,8 +642,9 @@ func TestApiDeleteDevice(t *testing.T) {
 	for name, tc := range tcases {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
 			devadm := &mdevadm.App{}
-			devadm.On("WithContext", mock.Anything).Return(devadm)
-			devadm.On("DeleteDeviceAuth", tc.id).Return(tc.devadmErr)
+			devadm.On("DeleteDeviceAuth",
+				mock.MatchedBy(func(c context.Context) bool { return true }),
+				tc.id).Return(tc.devadmErr)
 
 			apih := makeMockApiHandler(t, devadm)
 
@@ -692,8 +697,9 @@ func TestApiDeleteDeviceData(t *testing.T) {
 	for name, tc := range tcases {
 		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
 			devadm := &mdevadm.App{}
-			devadm.On("WithContext", mock.Anything).Return(devadm)
-			devadm.On("DeleteDeviceData", tc.devid).Return(tc.devadmErr)
+			devadm.On("DeleteDeviceData",
+				mock.MatchedBy(func(c context.Context) bool { return true }),
+				tc.devid).Return(tc.devadmErr)
 
 			apih := makeMockApiHandler(t, devadm)
 

@@ -15,6 +15,7 @@ package deviceauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -45,7 +46,6 @@ type Config struct {
 
 type Client struct {
 	client requestid.ApiRequester
-	log    *log.Logger
 	conf   Config
 }
 
@@ -59,8 +59,9 @@ type StatusReq struct {
 // TODO rename this and calling funcs to UpdateDeviceStatus etc.
 // perhaps change the interface - the whole Device isn't needed
 // leaving for later, requires large refact in tests etc.
-func (d *Client) UpdateDevice(sreq StatusReq) error {
-	d.log.Debugf("update device %s", sreq.DeviceId)
+func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
+	l := log.FromContext(ctx)
+	l.Debugf("update device %s", sreq.DeviceId)
 
 	url := d.buildDevAuthUpdateUrl(sreq)
 
@@ -91,24 +92,13 @@ func (d *Client) UpdateDevice(sreq StatusReq) error {
 	return nil
 }
 
-func (d *Client) UseLog(l *log.Logger) {
-	d.log = l.F(log.Ctx{})
-}
-
 func NewClient(c Config, client requestid.ApiRequester) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	return &Client{
 		client: client,
-		log:    log.New(log.Ctx{}),
 		conf:   c,
 	}
-}
-
-func NewClientWithLogger(c Config, client requestid.ApiRequester, l *log.Logger) *Client {
-	dac := NewClient(c, client)
-	dac.UseLog(l)
-	return dac
 }
 
 func (d *Client) buildDevAuthUpdateUrl(req StatusReq) string {
