@@ -11,33 +11,17 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package main
+package store
 
 import (
-	"testing"
-
-	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/deviceadm/model"
 )
 
-func TestSetupMiddleware(t *testing.T) {
-
-	var tdata = []struct {
-		mwtype string
-		experr bool
-	}{
-		{"foo", true},
-		{EnvProd, false},
-		{EnvDev, false},
-	}
-
-	for _, td := range tdata {
-		api := rest.NewApi()
-
-		err := SetupMiddleware(api, td.mwtype)
-		if err != nil && td.experr == false {
-			t.Errorf("dod not expect error: %s", err)
-		} else if err == nil && td.experr == true {
-			t.Errorf("expected error, got none")
-		}
-	}
+// Filter wraps filtering information that can be passed to DataStore API when
+// listing auth sets
+type Filter struct {
+	// List auth sets owned by this DeviceID
+	DeviceID model.DeviceID
+	// List auth sets with this status
+	Status string
 }

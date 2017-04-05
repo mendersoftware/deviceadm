@@ -51,19 +51,21 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	return NewDataStoreMongoWithSession(s), nil
 }
 
-func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, status string) ([]model.DeviceAuth, error) {
+func (db *DataStoreMongo) GetDeviceAuths(skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
 	c := s.DB(DbName).C(DbDevicesColl)
 	res := []model.DeviceAuth{}
 
-	var filter bson.M
-	if status != "" {
-		filter = bson.M{"status": status}
+	var dbFilter = &model.DeviceAuth{}
+	if filter.Status != "" {
+		dbFilter.Status = filter.Status
+	}
+	if filter.DeviceID != "" {
+		dbFilter.DeviceId = filter.DeviceID
 	}
 
-	err := c.Find(filter).Skip(skip).Limit(limit).All(&res)
-
+	err := c.Find(dbFilter).Sort("id").Skip(skip).Limit(limit).All(&res)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch device list")
 	}

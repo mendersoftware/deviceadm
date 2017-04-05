@@ -14,13 +14,15 @@
 package http
 
 import (
-	"github.com/ant0ine/go-json-rest/rest"
-	rtest "github.com/ant0ine/go-json-rest/rest/test"
-	"github.com/mendersoftware/deviceadm/utils"
 	"net/http"
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/ant0ine/go-json-rest/rest"
+	rtest "github.com/ant0ine/go-json-rest/rest/test"
+
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 func TestSupportsMethod(t *testing.T) {
@@ -101,12 +103,12 @@ func TestAutogenOptionRoutes(t *testing.T) {
 
 	type expHandler map[string]rest.HandlerFunc
 	exp := map[string]expHandler{
-		"/foo": expHandler{
+		"/foo": {
 			http.MethodGet:     dummy,
 			http.MethodPost:    dummy,
 			http.MethodOptions: options,
 		},
-		"/bar": expHandler{
+		"/bar": {
 			http.MethodGet:     dummy,
 			http.MethodOptions: dummy,
 		},

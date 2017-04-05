@@ -50,6 +50,11 @@ paths:
           type: number
           format: integer
           default: 10
+        - name: device_id
+          in: query
+          description: List auth sets owned by given device
+          required: false
+          type: string
       responses:
         200:
           description: Successful response.

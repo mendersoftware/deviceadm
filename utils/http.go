@@ -16,11 +16,12 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/ant0ine/go-json-rest/rest"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/ant0ine/go-json-rest/rest"
 )
 
 //pagination constants
@@ -45,10 +46,10 @@ const (
 	StatusName     = "status"
 	StatusPending  = "pending"
 	StatusRejected = "rejected"
-	StatusAllowed  = "allowed"
+	StatusAccepted = "accepted"
 )
 
-var DevStatuses = []string{StatusPending, StatusRejected, StatusAllowed}
+var DevStatuses = []string{StatusPending, StatusRejected, StatusAccepted}
 
 //error msgs
 func MsgQueryParmInvalid(name string) string {

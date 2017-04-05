@@ -14,9 +14,11 @@
 package http
 
 import (
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/deviceadm/utils"
 	"net/http"
+
+	"github.com/ant0ine/go-json-rest/rest"
+
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 type HttpOptionsGenerator func(methods []string) rest.HandlerFunc

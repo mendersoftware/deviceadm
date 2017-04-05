@@ -26,7 +26,7 @@ var (
 )
 
 type DataStore interface {
-	GetDeviceAuths(skip, limit int, status string) ([]model.DeviceAuth, error)
+	GetDeviceAuths(skip, limit int, filter Filter) ([]model.DeviceAuth, error)
 
 	// find a device auth set with given `id`, returns the device auth set
 	// or nil, if auth set was not found, error is set to ErrDevNotFound
