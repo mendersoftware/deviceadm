@@ -25,12 +25,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/deviceadm/model"
-	"github.com/mendersoftware/deviceadm/store"
-
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
+
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 )
 
 const (

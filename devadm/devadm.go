@@ -18,12 +18,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/pkg/errors"
+
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
-
-	"github.com/mendersoftware/go-lib-micro/requestid"
-	"github.com/pkg/errors"
 )
 
 // helper for obtaining API clients

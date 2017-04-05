@@ -23,7 +23,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
-
 	"github.com/pkg/errors"
 )
 

@@ -16,10 +16,10 @@ package mongo
 import (
 	"context"
 
-	"github.com/mendersoftware/deviceadm/model"
-
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/pkg/errors"
+
+	"github.com/mendersoftware/deviceadm/model"
 )
 
 type migration_1_1_0 struct {

@@ -16,16 +16,16 @@ package main
 import (
 	"net/http"
 
+	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/pkg/errors"
+	"gopkg.in/mgo.v2"
+
 	api_http "github.com/mendersoftware/deviceadm/api/http"
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/config"
 	"github.com/mendersoftware/deviceadm/devadm"
 	"github.com/mendersoftware/deviceadm/store/mongo"
-
-	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/mendersoftware/go-lib-micro/log"
-	"github.com/pkg/errors"
-	"gopkg.in/mgo.v2"
 )
 
 func SetupAPI(stacktype string) (*rest.Api, error) {

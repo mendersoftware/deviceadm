@@ -18,16 +18,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/mendersoftware/deviceadm/devadm"
-	"github.com/mendersoftware/deviceadm/model"
-	"github.com/mendersoftware/deviceadm/store"
-	"github.com/mendersoftware/deviceadm/utils"
-
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/mendersoftware/go-lib-micro/requestlog"
 	"github.com/pkg/errors"
+
+	"github.com/mendersoftware/deviceadm/devadm"
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 const (

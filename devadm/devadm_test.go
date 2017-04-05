@@ -21,14 +21,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mendersoftware/go-lib-micro/requestid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
 	mstore "github.com/mendersoftware/deviceadm/store/mocks"
-
-	"github.com/mendersoftware/go-lib-micro/requestid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 type FakeApiRequester struct {

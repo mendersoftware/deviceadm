@@ -17,12 +17,12 @@ import (
 	"context"
 	"flag"
 
-	"github.com/mendersoftware/deviceadm/config"
-	"github.com/mendersoftware/deviceadm/store/mongo"
-
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+
+	"github.com/mendersoftware/deviceadm/config"
+	"github.com/mendersoftware/deviceadm/store/mongo"
 )
 
 func main() {

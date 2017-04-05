@@ -17,13 +17,13 @@ package mongo
 import (
 	"context"
 
-	"github.com/mendersoftware/deviceadm/model"
-	"github.com/mendersoftware/deviceadm/store"
-
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/mendersoftware/deviceadm/model"
+	"github.com/mendersoftware/deviceadm/store"
 )
 
 const (
