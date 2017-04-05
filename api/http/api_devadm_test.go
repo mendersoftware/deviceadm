@@ -108,12 +108,15 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			skip:        15,
 			limit:       6,
 			listDevices: mockListDeviceAuths(5),
-			req:         test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5", nil),
-			code:        200,
-			body:        ToJson(mockListDeviceAuths(5)),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
+			code: 200,
+			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=3&per_page=5", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=1&per_page=5", "first"),
 			},
 		},
 		{
@@ -121,29 +124,35 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			skip:        15,
 			limit:       6,
 			listDevices: mockListDeviceAuths(9),
-			req:         test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=4&per_page=5", nil),
-			code:        200,
-			body:        ToJson(mockListDeviceAuths(5)),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
+			code: 200,
+			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=3&per_page=5", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=1&per_page=5", "first"),
 			},
 		},
 		{
 			//invalid pagination - format
-			req:  test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=foo&per_page=5", nil),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?page=foo&per_page=5", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmInvalid("page")),
 		},
 		{
 			//invalid pagination - format
-			req:  test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=1&per_page=foo", nil),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?page=1&per_page=foo", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmInvalid("per_page")),
 		},
 		{
 			//invalid pagination - bounds
-			req:  test.MakeSimpleRequest("GET", "http://1.2.3.4/r?page=0&per_page=5", nil),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?page=0&per_page=5", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmLimit("page")),
 		},
@@ -154,18 +163,20 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			filter:      store.Filter{Status: "accepted"},
 			listDevices: mockListDeviceAuths(6),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/r?page=4&per_page=5&status=accepted", nil),
+				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5&status=accepted", nil),
 			code: 200,
 			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=3&per_page=5&status=accepted", "prev"),
-				fmt.Sprintf(utils.LinkTmpl, "r", "page=1&per_page=5&status=accepted", "first"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=3&per_page=5&status=accepted", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=1&per_page=5&status=accepted", "first"),
 			},
 		},
 		{
 			//invalid status
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/r?page=1&per_page=5&status=foo", nil),
+				"http://1.2.3.4/api/0.1.0/devices?page=1&per_page=5&status=foo", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmOneOf("status", utils.DevStatuses)),
 		},
@@ -175,7 +186,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			limit:          6,
 			listDevicesErr: errors.New("devadm error"),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/r?page=4&per_page=5", nil),
+				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
 			code: 500,
 			body: RestError("internal error"),
 		},
@@ -183,9 +194,10 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			limit:       21,
 			filter:      store.Filter{DeviceID: "foo"},
 			listDevices: mockListDeviceAuths(2),
-			req:         test.MakeSimpleRequest("GET", "http://1.2.3.4/r?device_id=foo", nil),
-			code:        200,
-			body:        ToJson(mockListDeviceAuths(2)),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/0.1.0/devices?device_id=foo", nil),
+			code: 200,
+			body: ToJson(mockListDeviceAuths(2)),
 		},
 	}
 
@@ -196,21 +208,11 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			mock.MatchedBy(func(c context.Context) bool { return true }),
 			tc.skip, tc.limit, tc.filter).Return(tc.listDevices, tc.listDevicesErr)
 
-		handlers := DevAdmHandlers{devadm}
-		router, err := rest.MakeRouter(rest.Get("/r", handlers.GetDevicesHandler))
-		assert.NotNil(t, router)
-		assert.NoError(t, err)
-
-		api := rest.NewApi()
-		api.Use(
-			&requestlog.RequestLogMiddleware{},
-			&requestid.RequestIdMiddleware{},
-		)
-		api.SetApp(router)
+		apih := makeMockApiHandler(t, devadm)
 
 		rest.ErrorFieldName = "error"
 
-		recorded := runTestRequest(t, api.MakeHandler(), tc.req, tc.code, tc.body)
+		recorded := runTestRequest(t, apih, tc.req, tc.code, tc.body)
 
 		for _, h := range tc.hdrs {
 			assert.Equal(t, h, ExtractHeader("Link", h, recorded))
