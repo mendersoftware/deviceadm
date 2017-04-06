@@ -43,17 +43,6 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 	return api, nil
 }
 
-func SetupDataStore(url string) (*mongo.DataStoreMongo, error) {
-	dbSession, err := mgo.Dial(url)
-	if err != nil {
-		return nil, err
-	}
-	dbSession.SetSafe(&mgo.Safe{})
-
-	d := mongo.NewDataStoreMongoWithSession(dbSession)
-	return d, nil
-}
-
 func RunServer(c config.Reader) error {
 
 	l := log.New(log.Ctx{})
