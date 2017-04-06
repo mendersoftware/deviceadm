@@ -28,13 +28,3 @@ func TestSetupApi(t *testing.T) {
 	assert.NotNil(t, api)
 	assert.Nil(t, err)
 }
-
-func TestSetupDataStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestSetupDataStore in short mode.")
-	}
-
-	d, err := SetupDataStore("::invalid-url::")
-	assert.Nil(t, d)
-	assert.Error(t, err)
-}

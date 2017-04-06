@@ -25,7 +25,6 @@ import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
-	"gopkg.in/mgo.v2"
 )
 
 func SetupAPI(stacktype string) (*rest.Api, error) {
@@ -41,17 +40,6 @@ func SetupAPI(stacktype string) (*rest.Api, error) {
 	rest.ErrorFieldName = "error"
 
 	return api, nil
-}
-
-func SetupDataStore(url string) (*mongo.DataStoreMongo, error) {
-	dbSession, err := mgo.Dial(url)
-	if err != nil {
-		return nil, err
-	}
-	dbSession.SetSafe(&mgo.Safe{})
-
-	d := mongo.NewDataStoreMongoWithSession(dbSession)
-	return d, nil
 }
 
 func RunServer(c config.Reader) error {
