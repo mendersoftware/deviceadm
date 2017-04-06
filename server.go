@@ -58,7 +58,7 @@ func RunServer(c config.Reader) error {
 
 	l := log.New(log.Ctx{})
 
-	d, err := SetupDataStore(c.GetString(SettingDb))
+	d, err := mongo.NewDataStoreMongo(c.GetString(SettingDb))
 	if err != nil {
 		return errors.Wrap(err, "database connection failed")
 	}
