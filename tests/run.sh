@@ -9,7 +9,7 @@ HOST=${HOST="mender-device-adm:8080"}
 DEVICEAUTH_HOST=${DEVICEAUTH_HOST="mender-device-auth:8080"}
 
 # if we're running in a container, wait a little before starting tests
-[ $$ -eq 1 ] && sleep 5
+[ $$ -eq 1 ] && sleep 10
 
 py.test-3 -s --tb=short --api=0.1.0  --host $HOST \
           --devauth-host $DEVICEAUTH_HOST \
