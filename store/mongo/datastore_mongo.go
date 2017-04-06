@@ -48,6 +48,12 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open mgo session")
 	}
+
+	// force write ack with immediate journal file fsync
+	s.SetSafe(&mgo.Safe{
+		WMode: "1",
+		J:     true,
+	})
 	return NewDataStoreMongoWithSession(s), nil
 }
 
