@@ -15,6 +15,7 @@
 package store
 
 import (
+	"context"
 	"errors"
 
 	"github.com/mendersoftware/deviceadm/model"
@@ -26,26 +27,26 @@ var (
 )
 
 type DataStore interface {
-	GetDeviceAuths(skip, limit int, filter Filter) ([]model.DeviceAuth, error)
+	GetDeviceAuths(ctx context.Context, skip, limit int, filter Filter) ([]model.DeviceAuth, error)
 
 	// find a device auth set with given `id`, returns the device auth set
 	// or nil, if auth set was not found, error is set to ErrDevNotFound
-	GetDeviceAuth(id model.AuthID) (*model.DeviceAuth, error)
+	GetDeviceAuth(ctx context.Context, id model.AuthID) (*model.DeviceAuth, error)
 
 	// update or insert device auth set into data store, only non-empty
 	// fields will be stored/updated, for instance, to update a status of
 	// device auth set with ID "foo":
 	//
-	// ds.PutDeviceAuth(&DeviceAuth{
+	// ds.PutDeviceAuth(context.TODO(), &DeviceAuth{
 	// 	ID: "foo",
 	//      DeviceId: "bar",
 	// 	Status: "accepted",
 	// })
-	PutDeviceAuth(dev *model.DeviceAuth) error
+	PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error
 
 	// remove device auth set
-	DeleteDeviceAuth(id model.AuthID) error
+	DeleteDeviceAuth(ctx context.Context, id model.AuthID) error
 
 	// remove auth sets owned by device
-	DeleteDeviceAuthByDevice(id model.DeviceID) error
+	DeleteDeviceAuthByDevice(ctx context.Context, id model.DeviceID) error
 }

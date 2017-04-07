@@ -19,6 +19,7 @@ import (
 
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/accesslog"
+	mctx "github.com/mendersoftware/go-lib-micro/context"
 	"github.com/mendersoftware/go-lib-micro/customheader"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
@@ -142,5 +143,10 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 		},
 	})
 
+	api.Use(&mctx.UpdateContextMiddleware{
+		Updates: []mctx.UpdateContextFunc{
+			mctx.RepackLoggerToContext,
+			mctx.RepackRequestIdToContext,
+		}})
 	return nil
 }

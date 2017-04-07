@@ -14,14 +14,17 @@
 package mongo
 
 import (
-	"github.com/mendersoftware/deviceadm/model"
+	"context"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/pkg/errors"
+
+	"github.com/mendersoftware/deviceadm/model"
 )
 
 type migration_1_1_0 struct {
-	ms *DataStoreMongo
+	ms  *DataStoreMongo
+	ctx context.Context
 }
 
 func (m *migration_1_1_0) Up(from migrate.Version) error {
@@ -48,7 +51,7 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 		return errors.Wrap(err, "failed to close DB iterator")
 	}
 
-	if err := m.ms.EnsureIndexes(); err != nil {
+	if err := m.ms.EnsureIndexes(m.ctx); err != nil {
 		return errors.Wrap(err, "database indexing failed")
 	}
 

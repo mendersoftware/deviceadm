@@ -15,6 +15,7 @@ package deviceauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
-
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +45,6 @@ type Config struct {
 
 type Client struct {
 	client requestid.ApiRequester
-	log    *log.Logger
 	conf   Config
 }
 
@@ -59,8 +58,9 @@ type StatusReq struct {
 // TODO rename this and calling funcs to UpdateDeviceStatus etc.
 // perhaps change the interface - the whole Device isn't needed
 // leaving for later, requires large refact in tests etc.
-func (d *Client) UpdateDevice(sreq StatusReq) error {
-	d.log.Debugf("update device %s", sreq.DeviceId)
+func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
+	l := log.FromContext(ctx)
+	l.Debugf("update device %s", sreq.DeviceId)
 
 	url := d.buildDevAuthUpdateUrl(sreq)
 
@@ -78,7 +78,10 @@ func (d *Client) UpdateDevice(sreq StatusReq) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	rsp, err := d.client.Do(req)
+	// set request timeout and setup cancellation
+	ctx, cancel := context.WithTimeout(ctx, d.conf.Timeout)
+	defer cancel()
+	rsp, err := d.client.Do(req.WithContext(ctx))
 	if err != nil {
 		return errors.Wrapf(err, "failed to update device status")
 	}
@@ -91,24 +94,17 @@ func (d *Client) UpdateDevice(sreq StatusReq) error {
 	return nil
 }
 
-func (d *Client) UseLog(l *log.Logger) {
-	d.log = l.F(log.Ctx{})
-}
-
 func NewClient(c Config, client requestid.ApiRequester) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
+	// use default timeout if none was provided
+	if c.Timeout == 0 {
+		c.Timeout = defaultDevAuthReqTimeout
+	}
 	return &Client{
 		client: client,
-		log:    log.New(log.Ctx{}),
 		conf:   c,
 	}
-}
-
-func NewClientWithLogger(c Config, client requestid.ApiRequester, l *log.Logger) *Client {
-	dac := NewClient(c, client)
-	dac.UseLog(l)
-	return dac
 }
 
 func (d *Client) buildDevAuthUpdateUrl(req StatusReq) string {

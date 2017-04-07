@@ -14,12 +14,12 @@
 package deviceauth
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,9 +52,10 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(StatusReq{
-		AuthId: "123",
-	})
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId: "123",
+		})
 	assert.NoError(t, err, "expected no errors")
 }
 
@@ -66,10 +67,11 @@ func TestDevAuthClientReqFail(t *testing.T) {
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(StatusReq{
-		AuthId:   "123",
-		DeviceId: "1",
-	})
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId:   "123",
+			DeviceId: "1",
+		})
 	assert.Error(t, err, "expected an error")
 }
 
@@ -88,10 +90,11 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 		DevauthUrl: s.URL,
 	}, &http.Client{})
 
-	err := c.UpdateDevice(StatusReq{
-		AuthId:   "123",
-		DeviceId: "1",
-	})
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId:   "123",
+			DeviceId: "1",
+		})
 
 	assert.NoError(t, err, "expected no errors")
 }
@@ -99,10 +102,11 @@ func TestDevAuthClientReqUrl(t *testing.T) {
 func TestDevAuthClientReqNoHost(t *testing.T) {
 	c := NewClient(Config{}, &http.Client{})
 
-	err := c.UpdateDevice(StatusReq{
-		AuthId:   "123",
-		DeviceId: "1",
-	})
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId:   "123",
+			DeviceId: "1",
+		})
 
 	assert.Error(t, err, "expected an error")
 }
@@ -133,10 +137,11 @@ func TestDevAuthClientTImeout(t *testing.T) {
 	}, &http.Client{Timeout: defaultDevAuthReqTimeout})
 
 	t1 := time.Now()
-	err := c.UpdateDevice(StatusReq{
-		AuthId:   "123",
-		DeviceId: "1",
-	})
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId:   "123",
+			DeviceId: "1",
+		})
 	t2 := time.Now()
 
 	// let the responder know we're done
@@ -150,12 +155,4 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		time.Duration(0.2*float64(defaultDevAuthReqTimeout))
 
 	assert.WithinDuration(t, t2, t1, maxdur, "timeout took too long")
-}
-
-func TestUseLog(t *testing.T) {
-	c := NewClient(Config{}, &http.Client{})
-
-	l2 := log.New(log.Ctx{"test": "test"})
-	c.UseLog(l2)
-	assert.Equal(t, l2, c.log)
 }

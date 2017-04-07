@@ -14,17 +14,17 @@
 package mongo
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/deviceadm/model"
-	// "github.com/mendersoftware/deviceadm/store"
-
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
+
+	"github.com/mendersoftware/deviceadm/model"
 )
 
 func randTime(base time.Time) time.Time {
@@ -91,7 +91,9 @@ func TestMigration_1_0_0(t *testing.T) {
 
 	data := populateDevices(t, s, devCount)
 
-	mig := migration_1_1_0{ms: db}
+	ctx := context.Background()
+
+	mig := migration_1_1_0{ms: db, ctx: ctx}
 
 	err := mig.Up(migrate.MakeVersion(0, 1, 0))
 	assert.NoError(t, err)
@@ -109,7 +111,7 @@ func TestMigration_1_0_0(t *testing.T) {
 
 	// verify that DeviceId was set for every device
 	for _, dev := range data.devices {
-		dbdev, err := db.GetDeviceAuth(dev.ID)
+		dbdev, err := db.GetDeviceAuth(ctx, dev.ID)
 		assert.NoError(t, err)
 
 		// DeviceId should have been set to the value of ID
