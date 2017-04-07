@@ -70,7 +70,7 @@ func main() {
 	// TODO consider keeping DbVersion in data store
 	err = db.Migrate(ctx, mongo.DbVersion)
 	if err != nil {
-		l.Fatal("failed to run migrations")
+		l.Fatalf("failed to run migrations: %v", err)
 	}
 
 	l.Fatal(RunServer(conf))
