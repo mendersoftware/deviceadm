@@ -19,7 +19,6 @@ import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
-	"gopkg.in/mgo.v2"
 
 	api_http "github.com/mendersoftware/deviceadm/api/http"
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
