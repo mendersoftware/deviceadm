@@ -51,8 +51,8 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 
 	// force write ack with immediate journal file fsync
 	s.SetSafe(&mgo.Safe{
-		WMode: "1",
-		J:     true,
+		W: 1,
+		J: true,
 	})
 	return NewDataStoreMongoWithSession(s), nil
 }
