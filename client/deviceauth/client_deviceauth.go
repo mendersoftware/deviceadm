@@ -22,8 +22,9 @@ import (
 	"time"
 
 	"github.com/mendersoftware/go-lib-micro/log"
-	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/pkg/errors"
+
+	"github.com/mendersoftware/deviceadm/client"
 )
 
 const (
@@ -44,7 +45,7 @@ type Config struct {
 }
 
 type Client struct {
-	client requestid.ApiRequester
+	client client.HttpRunner
 	conf   Config
 }
 
@@ -94,7 +95,7 @@ func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
 	return nil
 }
 
-func NewClient(c Config, client requestid.ApiRequester) *Client {
+func NewClient(c Config, client client.HttpRunner) *Client {
 	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	// use default timeout if none was provided

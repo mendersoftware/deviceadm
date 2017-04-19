@@ -21,10 +21,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/mendersoftware/deviceadm/client"
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
@@ -46,7 +46,7 @@ func (f FakeApiRequester) Do(r *http.Request) (*http.Response, error) {
 }
 
 func devadmWithClientForTest(d store.DataStore, clientRespStatus int) App {
-	clientGetter := func() requestid.ApiRequester {
+	clientGetter := func() client.HttpRunner {
 		return FakeApiRequester{clientRespStatus}
 	}
 	return &DevAdm{
