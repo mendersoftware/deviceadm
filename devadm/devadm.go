@@ -15,7 +15,6 @@ package devadm
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
@@ -30,7 +29,7 @@ import (
 type ApiClientGetter func() client.HttpRunner
 
 func simpleApiClientGetter() client.HttpRunner {
-	return &http.Client{}
+	return &client.HttpApi{}
 }
 
 // this device admission service interface
