@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
+	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/deviceadm/model"
@@ -32,7 +33,8 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 
 	defer s.Close()
 
-	iter := s.DB(DbName).C(DbDevicesColl).Find(nil).Iter()
+	iter := s.DB(ctx_store.DbFromContext(m.ctx, DbName)).
+		C(DbDevicesColl).Find(nil).Iter()
 
 	var olddev model.DeviceAuth
 
@@ -40,7 +42,8 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 		newdev := olddev
 		newdev.DeviceId = model.DeviceID(newdev.ID)
 
-		_, err := s.DB(DbName).C(DbDevicesColl).Upsert(&olddev, &newdev)
+		_, err := s.DB(ctx_store.DbFromContext(m.ctx, DbName)).
+			C(DbDevicesColl).Upsert(&olddev, &newdev)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert auth set for device %v",
 				olddev.ID)
