@@ -15,22 +15,21 @@ package devadm
 
 import (
 	"context"
-	"net/http"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/pkg/errors"
 
+	"github.com/mendersoftware/deviceadm/client"
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
 )
 
 // helper for obtaining API clients
-type ApiClientGetter func() requestid.ApiRequester
+type ApiClientGetter func() client.HttpRunner
 
-func simpleApiClientGetter() requestid.ApiRequester {
-	return &http.Client{}
+func simpleApiClientGetter() client.HttpRunner {
+	return &client.HttpApi{}
 }
 
 // this device admission service interface

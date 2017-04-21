@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -24,6 +25,8 @@ import (
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/mendersoftware/go-lib-micro/requestlog"
+
+	ctx_httpheader "github.com/mendersoftware/deviceadm/context/httpheader"
 )
 
 const (
@@ -147,6 +150,11 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 		Updates: []mctx.UpdateContextFunc{
 			mctx.RepackLoggerToContext,
 			mctx.RepackRequestIdToContext,
+			preserveHeaders,
 		}})
 	return nil
+}
+
+func preserveHeaders(ctx context.Context, r *rest.Request) context.Context {
+	return ctx_httpheader.WithContext(ctx, r.Header, "Authorization")
 }
