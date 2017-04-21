@@ -103,6 +103,8 @@ func TestMigration_1_0_0(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, devCount, cnt)
 
+	verifyIndexes(t, s)
+
 	// trying to add a device auth set with same ID should raise conflict
 	err = s.DB(DbName).C(DbDevicesColl).Insert(&model.DeviceAuth{
 		ID: data.GetDev(10).ID,
@@ -119,4 +121,20 @@ func TestMigration_1_0_0(t *testing.T) {
 	}
 
 	db.session.Close()
+}
+
+func verifyIndexes(t *testing.T, session *mgo.Session) {
+	// verify index exists
+	indexes, err := session.DB(DbName).C(DbDevicesColl).Indexes()
+	assert.NoError(t, err, "getting indexes failed")
+
+	assert.Len(t, indexes, 2)
+	assert.Equal(t,
+		indexes[1],
+		mgo.Index{
+			Key:        []string{dbDeviceIdIndex},
+			Unique:     true,
+			Name:       dbDeviceIdIndexName,
+			Background: false,
+		})
 }

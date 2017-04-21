@@ -31,9 +31,6 @@ const (
 	DbVersion     = "1.1.0"
 	DbName        = "deviceadm"
 	DbDevicesColl = "devices"
-
-	DbDeviceIdIndex     = "id"
-	DbDeviceIdIndexName = "uniqueDeviceIdIndex"
 )
 
 type DataStoreMongo struct {
@@ -212,20 +209,4 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	return nil
-}
-
-func (db *DataStoreMongo) EnsureIndexes(ctx context.Context) error {
-	s := db.session.Copy()
-	defer s.Close()
-
-	uniqueDevIdIdx := mgo.Index{
-		Key:        []string{DbDeviceIdIndex},
-		Unique:     true,
-		Name:       DbDeviceIdIndexName,
-		Background: false,
-	}
-
-	return s.DB(ctx_store.DbFromContext(ctx, DbName)).
-		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
-
 }
