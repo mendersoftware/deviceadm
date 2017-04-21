@@ -201,7 +201,10 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	migrations := []migrate.Migration{
-		&migration_1_1_0{ms: db},
+		&migration_1_1_0{
+			ms:  db,
+			ctx: ctx,
+		},
 	}
 	err = m.Apply(ctx, *ver, migrations)
 	if err != nil {
