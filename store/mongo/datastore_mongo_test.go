@@ -240,14 +240,6 @@ func TestMongoGetDevices(t *testing.T) {
 	}
 }
 
-func TestFailedConn(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestMongoGetDevices in short mode.")
-	}
-	_, err := NewDataStoreMongo("invalid:27017")
-	assert.NotNil(t, err)
-}
-
 func TestMongoGetDevice(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
