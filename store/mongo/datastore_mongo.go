@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
+	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -30,9 +31,6 @@ const (
 	DbVersion     = "1.1.0"
 	DbName        = "deviceadm"
 	DbDevicesColl = "devices"
-
-	DbDeviceIdIndex     = "id"
-	DbDeviceIdIndexName = "uniqueDeviceIdIndex"
 )
 
 type DataStoreMongo struct {
@@ -60,7 +58,7 @@ func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
 func (db *DataStoreMongo) GetDeviceAuths(ctx context.Context, skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
-	c := s.DB(DbName).C(DbDevicesColl)
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 	res := []model.DeviceAuth{}
 
 	var dbFilter = &model.DeviceAuth{}
@@ -82,7 +80,7 @@ func (db *DataStoreMongo) GetDeviceAuths(ctx context.Context, skip, limit int, f
 func (db *DataStoreMongo) GetDeviceAuth(ctx context.Context, id model.AuthID) (*model.DeviceAuth, error) {
 	s := db.session.Copy()
 	defer s.Close()
-	c := s.DB(DbName).C(DbDevicesColl)
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
 	filter := bson.M{"id": id}
 	res := model.DeviceAuth{}
@@ -105,7 +103,8 @@ func (db *DataStoreMongo) DeleteDeviceAuth(ctx context.Context, id model.AuthID)
 	defer s.Close()
 
 	filter := bson.M{"id": id}
-	err := s.DB(DbName).C(DbDevicesColl).Remove(filter)
+	err := s.DB(ctx_store.DbFromContext(ctx, DbName)).
+		C(DbDevicesColl).Remove(filter)
 
 	switch err {
 	case nil:
@@ -122,7 +121,8 @@ func (db *DataStoreMongo) DeleteDeviceAuthByDevice(ctx context.Context, id model
 	defer s.Close()
 
 	filter := model.DeviceAuth{DeviceId: id}
-	ci, err := s.DB(DbName).C(DbDevicesColl).RemoveAll(filter)
+	ci, err := s.DB(ctx_store.DbFromContext(ctx, DbName)).
+		C(DbDevicesColl).RemoveAll(filter)
 
 	switch {
 	case err != nil:
@@ -171,7 +171,7 @@ func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
-	c := s.DB(DbName).C(DbDevicesColl)
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
 	filter := bson.M{"id": dev.ID}
 
@@ -189,7 +189,7 @@ func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAu
 func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	m := migrate.SimpleMigrator{
 		Session: db.session,
-		Db:      DbName,
+		Db:      ctx_store.DbFromContext(ctx, DbName),
 	}
 
 	ver, err := migrate.NewVersion(version)
@@ -198,7 +198,10 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	migrations := []migrate.Migration{
-		&migration_1_1_0{ms: db},
+		&migration_1_1_0{
+			ms:  db,
+			ctx: ctx,
+		},
 	}
 	err = m.Apply(ctx, *ver, migrations)
 	if err != nil {
@@ -206,19 +209,4 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	return nil
-}
-
-func (db *DataStoreMongo) EnsureIndexes(ctx context.Context) error {
-	s := db.session.Copy()
-	defer s.Close()
-
-	uniqueDevIdIdx := mgo.Index{
-		Key:        []string{DbDeviceIdIndex},
-		Unique:     true,
-		Name:       DbDeviceIdIndexName,
-		Background: false,
-	}
-
-	return s.DB(DbName).C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
-
 }

@@ -25,9 +25,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
+	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/mgo.v2"
 
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
@@ -86,11 +87,11 @@ func makeDevs(count int, authsPerDevice int) []model.DeviceAuth {
 	return devs
 }
 
-func setUp(db *DataStoreMongo, devs []model.DeviceAuth) error {
+func setUp(ctx context.Context, db *DataStoreMongo, devs []model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
 
-	c := s.DB(DbName).C(DbDevicesColl)
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
 	for _, d := range devs {
 		err := c.Insert(d)
@@ -152,49 +153,46 @@ func TestMongoGetDevices(t *testing.T) {
 		skip   int
 		limit  int
 		filter store.Filter
+		tenant string
 	}{
 		{
-			0,
-			20,
-			store.Filter{},
+			limit: 20,
 		},
 		{
-			7,
-			20,
-			store.Filter{},
+			skip:  7,
+			limit: 20,
 		},
 		{
-			0,
-			3,
-			store.Filter{},
+			limit: 3,
 		},
 		{
-			3,
-			5,
-			store.Filter{},
+			skip:  3,
+			limit: 5,
 		},
 		{
-			0,
-			20,
-			store.Filter{Status: model.DevStatusAccepted},
+			limit:  20,
+			filter: store.Filter{Status: model.DevStatusAccepted},
 		},
 		{
-			3,
-			2,
-			store.Filter{Status: model.DevStatusPending},
+			skip:   3,
+			limit:  2,
+			filter: store.Filter{Status: model.DevStatusPending},
 		},
 		{
-			0,
-			0,
-			store.Filter{DeviceID: "devid-0001"},
+			filter: store.Filter{DeviceID: "devid-0001"},
 		},
 		{
-			0,
-			0,
-			store.Filter{
+			filter: store.Filter{
 				DeviceID: "devid-0000",
 				Status:   model.DevStatusAccepted,
 			},
+		},
+		{
+			filter: store.Filter{
+				DeviceID: "devid-0000",
+				Status:   model.DevStatusAccepted,
+			},
+			tenant: "acme",
 		},
 	}
 
@@ -214,12 +212,28 @@ func TestMongoGetDevices(t *testing.T) {
 		err = wipe(d)
 		assert.NoError(t, err, "failed to wipe data")
 
-		err = setUp(d, devs)
+		ctx := context.Background()
+		if tc.tenant != "" {
+			ctx = identity.WithContext(ctx, &identity.Identity{
+				Subject: "foo",
+				Tenant:  tc.tenant,
+			})
+		}
+		err = setUp(ctx, d, devs)
 		assert.NoError(t, err, "failed to setup input data")
 
 		//test
-		dbdevs, err := d.GetDeviceAuths(context.Background(),
-			tc.skip, tc.limit, tc.filter)
+
+		if tc.tenant != "" {
+			// tenant identity is setup and kept in context, try
+			// fetching devices using a context without identity,
+			// this should return no devices
+			dbdevs, err := d.GetDeviceAuths(context.Background(),
+				tc.skip, tc.limit, tc.filter)
+			assert.NoError(t, err, "failed to get devices")
+			assert.Len(t, dbdevs, 0)
+		}
+		dbdevs, err := d.GetDeviceAuths(ctx, tc.skip, tc.limit, tc.filter)
 		assert.NoError(t, err, "failed to get devices")
 
 		if tc.limit != 0 {
@@ -241,14 +255,6 @@ func TestMongoGetDevices(t *testing.T) {
 	}
 }
 
-func TestFailedConn(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestMongoGetDevices in short mode.")
-	}
-	_, err := NewDataStoreMongo("invalid:27017")
-	assert.NotNil(t, err)
-}
-
 func TestMongoGetDevice(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
@@ -258,12 +264,14 @@ func TestMongoGetDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDeviceAuth(context.Background(), "")
+	ctx := context.Background()
+
+	_, err = d.GetDeviceAuth(ctx, "")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
 	devs := makeDevs(100, 3)
-	err = setUp(d, devs)
+	err = setUp(ctx, d, devs)
 	assert.NoError(t, err, "failed to setup input data")
 
 	// we're going to go through all expected devices just for the
@@ -273,7 +281,7 @@ func TestMongoGetDevice(t *testing.T) {
 	for _, dev := range expected {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
+		dbdev, err := d.GetDeviceAuth(ctx, dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -282,10 +290,28 @@ func TestMongoGetDevice(t *testing.T) {
 			dbdev, dev)
 
 		// modify device ID by appending bogus string to it
-		dbdev, err = d.GetDeviceAuth(context.Background(), dev.ID+"-foobar")
+		dbdev, err = d.GetDeviceAuth(ctx, dev.ID+"-foobar")
 		assert.Nil(t, dbdev, "expected nil got %+v", dbdev)
 		assert.EqualError(t, err, store.ErrNotFound.Error(), "expected error")
 	}
+
+	// now with tenant
+	tenDevs := makeDevs(2, 1)
+	// make sure that tenant devices have different ID
+	for i := range tenDevs {
+		tenDevs[i].ID = tenDevs[i].ID + "-foo"
+	}
+	tenCtx := identity.WithContext(ctx, &identity.Identity{
+		Subject: "foo",
+		Tenant:  "bar",
+	})
+	setUp(tenCtx, d, tenDevs)
+	// a non-tenant device should not be found in tenant's DB
+	_, err = d.GetDeviceAuth(tenCtx, devs[0].ID)
+	assert.EqualError(t, err, store.ErrNotFound.Error())
+	// try tenant's device now
+	_, err = d.GetDeviceAuth(tenCtx, tenDevs[0].ID)
+	assert.NoError(t, err)
 
 }
 
@@ -298,17 +324,19 @@ func TestMongoPutDevice(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	_, err = d.GetDeviceAuth(context.Background(), "")
+	ctx := context.Background()
+
+	_, err = d.GetDeviceAuth(ctx, "")
 	assert.Error(t, err, "expected error")
 
 	// populate DB
 	devs := makeDevs(100, 3)
-	err = setUp(d, devs)
+	err = setUp(ctx, d, devs)
 	assert.NoError(t, err, "failed to setup input data")
 
 	// insert all devices to DB
 	for _, dev := range devs {
-		err := d.PutDeviceAuth(context.Background(), &dev)
+		err := d.PutDeviceAuth(ctx, &dev)
 		assert.NoError(t, err, "expected no error inserting to data store")
 	}
 
@@ -316,7 +344,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
+		dbdev, err := d.GetDeviceAuth(ctx, dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -332,7 +360,7 @@ func TestMongoPutDevice(t *testing.T) {
 		}
 
 		// update device key
-		err = d.PutDeviceAuth(context.Background(), &ndev)
+		err = d.PutDeviceAuth(ctx, &ndev)
 		assert.NoError(t, err, "expected no error updating devices in DB")
 	}
 
@@ -340,7 +368,7 @@ func TestMongoPutDevice(t *testing.T) {
 	for _, dev := range devs {
 		// we expect to find a device that was present in the
 		// input set
-		dbdev, err := d.GetDeviceAuth(context.Background(), dev.ID)
+		dbdev, err := d.GetDeviceAuth(ctx, dev.ID)
 		assert.NoError(t, err, "expected no error")
 		assert.NotNil(t, dbdev, "expected to device of ID %s to be found",
 			dev.ID)
@@ -352,6 +380,23 @@ func TestMongoPutDevice(t *testing.T) {
 		assert.Equal(t, dev.Key, dbdev.Key)
 		assert.True(t, reflect.DeepEqual(dev.Attributes, dbdev.Attributes))
 	}
+
+	// since everything work a tenant case is rather simple
+	tenCtx := identity.WithContext(ctx, &identity.Identity{
+		Subject: "foo",
+		Tenant:  "bar",
+	})
+	devs = makeDevs(1, 1)
+	err = setUp(tenCtx, d, devs)
+	dbdev, err := d.GetDeviceAuth(tenCtx, devs[0].ID)
+	err = d.PutDeviceAuth(tenCtx, &model.DeviceAuth{
+		Status: "rejected",
+		ID:     devs[0].ID,
+	})
+	assert.NoError(t, err)
+	dbdev, err = d.GetDeviceAuth(tenCtx, devs[0].ID)
+	assert.Equal(t, "rejected", dbdev.Status)
+
 }
 
 func TestMongoPutDeviceTime(t *testing.T) {
@@ -363,7 +408,9 @@ func TestMongoPutDeviceTime(t *testing.T) {
 	defer d.session.Close()
 	var err error
 
-	dev, err := d.GetDeviceAuth(context.Background(), "foobar")
+	ctx := context.Background()
+
+	dev, err := d.GetDeviceAuth(ctx, "foobar")
 	assert.Nil(t, dev)
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 
@@ -376,10 +423,10 @@ func TestMongoPutDeviceTime(t *testing.T) {
 			"foo": "bar",
 		},
 	}
-	err = d.PutDeviceAuth(context.Background(), &expdev)
+	err = d.PutDeviceAuth(ctx, &expdev)
 	assert.NoError(t, err)
 
-	dev, err = d.GetDeviceAuth(context.Background(), "foobar")
+	dev, err = d.GetDeviceAuth(ctx, "foobar")
 	assert.NotNil(t, dev)
 	assert.NoError(t, err)
 
@@ -418,14 +465,17 @@ func TestMigrate(t *testing.T) {
 		db.Wipe()
 		session := db.Session()
 
+		ctx := context.Background()
+
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.Migrate(context.Background(), tc.version)
+		err := store.Migrate(ctx, tc.version)
 		if tc.err == "" {
 			assert.NoError(t, err)
 			// list migrations
 			var out []migrate.MigrationEntry
-			session.DB(DbName).C(migrate.DbMigrationsColl).Find(nil).All(&out)
+			session.DB(ctx_store.DbFromContext(ctx, DbName)).
+				C(migrate.DbMigrationsColl).Find(nil).All(&out)
 			sort.Slice(out, func(i int, j int) bool {
 				return migrate.VersionIsLess(out[i].Version, out[j].Version)
 			})
@@ -464,9 +514,10 @@ func TestMongoDeleteDevice(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		id  model.AuthID
-		out []model.DeviceAuth
-		err error
+		id     model.AuthID
+		out    []model.DeviceAuth
+		err    error
+		tenant string
 	}{
 		"exists 1": {
 			id: "0001",
@@ -479,7 +530,6 @@ func TestMongoDeleteDevice(t *testing.T) {
 					Status:         "pending",
 				},
 			},
-			err: nil,
 		},
 		"exists 2": {
 			id: "0002",
@@ -492,7 +542,6 @@ func TestMongoDeleteDevice(t *testing.T) {
 					Status:         "pending",
 				},
 			},
-			err: nil,
 		},
 		"doesn't exist": {
 			id: "foo",
@@ -514,6 +563,19 @@ func TestMongoDeleteDevice(t *testing.T) {
 			},
 			err: store.ErrNotFound,
 		},
+		"exists 2, with tenant": {
+			id: "0001",
+			out: []model.DeviceAuth{
+				{
+					ID:             "0002",
+					DeviceId:       "0002",
+					DeviceIdentity: "0002-id",
+					Key:            "0002-key",
+					Status:         "pending",
+				},
+			},
+			tenant: "foo",
+		},
 	}
 
 	for name, tc := range testCases {
@@ -521,22 +583,38 @@ func TestMongoDeleteDevice(t *testing.T) {
 		db.Wipe()
 		session := db.Session()
 
-		for _, d := range inDevs {
-			err := session.DB(DbName).C(DbDevicesColl).Insert(d)
-			assert.NoError(t, err, "failed to setup input data")
-		}
-
 		store := NewDataStoreMongoWithSession(session)
 
-		err := store.DeleteDeviceAuth(context.Background(), tc.id)
+		ctx := context.Background()
+
+		setUp(ctx, store, inDevs)
+
+		if tc.tenant != "" {
+			ctx = identity.WithContext(ctx, &identity.Identity{
+				Subject: "foo",
+				Tenant:  tc.tenant,
+			})
+			// once again but for tenant DB
+			setUp(ctx, store, inDevs)
+		}
+
+		err := store.DeleteDeviceAuth(ctx, tc.id)
 		if tc.err != nil {
 			assert.EqualError(t, err, tc.err.Error())
 		} else {
 			assert.NoError(t, err, "failed to delete device")
 		}
 
+		if tc.tenant != "" {
+			// device should still be present in default DB though,
+			// as it's a separate storage
+			_, err := store.GetDeviceAuth(context.Background(), tc.id)
+			assert.NoError(t, err)
+		}
+
 		var outDevs []model.DeviceAuth
-		err = session.DB(DbName).C(DbDevicesColl).Find(nil).All(&outDevs)
+		err = session.DB(ctx_store.DbFromContext(ctx, DbName)).
+			C(DbDevicesColl).Find(nil).All(&outDevs)
 		assert.NoError(t, err, "failed to verify devices")
 
 		assert.True(t, reflect.DeepEqual(tc.out, outDevs))
@@ -579,55 +657,36 @@ func TestMongoDeleteDeviceAuthsByDevice(t *testing.T) {
 	session := db.Session()
 	defer session.Close()
 
+	ctx := context.Background()
+	tenCtx := identity.WithContext(ctx, &identity.Identity{
+		Subject: "foo",
+		Tenant:  "bar",
+	})
+
 	dbstore := NewDataStoreMongoWithSession(session)
 
-	for _, d := range inDevs {
-		err := dbstore.PutDeviceAuth(context.Background(), &d)
-		assert.NoError(t, err)
-	}
+	// setup in default DB
+	setUp(ctx, dbstore, inDevs)
+	// and in tenant DB
+	setUp(tenCtx, dbstore, inDevs)
 
-	err := dbstore.DeleteDeviceAuthByDevice(context.Background(), "0001")
+	// delete from default DB
+	err := dbstore.DeleteDeviceAuthByDevice(ctx, "0001")
 	assert.NoError(t, err)
 
 	for _, aid := range []model.AuthID{"0001", "0002"} {
-		_, err := dbstore.GetDeviceAuth(context.Background(), aid)
+		_, err := dbstore.GetDeviceAuth(ctx, aid)
 		assert.EqualError(t, err, store.ErrNotFound.Error())
+
+		// devices should exist in tenant's DB however
+		_, err = dbstore.GetDeviceAuth(tenCtx, aid)
+		assert.NoError(t, err)
 	}
 
-	aset, err := dbstore.GetDeviceAuth(context.Background(), "0003")
+	aset, err := dbstore.GetDeviceAuth(ctx, "0003")
 	assert.NoError(t, err)
 	assert.NotNil(t, aset)
 
-	err = dbstore.DeleteDeviceAuthByDevice(context.Background(), "0004")
+	err = dbstore.DeleteDeviceAuthByDevice(ctx, "0004")
 	assert.EqualError(t, err, store.ErrNotFound.Error())
-}
-
-func TestMongoEnsureIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestMongoEnsureIndexes in short mode.")
-	}
-
-	db.Wipe()
-	session := db.Session()
-
-	store := NewDataStoreMongoWithSession(session)
-
-	err := store.EnsureIndexes(context.Background())
-	assert.NoError(t, err, "EnsureIndexes() failed")
-
-	// verify index exists
-	indexes, err := session.DB(DbName).C(DbDevicesColl).Indexes()
-	assert.NoError(t, err, "getting indexes failed")
-
-	assert.Len(t, indexes, 2)
-	assert.Equal(t,
-		indexes[1],
-		mgo.Index{
-			Key:        []string{DbDeviceIdIndex},
-			Unique:     true,
-			Name:       DbDeviceIdIndexName,
-			Background: false,
-		})
-
-	session.Close()
 }

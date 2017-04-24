@@ -17,9 +17,16 @@ import (
 	"context"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
+	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
+	"gopkg.in/mgo.v2"
 
 	"github.com/mendersoftware/deviceadm/model"
+)
+
+const (
+	dbDeviceIdIndex     = "id"
+	dbDeviceIdIndexName = "uniqueDeviceIdIndex"
 )
 
 type migration_1_1_0 struct {
@@ -32,7 +39,8 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 
 	defer s.Close()
 
-	iter := s.DB(DbName).C(DbDevicesColl).Find(nil).Iter()
+	iter := s.DB(ctx_store.DbFromContext(m.ctx, DbName)).
+		C(DbDevicesColl).Find(nil).Iter()
 
 	var olddev model.DeviceAuth
 
@@ -40,7 +48,8 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 		newdev := olddev
 		newdev.DeviceId = model.DeviceID(newdev.ID)
 
-		_, err := s.DB(DbName).C(DbDevicesColl).Upsert(&olddev, &newdev)
+		_, err := s.DB(ctx_store.DbFromContext(m.ctx, DbName)).
+			C(DbDevicesColl).Upsert(&olddev, &newdev)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert auth set for device %v",
 				olddev.ID)
@@ -51,11 +60,24 @@ func (m *migration_1_1_0) Up(from migrate.Version) error {
 		return errors.Wrap(err, "failed to close DB iterator")
 	}
 
-	if err := m.ms.EnsureIndexes(m.ctx); err != nil {
+	if err := m.ensureIndexes(s); err != nil {
 		return errors.Wrap(err, "database indexing failed")
 	}
 
 	return nil
+}
+
+func (m *migration_1_1_0) ensureIndexes(s *mgo.Session) error {
+	uniqueDevIdIdx := mgo.Index{
+		Key:        []string{dbDeviceIdIndex},
+		Unique:     true,
+		Name:       dbDeviceIdIndexName,
+		Background: false,
+	}
+
+	return s.DB(ctx_store.DbFromContext(m.ctx, DbName)).
+		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
+
 }
 
 func (m *migration_1_1_0) Version() migrate.Version {
