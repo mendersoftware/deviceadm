@@ -22,6 +22,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/accesslog"
 	mctx "github.com/mendersoftware/go-lib-micro/context"
 	"github.com/mendersoftware/go-lib-micro/customheader"
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
 	"github.com/mendersoftware/go-lib-micro/requestlog"
@@ -152,6 +153,9 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 			mctx.RepackRequestIdToContext,
 			preserveHeaders,
 		}})
+
+	api.Use(&identity.IdentityMiddleware{})
+
 	return nil
 }
 
