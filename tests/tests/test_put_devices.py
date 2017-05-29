@@ -6,7 +6,9 @@ import pytest
 @pytest.mark.usefixtures("create_devices")
 class TestPrebootstrap(ManagementClient):
 
-    def change_status(self, device_id, expected_initial, expected_final, expected_error_code=None):
+    def change_status(self, device_id, expected_initial, expected_final, expected_error_code=None, auth=None):
+        if auth is None:
+            auth = self.uauth
         Status = self.client.get_model('Status')
         s = Status(status=expected_final)
         try:
