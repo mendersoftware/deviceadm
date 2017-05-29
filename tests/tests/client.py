@@ -2,6 +2,9 @@ import logging
 import os
 
 import pytest
+import json
+import base64
+import common
 from bravado.swagger_model import load_file
 from bravado.client import SwaggerClient, RequestsClient
 from requests.utils import parse_header_links
@@ -52,8 +55,8 @@ class ManagementClient(SwaggerApiClient):
 
     spec_option = 'management_spec'
 
-    #user auth - dummy, just to make swagger client happy
-    uauth = {"headers": {"Authorization": "Bearer foobarbaz"}}
+    # default user auth - single user, single tenant
+    uauth = {"Authorization": "Bearer foobarbaz"}
 
     def setup(self):
         self.setup_swagger()
@@ -66,6 +69,14 @@ class ManagementClient(SwaggerApiClient):
                 return r + self.get_all_devices(page=page)
         else:
             return r
+
+    def make_user_auth(self, user_id, tenant_id=None):
+        """
+            Prepare an almost-valid JWT auth header, suitable for consumption by deviceadm.
+        """
+        jwt = common.make_id_jwt(user_id, tenant_id)
+        return {"Authorization": "Bearer " + jwt}
+
 
 class ManagementClientSimple(ManagementClient):
     log = logging.getLogger('client.ManagementClientSimple')
