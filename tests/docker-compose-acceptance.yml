@@ -16,4 +16,3 @@ services:
             image: mendersoftware/deviceadm:prtest
             volumes:
                 - "${TESTS_DIR}:/testing"
-
