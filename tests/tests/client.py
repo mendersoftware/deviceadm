@@ -61,8 +61,10 @@ class ManagementClient(SwaggerApiClient):
     def setup(self):
         self.setup_swagger()
 
-    def get_all_devices(self, page=1):
-        r, h = self.client.devices.get_devices(page=page, _request_options=self.uauth).result()
+    def get_all_devices(self, page=1, auth=None):
+        if auth is None:
+            auth=self.uauth
+        r, h = self.client.devices.get_devices(page=page, _request_options={"headers": auth}).result()
         for i in parse_header_links(h.headers["link"]):
             if i["rel"] == "next":
                 page = int(dict(urlparse.parse_qs(urlparse.urlsplit(i["url"]).query))["page"][0])

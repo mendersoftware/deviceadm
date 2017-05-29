@@ -10,9 +10,9 @@ class TestPrebootstrap(ManagementClient):
         Status = self.client.get_model('Status')
         s = Status(status=expected_final)
         try:
-            actual_initial = self.client.devices.get_devices_id(id=device_id, _request_options=self.uauth).result()[0].status
+            actual_initial = self.client.devices.get_devices_id(id=device_id, _request_options={"headers": auth}).result()[0].status
             assert actual_initial == expected_initial
-            self.client.devices.put_devices_id_status(id=device_id, status=s, _request_options=self.uauth).result()
+            self.client.devices.put_devices_id_status(id=device_id, status=s, _request_options={"headers": auth}).result()
         except bravado.exception.HTTPError as e:
             assert e.response.status_code == expected_error_code
             return
@@ -21,7 +21,7 @@ class TestPrebootstrap(ManagementClient):
                 pytest.fail("Expected an exception, but didnt get any!")
                 return
 
-        assert self.client.devices.get_devices_id(id=device_id, _request_options=self.uauth).result()[0].status == expected_final
+        assert self.client.devices.get_devices_id(id=device_id, _request_options={"headers": auth}).result()[0].status == expected_final
 
 
     def test_change_status(self):
