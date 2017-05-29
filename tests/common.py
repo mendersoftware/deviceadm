@@ -42,6 +42,24 @@ def sign_data(data, privateKey):
     sign = signer.sign(digest)
     return b64encode(sign)
 
+def make_id_jwt(sub, tenant=None):
+    """
+        Prepare an almost-valid JWT token, suitable for consumption by our identity middleware (needs sub and optionally mender.tenant claims).
+
+        The token contains valid base64-encoded payload, but the header/signature are bogus.
+        This is enough for the identity middleware to interpret the identity
+        and select the correct db; note that there is no gateway in the test setup, so the signature
+        is never verified. It's also enough to provide a tenant_token for deviceauth.
+
+        If 'tenant' is specified, the 'mender.tenant' claim is added.
+    """
+    payload = {"sub": sub}
+    if tenant is not None:
+        payload["mender.tenant"] = tenant
+    payload = json.dumps(payload)
+    payloadb64 = b64encode(payload.encode("utf-8"))
+    return "bogus_header." + payloadb64.decode() + ".bogus_sign"
+
 
 # Create devices using the Device Authentication microservice
 @pytest.fixture(scope="class")
