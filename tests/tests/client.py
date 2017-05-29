@@ -47,8 +47,12 @@ class InternalClient(SwaggerApiClient):
     def setup(self):
         self.setup_swagger()
 
-    def delete_device(self, id):
-        return requests.delete(self.make_api_url('/devices?device_id={}'.format(id)))
+    def delete_device(self, id, auth=None):
+        return requests.delete(self.make_api_url('/devices?device_id={}'.format(id)), headers=auth)
+
+    def make_id_auth(self, user, tenant):
+        jwt = common.make_id_jwt(user, tenant)
+        return {"Authorization" : "Bearer " + jwt}
 
 class ManagementClient(SwaggerApiClient):
     log = logging.getLogger('client.ManagementClient')
@@ -68,7 +72,7 @@ class ManagementClient(SwaggerApiClient):
         for i in parse_header_links(h.headers["link"]):
             if i["rel"] == "next":
                 page = int(dict(urlparse.parse_qs(urlparse.urlsplit(i["url"]).query))["page"][0])
-                return r + self.get_all_devices(page=page)
+                return r + self.get_all_devices(page=page, auth=auth)
         else:
             return r
 
