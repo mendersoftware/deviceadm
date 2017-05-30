@@ -2,6 +2,9 @@ import logging
 import os
 
 import pytest
+import json
+import base64
+import common
 from bravado.swagger_model import load_file
 from bravado.client import SwaggerClient, RequestsClient
 from requests.utils import parse_header_links
@@ -44,28 +47,42 @@ class InternalClient(SwaggerApiClient):
     def setup(self):
         self.setup_swagger()
 
-    def delete_device(self, id):
-        return requests.delete(self.make_api_url('/devices?device_id={}'.format(id)))
+    def delete_device(self, id, auth=None):
+        return requests.delete(self.make_api_url('/devices?device_id={}'.format(id)), headers=auth)
+
+    def make_id_auth(self, user, tenant):
+        jwt = common.make_id_jwt(user, tenant)
+        return {"Authorization" : "Bearer " + jwt}
 
 class ManagementClient(SwaggerApiClient):
     log = logging.getLogger('client.ManagementClient')
 
     spec_option = 'management_spec'
 
-    #user auth - dummy, just to make swagger client happy
-    uauth = {"headers": {"Authorization": "Bearer foobarbaz"}}
+    # default user auth - single user, single tenant
+    uauth = {"Authorization": "Bearer foobarbaz"}
 
     def setup(self):
         self.setup_swagger()
 
-    def get_all_devices(self, page=1):
-        r, h = self.client.devices.get_devices(page=page, _request_options=self.uauth).result()
+    def get_all_devices(self, page=1, auth=None):
+        if auth is None:
+            auth=self.uauth
+        r, h = self.client.devices.get_devices(page=page, _request_options={"headers": auth}).result()
         for i in parse_header_links(h.headers["link"]):
             if i["rel"] == "next":
                 page = int(dict(urlparse.parse_qs(urlparse.urlsplit(i["url"]).query))["page"][0])
-                return r + self.get_all_devices(page=page)
+                return r + self.get_all_devices(page=page, auth=auth)
         else:
             return r
+
+    def make_user_auth(self, user_id, tenant_id=None):
+        """
+            Prepare an almost-valid JWT auth header, suitable for consumption by deviceadm.
+        """
+        jwt = common.make_id_jwt(user_id, tenant_id)
+        return {"Authorization": "Bearer " + jwt}
+
 
 class ManagementClientSimple(ManagementClient):
     log = logging.getLogger('client.ManagementClientSimple')

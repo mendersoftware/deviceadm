@@ -10,9 +10,9 @@ services:
             - mender-device-adm
             - mender-device-auth
             - mender-inventory
+        command: -k "not Multitenant"
     mender-device-adm:
             # built/tagged locally and only used for testing
             image: mendersoftware/deviceadm:prtest
             volumes:
                 - "${TESTS_DIR}:/testing"
-
