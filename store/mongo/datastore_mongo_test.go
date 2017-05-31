@@ -15,11 +15,8 @@ package mongo
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
@@ -32,11 +29,6 @@ import (
 
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
-)
-
-const (
-	testDataFolder  = "testdata"
-	allDevsInputSet = "get_devices_input.json"
 )
 
 // db and test management funcs
@@ -115,22 +107,6 @@ func wipe(db *DataStoreMongo) error {
 	}
 
 	return nil
-}
-
-func parseDevs(dataset string) ([]model.DeviceAuth, error) {
-	f, err := os.Open(filepath.Join(testDataFolder, dataset))
-	if err != nil {
-		return nil, err
-	}
-
-	var devs []model.DeviceAuth
-
-	j := json.NewDecoder(f)
-	if err = j.Decode(&devs); err != nil {
-		return nil, err
-	}
-
-	return devs, nil
 }
 
 // test funcs
