@@ -31,10 +31,20 @@ import (
 	"github.com/mendersoftware/deviceadm/store"
 )
 
-// db and test management funcs
+// getDb returns a new, clean, data store.
 func getDb() *DataStoreMongo {
 	db.Wipe()
 	return NewDataStoreMongoWithSession(db.Session())
+}
+
+// getMigratedDb returns a new data store and applies migrations
+func getMigratedDb(t *testing.T, ctx context.Context) *DataStoreMongo {
+	ds := getDb()
+
+	err := ds.Migrate(ctx, DbVersion)
+	assert.NoError(t, err)
+
+	return ds
 }
 
 // randStatus returns a randomly chosen status
@@ -115,12 +125,14 @@ func TestMongoGetDevices(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevices in short mode.")
 	}
 
-	d := getDb()
+	ctx := context.Background()
+
+	d := getMigratedDb(t, ctx)
 	defer d.session.Close()
 
 	var err error
 
-	_, err = d.GetDeviceAuths(context.Background(), 0, 5, store.Filter{})
+	_, err = d.GetDeviceAuths(ctx, 0, 5, store.Filter{})
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -236,11 +248,11 @@ func TestMongoGetDevice(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
 	}
 
-	d := getDb()
+	ctx := context.Background()
+
+	d := getMigratedDb(t, ctx)
 	defer d.session.Close()
 	var err error
-
-	ctx := context.Background()
 
 	_, err = d.GetDeviceAuth(ctx, "")
 	assert.Error(t, err, "expected error")
@@ -296,11 +308,12 @@ func TestMongoPutDevice(t *testing.T) {
 		t.Skip("skipping TestMongoGetDevice in short mode.")
 	}
 
-	d := getDb()
-	defer d.session.Close()
-	var err error
-
 	ctx := context.Background()
+
+	d := getMigratedDb(t, ctx)
+	defer d.session.Close()
+
+	var err error
 
 	_, err = d.GetDeviceAuth(ctx, "")
 	assert.Error(t, err, "expected error")
@@ -380,11 +393,11 @@ func TestMongoPutDeviceTime(t *testing.T) {
 		t.Skip("skipping TestMongoPutDeviceTime in short mode.")
 	}
 
-	d := getDb()
+	ctx := context.Background()
+
+	d := getMigratedDb(t, ctx)
 	defer d.session.Close()
 	var err error
-
-	ctx := context.Background()
 
 	dev, err := d.GetDeviceAuth(ctx, "foobar")
 	assert.Nil(t, dev)
