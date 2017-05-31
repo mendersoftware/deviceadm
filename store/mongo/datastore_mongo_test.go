@@ -186,56 +186,55 @@ func TestMongoGetDevices(t *testing.T) {
 	known.Status = model.DevStatusAccepted
 	devs = append(devs, known)
 
-	for idx, tc := range testCases {
-		t.Logf("tc: %v", idx)
-		//setup
-		ctx := context.Background()
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(fmt.Sprintf("tc: %v", idx), func(t *testing.T) {
+			ctx := context.Background()
 
-		d := getMigratedDb(t, ctx)
+			//setup
+			d := getMigratedDb(t, ctx)
+			defer d.session.Close()
 
-		var err error
+			if tc.tenant != "" {
+				ctx = identity.WithContext(ctx, &identity.Identity{
+					Subject: "foo",
+					Tenant:  tc.tenant,
+				})
+			}
+			err := setUp(ctx, d, devs)
+			assert.NoError(t, err, "failed to setup input data")
 
-		if tc.tenant != "" {
-			ctx = identity.WithContext(ctx, &identity.Identity{
-				Subject: "foo",
-				Tenant:  tc.tenant,
-			})
-		}
-		err = setUp(ctx, d, devs)
-		assert.NoError(t, err, "failed to setup input data")
+			//test
 
-		//test
-
-		if tc.tenant != "" {
-			// tenant identity is setup and kept in context, try
-			// fetching devices using a context without identity,
-			// this should return no devices
-			dbdevs, err := d.GetDeviceAuths(context.Background(),
-				tc.skip, tc.limit, tc.filter)
+			if tc.tenant != "" {
+				// tenant identity is setup and kept in context, try
+				// fetching devices using a context without identity,
+				// this should return no devices
+				dbdevs, err := d.GetDeviceAuths(context.Background(),
+					tc.skip, tc.limit, tc.filter)
+				assert.NoError(t, err, "failed to get devices")
+				assert.Len(t, dbdevs, 0)
+			}
+			dbdevs, err := d.GetDeviceAuths(ctx, tc.skip, tc.limit, tc.filter)
 			assert.NoError(t, err, "failed to get devices")
-			assert.Len(t, dbdevs, 0)
-		}
-		dbdevs, err := d.GetDeviceAuths(ctx, tc.skip, tc.limit, tc.filter)
-		assert.NoError(t, err, "failed to get devices")
 
-		if tc.limit != 0 {
-			assert.True(t, len(dbdevs) > 0 && len(dbdevs) <= tc.limit)
-		} else {
-			assert.NotEmpty(t, dbdevs)
-		}
-
-		if tc.filter.Status != "" {
-			for _, d := range dbdevs {
-				assert.Equal(t, tc.filter.Status, d.Status)
+			if tc.limit != 0 {
+				assert.True(t, len(dbdevs) > 0 && len(dbdevs) <= tc.limit)
+			} else {
+				assert.NotEmpty(t, dbdevs)
 			}
-		}
-		if tc.filter.DeviceID != "" {
-			for _, d := range dbdevs {
-				assert.Equal(t, tc.filter.DeviceID, d.DeviceId)
-			}
-		}
 
-		d.session.Close()
+			if tc.filter.Status != "" {
+				for _, d := range dbdevs {
+					assert.Equal(t, tc.filter.Status, d.Status)
+				}
+			}
+			if tc.filter.DeviceID != "" {
+				for _, d := range dbdevs {
+					assert.Equal(t, tc.filter.DeviceID, d.DeviceId)
+				}
+			}
+		})
 	}
 }
 
@@ -446,32 +445,29 @@ func TestMigrate(t *testing.T) {
 	}
 
 	for name, tc := range testCases {
-		t.Logf("case: %s", name)
-		db.Wipe()
-		session := db.Session()
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			d := getDb()
 
-		ctx := context.Background()
+			defer d.session.Close()
 
-		store := NewDataStoreMongoWithSession(session)
-
-		err := store.Migrate(ctx, tc.version)
-		if tc.err == "" {
-			assert.NoError(t, err)
-			// list migrations
-			var out []migrate.MigrationEntry
-			session.DB(ctx_store.DbFromContext(ctx, DbName)).
-				C(migrate.DbMigrationsColl).Find(nil).All(&out)
-			sort.Slice(out, func(i int, j int) bool {
-				return migrate.VersionIsLess(out[i].Version, out[j].Version)
-			})
-			// the last migration should match what we want
-			v, _ := migrate.NewVersion(tc.version)
-			assert.Equal(t, *v, out[len(out)-1].Version)
-		} else {
-			assert.EqualError(t, err, tc.err)
-		}
-
-		session.Close()
+			err := d.Migrate(ctx, tc.version)
+			if tc.err == "" {
+				assert.NoError(t, err)
+				// list migrations
+				var out []migrate.MigrationEntry
+				d.session.DB(ctx_store.DbFromContext(ctx, DbName)).
+					C(migrate.DbMigrationsColl).Find(nil).All(&out)
+				sort.Slice(out, func(i int, j int) bool {
+					return migrate.VersionIsLess(out[i].Version, out[j].Version)
+				})
+				// the last migration should match what we want
+				v, _ := migrate.NewVersion(tc.version)
+				assert.Equal(t, *v, out[len(out)-1].Version)
+			} else {
+				assert.EqualError(t, err, tc.err)
+			}
+		})
 	}
 
 }
@@ -564,47 +560,44 @@ func TestMongoDeleteDevice(t *testing.T) {
 	}
 
 	for name, tc := range testCases {
-		t.Logf("case: %s", name)
-		db.Wipe()
-		session := db.Session()
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
 
-		store := NewDataStoreMongoWithSession(session)
+			d := getMigratedDb(t, ctx)
+			defer d.session.Close()
 
-		ctx := context.Background()
+			setUp(ctx, d, inDevs)
 
-		setUp(ctx, store, inDevs)
+			if tc.tenant != "" {
+				ctx = identity.WithContext(ctx, &identity.Identity{
+					Subject: "foo",
+					Tenant:  tc.tenant,
+				})
+				// once again but for tenant DB
+				setUp(ctx, d, inDevs)
+			}
 
-		if tc.tenant != "" {
-			ctx = identity.WithContext(ctx, &identity.Identity{
-				Subject: "foo",
-				Tenant:  tc.tenant,
-			})
-			// once again but for tenant DB
-			setUp(ctx, store, inDevs)
-		}
+			err := d.DeleteDeviceAuth(ctx, tc.id)
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err, "failed to delete device")
+			}
 
-		err := store.DeleteDeviceAuth(ctx, tc.id)
-		if tc.err != nil {
-			assert.EqualError(t, err, tc.err.Error())
-		} else {
-			assert.NoError(t, err, "failed to delete device")
-		}
+			if tc.tenant != "" {
+				// device should still be present in default DB though,
+				// as it's a separate storage
+				_, err := d.GetDeviceAuth(context.Background(), tc.id)
+				assert.NoError(t, err)
+			}
 
-		if tc.tenant != "" {
-			// device should still be present in default DB though,
-			// as it's a separate storage
-			_, err := store.GetDeviceAuth(context.Background(), tc.id)
-			assert.NoError(t, err)
-		}
+			var outDevs []model.DeviceAuth
+			err = d.session.DB(ctx_store.DbFromContext(ctx, DbName)).
+				C(DbDevicesColl).Find(nil).All(&outDevs)
+			assert.NoError(t, err, "failed to verify devices")
 
-		var outDevs []model.DeviceAuth
-		err = session.DB(ctx_store.DbFromContext(ctx, DbName)).
-			C(DbDevicesColl).Find(nil).All(&outDevs)
-		assert.NoError(t, err, "failed to verify devices")
-
-		assert.True(t, reflect.DeepEqual(tc.out, outDevs))
-
-		session.Close()
+			assert.True(t, reflect.DeepEqual(tc.out, outDevs))
+		})
 	}
 
 }
