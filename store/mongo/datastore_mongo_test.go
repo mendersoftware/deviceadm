@@ -120,9 +120,9 @@ func wipe(db *DataStoreMongo) error {
 }
 
 // test funcs
-func TestMongoGetDevices(t *testing.T) {
+func TestMongoGetDevicesEmpty(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping TestMongoGetDevices in short mode.")
+		t.Skip("skipping TestMongoGetDevicesEmpty in short mode.")
 	}
 
 	ctx := context.Background()
@@ -136,6 +136,19 @@ func TestMongoGetDevices(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+}
+
+func TestMongoGetDevices(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevices in short mode.")
+	}
+
+	ctx := context.Background()
+
+	d := getMigratedDb(t, ctx)
+	defer d.session.Close()
+
+	var err error
 
 	testCases := []struct {
 		skip   int
