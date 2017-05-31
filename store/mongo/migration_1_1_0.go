@@ -34,6 +34,10 @@ type migration_1_1_0 struct {
 	ctx context.Context
 }
 
+// Up applies a migration to version 1.1.0.
+//
+// In pre 1.1.x DB, the `id` field meant 'device ID'. In 1.1.0 device ID was
+// moved to `device_id` field, while `id` is now an authentication set ID.
 func (m *migration_1_1_0) Up(from migrate.Version) error {
 	s := m.ms.session.Copy()
 
