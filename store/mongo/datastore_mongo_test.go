@@ -105,20 +105,6 @@ func setUp(ctx context.Context, db *DataStoreMongo, devs []model.DeviceAuth) err
 	return nil
 }
 
-func wipe(db *DataStoreMongo) error {
-	s := db.session.Copy()
-	defer s.Close()
-
-	c := s.DB(DbName).C(DbDevicesColl)
-
-	_, err := c.RemoveAll(nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // test funcs
 func TestMongoGetDevicesEmpty(t *testing.T) {
 	if testing.Short() {
@@ -142,13 +128,6 @@ func TestMongoGetDevices(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestMongoGetDevices in short mode.")
 	}
-
-	ctx := context.Background()
-
-	d := getMigratedDb(t, ctx)
-	defer d.session.Close()
-
-	var err error
 
 	testCases := []struct {
 		skip   int
@@ -210,10 +189,12 @@ func TestMongoGetDevices(t *testing.T) {
 	for idx, tc := range testCases {
 		t.Logf("tc: %v", idx)
 		//setup
-		err = wipe(d)
-		assert.NoError(t, err, "failed to wipe data")
-
 		ctx := context.Background()
+
+		d := getMigratedDb(t, ctx)
+
+		var err error
+
 		if tc.tenant != "" {
 			ctx = identity.WithContext(ctx, &identity.Identity{
 				Subject: "foo",
@@ -253,6 +234,8 @@ func TestMongoGetDevices(t *testing.T) {
 				assert.Equal(t, tc.filter.DeviceID, d.DeviceId)
 			}
 		}
+
+		d.session.Close()
 	}
 }
 
