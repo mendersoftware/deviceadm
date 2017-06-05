@@ -12,32 +12,19 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package mongo
+package testing
 
 import (
+	"io/ioutil"
 	"os"
-	"testing"
 
-	ltesting "github.com/mendersoftware/go-lib-micro/log/testing"
-	mtesting "github.com/mendersoftware/go-lib-micro/mongo/testing"
+	"github.com/mendersoftware/go-lib-micro/log"
 )
 
-var db mtesting.TestDBRunner
-
-// Overwrites test execution and allows for test database setup
-func TestMain(m *testing.M) {
-
-	ltesting.MaybeDiscardLogs()
-
-	var status int
-	if !testing.Short() {
-		status = mtesting.WithDB(func(dbtest mtesting.TestDBRunner) int {
-			db = dbtest
-			return m.Run()
-		})
-	} else {
-		status = m.Run()
+// MaybeDiscardLogs() will setup a default logger to write to ioutil.Discard
+// unless TESTING_LOGS environment variable is non empty.
+func MaybeDiscardLogs() {
+	if os.Getenv("TESTING_LOGS") == "" {
+		log.Log.Out = ioutil.Discard
 	}
-
-	os.Exit(status)
 }
