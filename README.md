@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/mendersoftware/deviceadm.svg?branch=master)](https://travis-ci.org/mendersoftware/deviceadm)
-[![codecov](https://codecov.io/gh/mendersoftware/deviceadm/branch/master/graph/badge.svg)](https://codecov.io/gh/mendersoftware/deviceadm)
+[![Build Status](https://travis-ci.org/mendersoftware/deviceadm.svg?branch=1.1.x)](https://travis-ci.org/mendersoftware/deviceadm)
+[![codecov](https://codecov.io/gh/mendersoftware/deviceadm/branch/1.1.x/graph/badge.svg)](https://codecov.io/gh/mendersoftware/deviceadm)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mendersoftware/deviceadm)](https://goreportcard.com/report/github.com/mendersoftware/deviceadm)
 [![Docker pulls](https://img.shields.io/docker/pulls/mendersoftware/deviceadm.svg?maxAge=3600)](https://hub.docker.com/r/mendersoftware/deviceadm/)
 
