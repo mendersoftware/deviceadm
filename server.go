@@ -46,7 +46,16 @@ func RunServer(c config.Reader) error {
 
 	l := log.New(log.Ctx{})
 
-	d, err := mongo.NewDataStoreMongo(c.GetString(SettingDb))
+	d, err := mongo.NewDataStoreMongo(
+		mongo.DataStoreMongoConfig{
+			ConnectionString: c.GetString(SettingDb),
+
+			SSL:           c.GetBool(SettingDbSSL),
+			SSLSkipVerify: c.GetBool(SettingDbSSLSkipVerify),
+
+			Username: c.GetString(SettingDbUsername),
+			Password: c.GetString(SettingDbPassword),
+		})
 	if err != nil {
 		return errors.Wrap(err, "database connection failed")
 	}
