@@ -140,12 +140,17 @@ before_deploy:
     # Master is always lastest
     - if [ ! -z "$TRAVIS_TAG" ]; then export IMAGE_TAG=$TRAVIS_TAG; else export IMAGE_TAG=$TRAVIS_BRANCH; fi
 
-
     # Upload image to docker registry only on PUSH
     - if [ "$JOB_TYPE" = compile_and_basic_tests ]; then
         docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$IMAGE_TAG ;
         docker login --email=$DOCKER_HUB_EMAIL --username=$DOCKER_HUB_USERNAME --password=$DOCKER_HUB_PASSWORD ;
         docker push $DOCKER_REPOSITORY:$IMAGE_TAG;
+
+        if [ "$TRAVIS_BRANCH" = master ]; then 
+            export COMMIT_TAG="$TRAVIS_BRANCH"_"$TRAVIS_COMMIT";
+            docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$COMMIT_TAG;
+            docker push $DOCKER_REPOSITORY:$COMMIT_TAG;
+        fi;
       fi
 
 deploy:
