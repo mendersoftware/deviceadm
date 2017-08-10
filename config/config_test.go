@@ -91,3 +91,16 @@ func TestSetDefaultConfigs(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestFromConfigFile(t *testing.T) {
+	t.Parallel()
+
+	err := FromConfigFile("", nil)
+	if err != nil {
+		t.FailNow()
+	}
+	err = FromConfigFile("non-existing-file.yaml", nil)
+	if err == nil {
+		t.FailNow()
+	}
+}
