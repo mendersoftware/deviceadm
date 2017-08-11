@@ -101,10 +101,10 @@
 			"revisionTime": "2017-05-18T09:54:14Z"
 		},
 		{
-			"checksumSHA1": "usy+42cTFkhNCywZ0qZib1XJwP0=",
+			"checksumSHA1": "dg7MolFkWlFs9YoLQx7GlWcQCN0=",
 			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
+			"revisionTime": "2017-07-31T11:52:04Z"
 		},
 		{
 			"checksumSHA1": "aFpMSIKd5L05oFey4tkL1UEBtnE=",
@@ -125,10 +125,10 @@
 			"revisionTime": "2017-05-18T09:54:14Z"
 		},
 		{
-			"checksumSHA1": "BTWkxwffjDfdPpFB8YqAhNAKXYA=",
+			"checksumSHA1": "OPmEYY7BmPzu7cLZvMrJR2UmgZo=",
 			"path": "github.com/mendersoftware/go-lib-micro/store",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
+			"revisionTime": "2017-07-31T11:52:04Z"
 		},
 		{
 			"checksumSHA1": "FLmqfKOP+8V5+LJm1568MwJf4gk=",
