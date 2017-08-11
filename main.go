@@ -50,6 +50,21 @@ func main() {
 		},
 	}
 
+	app.Commands = []cli.Command{
+		{
+			Name:  "server",
+			Usage: "Run the service as a server",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "automigrate",
+					Usage: "Run database migrations before starting.",
+				},
+			},
+
+			Action: cmdServer,
+		},
+	}
+
 	app.Action = cmdServer
 	app.Before = func(args *cli.Context) error {
 		log.Setup(debug)
@@ -99,6 +114,10 @@ func cmdServer(args *cli.Context) error {
 		return cli.NewExitError(
 			fmt.Sprintf("failed to connect to db: %v", err),
 			3)
+	}
+
+	if args.Bool("automigrate") {
+		db = db.WithAutomigrate()
 	}
 
 	ctx := context.Background()
