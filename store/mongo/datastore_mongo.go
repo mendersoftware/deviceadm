@@ -39,7 +39,8 @@ const (
 )
 
 type DataStoreMongo struct {
-	session *mgo.Session
+	session     *mgo.Session
+	automigrate bool
 }
 
 func NewDataStoreMongoWithSession(s *mgo.Session) *DataStoreMongo {
@@ -267,15 +268,7 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	return nil
 }
 
-func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) error {
-	uniqueDevIdIdx := mgo.Index{
-		Key:        []string{dbDeviceIdIndex},
-		Unique:     true,
-		Name:       dbDeviceIdIndexName,
-		Background: false,
-	}
-
-	return s.DB(ctx_store.DbFromContext(ctx, DbName)).
-		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
-
+func (db *DataStoreMongo) WithAutomigrate() *DataStoreMongo {
+	db.automigrate = true
+	return db
 }
