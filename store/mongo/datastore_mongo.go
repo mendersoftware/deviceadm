@@ -296,3 +296,16 @@ func (db *DataStoreMongo) WithAutomigrate() *DataStoreMongo {
 	db.automigrate = true
 	return db
 }
+
+func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) error {
+	uniqueDevIdIdx := mgo.Index{
+		Key:        []string{dbDeviceIdIndex},
+		Unique:     true,
+		Name:       dbDeviceIdIndexName,
+		Background: false,
+	}
+
+	return s.DB(ctx_store.DbFromContext(ctx, DbName)).
+		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
+
+}
