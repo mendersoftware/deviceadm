@@ -222,6 +222,11 @@ func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
+
+	if err := db.EnsureIndexes(ctx, s); err != nil {
+		return err
+	}
+
 	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
 	filter := bson.M{"id": dev.ID}
