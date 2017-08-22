@@ -62,7 +62,17 @@ func main() {
 	l.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
-	db, err := mongo.NewDataStoreMongo(conf.GetString(SettingDb))
+	db, err := mongo.NewDataStoreMongo(
+		mongo.DataStoreMongoConfig{
+			ConnectionString: conf.GetString(SettingDb),
+
+			SSL:           conf.GetBool(SettingDbSSL),
+			SSLSkipVerify: conf.GetBool(SettingDbSSLSkipVerify),
+
+			Username: conf.GetString(SettingDbUsername),
+			Password: conf.GetString(SettingDbPassword),
+		})
+
 	if err != nil {
 		l.Fatal("failed to connect to db")
 	}

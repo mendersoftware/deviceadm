@@ -16,6 +16,9 @@ package mongo
 
 import (
 	"context"
+	"crypto/tls"
+	"net"
+	"time"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	ctx_store "github.com/mendersoftware/go-lib-micro/store"
@@ -41,18 +44,64 @@ func NewDataStoreMongoWithSession(s *mgo.Session) *DataStoreMongo {
 	return &DataStoreMongo{session: s}
 }
 
-func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
-	s, err := mgo.Dial(host)
+type DataStoreMongoConfig struct {
+	// MGO connection string
+	ConnectionString string
+
+	// SSL support
+	SSL           bool
+	SSLSkipVerify bool
+
+	// Overwrites credentials provided in connection string if provided
+	Username string
+	Password string
+}
+
+func NewDataStoreMongo(config DataStoreMongoConfig) (*DataStoreMongo, error) {
+	dialInfo, err := mgo.ParseURL(config.ConnectionString)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open mgo session")
 	}
 
+	// Set 10s timeout - same as set by Dial
+	dialInfo.Timeout = 10 * time.Second
+
+	if config.Username != "" {
+		dialInfo.Username = config.Username
+	}
+	if config.Password != "" {
+		dialInfo.Password = config.Password
+	}
+
+	if config.SSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+
+			// Setup TLS
+			tlsConfig := &tls.Config{}
+			tlsConfig.InsecureSkipVerify = config.SSLSkipVerify
+
+			conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
+			return conn, err
+		}
+	}
+
+	masterSession, err := mgo.DialWithInfo(dialInfo)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open mgo session")
+	}
+
+	// Validate connection
+	if err := masterSession.Ping(); err != nil {
+		return nil, errors.Wrap(err, "failed to open mgo session")
+	}
+
 	// force write ack with immediate journal file fsync
-	s.SetSafe(&mgo.Safe{
+	masterSession.SetSafe(&mgo.Safe{
 		W: 1,
 		J: true,
 	})
-	return NewDataStoreMongoWithSession(s), nil
+
+	return NewDataStoreMongoWithSession(masterSession), nil
 }
 
 func (db *DataStoreMongo) GetDeviceAuths(ctx context.Context, skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {

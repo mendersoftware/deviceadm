@@ -27,6 +27,15 @@ const (
 	SettingDb        = "mongo"
 	SettingDbDefault = "mongo-device-adm:27017"
 
+	SettingDbSSL        = "mongo_ssl"
+	SettingDbSSLDefault = false
+
+	SettingDbSSLSkipVerify        = "mongo_ssl_skipverify"
+	SettingDbSSLSkipVerifyDefault = false
+
+	SettingDbUsername = "mongo_username"
+	SettingDbPassword = "mongo_password"
+
 	SettingDevAuthUrl        = "devauthurl"
 	SettingDevAuthUrlDefault = "http://mender-device-auth:8080"
 )
@@ -38,5 +47,7 @@ var (
 		{Key: SettingMiddleware, Value: SettingMiddlewareDefault},
 		{Key: SettingDb, Value: SettingDbDefault},
 		{Key: SettingDevAuthUrl, Value: SettingDevAuthUrlDefault},
+		{Key: SettingDbSSL, Value: SettingDbSSLDefault},
+		{Key: SettingDbSSLSkipVerify, Value: SettingDbSSLSkipVerifyDefault},
 	}
 )
