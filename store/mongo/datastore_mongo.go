@@ -20,6 +20,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
@@ -39,7 +40,8 @@ const (
 )
 
 type DataStoreMongo struct {
-	session *mgo.Session
+	session     *mgo.Session
+	automigrate bool
 }
 
 func NewDataStoreMongoWithSession(s *mgo.Session) *DataStoreMongo {
@@ -243,28 +245,56 @@ func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAu
 }
 
 func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
-	m := migrate.SimpleMigrator{
-		Session: db.session,
-		Db:      ctx_store.DbFromContext(ctx, DbName),
+
+	l := log.FromContext(ctx)
+
+	dbs, err := migrate.GetTenantDbs(db.session, ctx_store.IsTenantDb(DbName))
+	if err != nil {
+		return errors.Wrap(err, "failed go retrieve tenant DBs")
 	}
 
-	ver, err := migrate.NewVersion(version)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse service version")
+	if len(dbs) == 0 {
+		dbs = []string{DbName}
 	}
 
-	migrations := []migrate.Migration{
-		&migration_1_1_0{
-			ms:  db,
-			ctx: ctx,
-		},
+	if db.automigrate {
+		l.Infof("automigrate is ON, will apply migrations")
+	} else {
+		l.Infof("automigrate is OFF, will check db version compatibility")
 	}
-	err = m.Apply(ctx, *ver, migrations)
-	if err != nil {
-		return errors.Wrap(err, "failed to apply migrations")
+
+	for _, d := range dbs {
+		l.Infof("migrating %s", d)
+		m := migrate.SimpleMigrator{
+			Session:     db.session,
+			Db:          d,
+			Automigrate: db.automigrate,
+		}
+
+		ver, err := migrate.NewVersion(version)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse service version")
+		}
+
+		migrations := []migrate.Migration{
+			&migration_1_1_0{
+				ms:  db,
+				ctx: ctx,
+			},
+		}
+
+		err = m.Apply(ctx, *ver, migrations)
+		if err != nil {
+			return errors.Wrap(err, "failed to apply migrations")
+		}
 	}
 
 	return nil
+}
+
+func (db *DataStoreMongo) WithAutomigrate() *DataStoreMongo {
+	db.automigrate = true
+	return db
 }
 
 func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) error {

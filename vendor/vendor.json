@@ -101,10 +101,10 @@
 			"revisionTime": "2017-05-18T09:54:14Z"
 		},
 		{
-			"checksumSHA1": "usy+42cTFkhNCywZ0qZib1XJwP0=",
+			"checksumSHA1": "dg7MolFkWlFs9YoLQx7GlWcQCN0=",
 			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
+			"revisionTime": "2017-07-31T11:52:04Z"
 		},
 		{
 			"checksumSHA1": "aFpMSIKd5L05oFey4tkL1UEBtnE=",
@@ -125,10 +125,10 @@
 			"revisionTime": "2017-05-18T09:54:14Z"
 		},
 		{
-			"checksumSHA1": "BTWkxwffjDfdPpFB8YqAhNAKXYA=",
+			"checksumSHA1": "OPmEYY7BmPzu7cLZvMrJR2UmgZo=",
 			"path": "github.com/mendersoftware/go-lib-micro/store",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
+			"revisionTime": "2017-07-31T11:52:04Z"
 		},
 		{
 			"checksumSHA1": "FLmqfKOP+8V5+LJm1568MwJf4gk=",
@@ -188,6 +188,12 @@
 			"comment": "v1.1.3-19-gd77da35",
 			"path": "github.com/stretchr/testify/mock",
 			"revision": "d77da356e56a7428ad25149ca77381849a6a5232"
+		},
+		{
+			"checksumSHA1": "uGalSICR4r7354vvKuNnh7Y/R/4=",
+			"path": "github.com/urfave/cli",
+			"revision": "b99aa811b4c1dd84cc6bccb8499c82c72098085a",
+			"revisionTime": "2017-08-04T09:34:15Z"
 		},
 		{
 			"checksumSHA1": "c8iMfP5+K3GEg26HJiO0OVVLiM4=",
