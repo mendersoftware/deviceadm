@@ -16,7 +16,11 @@ package mongo
 
 import (
 	"context"
+	"crypto/tls"
+	"net"
+	"time"
 
+	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
@@ -28,31 +32,80 @@ import (
 )
 
 const (
-	DbVersion     = "1.1.0"
-	DbName        = "deviceadm"
-	DbDevicesColl = "devices"
+	DbVersion           = "1.1.0"
+	DbName              = "deviceadm"
+	DbDevicesColl       = "devices"
+	dbDeviceIdIndex     = "id"
+	dbDeviceIdIndexName = "uniqueDeviceIdIndex"
 )
 
 type DataStoreMongo struct {
-	session *mgo.Session
+	session     *mgo.Session
+	automigrate bool
 }
 
 func NewDataStoreMongoWithSession(s *mgo.Session) *DataStoreMongo {
 	return &DataStoreMongo{session: s}
 }
 
-func NewDataStoreMongo(host string) (*DataStoreMongo, error) {
-	s, err := mgo.Dial(host)
+type DataStoreMongoConfig struct {
+	// MGO connection string
+	ConnectionString string
+
+	// SSL support
+	SSL           bool
+	SSLSkipVerify bool
+
+	// Overwrites credentials provided in connection string if provided
+	Username string
+	Password string
+}
+
+func NewDataStoreMongo(config DataStoreMongoConfig) (*DataStoreMongo, error) {
+	dialInfo, err := mgo.ParseURL(config.ConnectionString)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open mgo session")
 	}
 
+	// Set 10s timeout - same as set by Dial
+	dialInfo.Timeout = 10 * time.Second
+
+	if config.Username != "" {
+		dialInfo.Username = config.Username
+	}
+	if config.Password != "" {
+		dialInfo.Password = config.Password
+	}
+
+	if config.SSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+
+			// Setup TLS
+			tlsConfig := &tls.Config{}
+			tlsConfig.InsecureSkipVerify = config.SSLSkipVerify
+
+			conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
+			return conn, err
+		}
+	}
+
+	masterSession, err := mgo.DialWithInfo(dialInfo)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open mgo session")
+	}
+
+	// Validate connection
+	if err := masterSession.Ping(); err != nil {
+		return nil, errors.Wrap(err, "failed to open mgo session")
+	}
+
 	// force write ack with immediate journal file fsync
-	s.SetSafe(&mgo.Safe{
+	masterSession.SetSafe(&mgo.Safe{
 		W: 1,
 		J: true,
 	})
-	return NewDataStoreMongoWithSession(s), nil
+
+	return NewDataStoreMongoWithSession(masterSession), nil
 }
 
 func (db *DataStoreMongo) GetDeviceAuths(ctx context.Context, skip, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
@@ -171,6 +224,11 @@ func genDeviceAuthUpdate(dev *model.DeviceAuth) *model.DeviceAuth {
 func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
 	s := db.session.Copy()
 	defer s.Close()
+
+	if err := db.EnsureIndexes(ctx, s); err != nil {
+		return err
+	}
+
 	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
 	filter := bson.M{"id": dev.ID}
@@ -187,26 +245,67 @@ func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAu
 }
 
 func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
-	m := migrate.SimpleMigrator{
-		Session: db.session,
-		Db:      ctx_store.DbFromContext(ctx, DbName),
+
+	l := log.FromContext(ctx)
+
+	dbs, err := migrate.GetTenantDbs(db.session, ctx_store.IsTenantDb(DbName))
+	if err != nil {
+		return errors.Wrap(err, "failed go retrieve tenant DBs")
 	}
 
-	ver, err := migrate.NewVersion(version)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse service version")
+	if len(dbs) == 0 {
+		dbs = []string{DbName}
 	}
 
-	migrations := []migrate.Migration{
-		&migration_1_1_0{
-			ms:  db,
-			ctx: ctx,
-		},
+	if db.automigrate {
+		l.Infof("automigrate is ON, will apply migrations")
+	} else {
+		l.Infof("automigrate is OFF, will check db version compatibility")
 	}
-	err = m.Apply(ctx, *ver, migrations)
-	if err != nil {
-		return errors.Wrap(err, "failed to apply migrations")
+
+	for _, d := range dbs {
+		l.Infof("migrating %s", d)
+		m := migrate.SimpleMigrator{
+			Session:     db.session,
+			Db:          d,
+			Automigrate: db.automigrate,
+		}
+
+		ver, err := migrate.NewVersion(version)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse service version")
+		}
+
+		migrations := []migrate.Migration{
+			&migration_1_1_0{
+				ms:  db,
+				ctx: ctx,
+			},
+		}
+
+		err = m.Apply(ctx, *ver, migrations)
+		if err != nil {
+			return errors.Wrap(err, "failed to apply migrations")
+		}
 	}
 
 	return nil
+}
+
+func (db *DataStoreMongo) WithAutomigrate() *DataStoreMongo {
+	db.automigrate = true
+	return db
+}
+
+func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) error {
+	uniqueDevIdIdx := mgo.Index{
+		Key:        []string{dbDeviceIdIndex},
+		Unique:     true,
+		Name:       dbDeviceIdIndexName,
+		Background: false,
+	}
+
+	return s.DB(ctx_store.DbFromContext(ctx, DbName)).
+		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
+
 }

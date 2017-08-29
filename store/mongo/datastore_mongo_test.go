@@ -26,6 +26,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	ctx_store "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
@@ -41,6 +42,7 @@ func getDb() *DataStoreMongo {
 func getMigratedDb(t *testing.T, ctx context.Context) *DataStoreMongo {
 	ds := getDb()
 
+	ds = ds.WithAutomigrate()
 	err := ds.Migrate(ctx, DbVersion)
 	assert.NoError(t, err)
 
@@ -431,45 +433,91 @@ func TestMigrate(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
+		tenantDbs   []string
+		automigrate bool
+
 		version string
 		err     string
 	}{
 		DbVersion: {
-			version: DbVersion,
-			err:     "",
+			automigrate: true,
+			version:     DbVersion,
+			err:         "",
 		},
+		DbVersion + " no automigrate": {
+			automigrate: false,
+			version:     DbVersion,
+			err:         "failed to apply migrations: db needs migration: deviceadm has version 0.0.0, needs version 1.1.0",
+		},
+		DbVersion + " multitenant": {
+			automigrate: true,
+			tenantDbs:   []string{"deviceadm-tenant1id", "deviceadm-tenant2id"},
+			version:     DbVersion,
+			err:         "",
+		},
+		DbVersion + " multitenant, no automigrate": {
+			automigrate: false,
+			tenantDbs:   []string{"deviceadm-tenant1id", "deviceadm-tenant2id"},
+			version:     DbVersion,
+			err:         "failed to apply migrations: db needs migration: deviceadm-tenant1id has version 0.0.0, needs version 1.1.0",
+		},
+
 		"0.1 error": {
-			version: "0.1",
-			err:     "failed to parse service version: failed to parse Version: unexpected EOF",
+			automigrate: true,
+			version:     "0.1",
+			err:         "failed to parse service version: failed to parse Version: unexpected EOF",
 		},
 	}
 
 	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("tc: %s", name), func(t *testing.T) {
+			db.Wipe()
+			db := NewDataStoreMongoWithSession(db.Session())
+
+			// set up automigration
+			if tc.automigrate {
+				db = db.WithAutomigrate()
+			}
+
+			// set up multitenancy/tenant dbs
+			if len(tc.tenantDbs) != 0 {
+
+				for _, d := range tc.tenantDbs {
+					err := db.session.DB(d).C("foo").Insert(bson.M{"foo": "bar"})
+					assert.NoError(t, err)
+				}
+			}
+
 			ctx := context.Background()
-			d := getDb()
-
-			defer d.session.Close()
-
-			err := d.Migrate(ctx, tc.version)
+			err := db.Migrate(ctx, tc.version)
 			if tc.err == "" {
 				assert.NoError(t, err)
-				// list migrations
-				var out []migrate.MigrationEntry
-				d.session.DB(ctx_store.DbFromContext(ctx, DbName)).
-					C(migrate.DbMigrationsColl).Find(nil).All(&out)
-				sort.Slice(out, func(i int, j int) bool {
-					return migrate.VersionIsLess(out[i].Version, out[j].Version)
-				})
-				// the last migration should match what we want
-				v, _ := migrate.NewVersion(tc.version)
-				assert.Equal(t, *v, out[len(out)-1].Version)
+
+				// verify migration entry in all databases (>1 if multitenant)
+				if tc.automigrate {
+					dbs := []string{DbName}
+					if len(tc.tenantDbs) > 0 {
+						dbs = tc.tenantDbs
+					}
+
+					for _, d := range dbs {
+						var out []migrate.MigrationEntry
+						db.session.DB(d).C(migrate.DbMigrationsColl).Find(nil).All(&out)
+						sort.Slice(out, func(i int, j int) bool {
+							return migrate.VersionIsLess(out[i].Version, out[j].Version)
+						})
+						// the last migration should match what we want
+						v, _ := migrate.NewVersion(tc.version)
+						assert.Equal(t, *v, out[len(out)-1].Version)
+					}
+				}
+
 			} else {
 				assert.EqualError(t, err, tc.err)
 			}
+			db.session.Close()
 		})
 	}
-
 }
 
 func TestMongoDeleteDevice(t *testing.T) {

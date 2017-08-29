@@ -1,9 +1,57 @@
-    # HTTP Server middleware environment
-    # Available values:
-    #   dev
-    #       development environment
-    #   prod
-    #       production environment
-    #
-    # Defaults to: prod
-#middleware: dev
+# API server listen address
+# Defauls to: ":8080" which will listen on all avalable interfaces.
+# Overwrite with environment variable: DEVICEADM_LISTEN
+
+# listen: :8080
+
+# HTTP Server middleware environment
+# Available values:
+#   dev
+#       development environment
+#   prod
+#       production environment
+# Defaults to: prod
+# Overwrite with environment variable: DEVICEADM_MIDDLEWARE
+
+# middleware: dev
+
+# Mongodb connection string
+# Defaults to: mongo-device-adm:27017
+# Overwrite with environment variable: DEVICEADM_MONGO
+
+# mongo: mongo-device-adm:27017
+
+# Enable SSL for mongo connections
+# Defaults to: false
+# Overwrite with environment variable: DEVICEADM_MONGO_SSL
+
+# mongo_ssl: false
+
+# SkipVerify controls whether a mongo client verifies the
+# server's certificate chain and host name.
+# If InsecureSkipVerify is true, accepts any certificate
+# presented by the server and any host name in that certificate.
+# Defaults to: false
+# Overwrite with environment variable: DEVICEADM_MONGO_SSL_SKIPVERIFY
+
+# mongo_ssl_skipverify: false
+
+# Mongodb username
+# Overwrites username set in connection string.
+# Defaults to: none
+# Overwrite with environment variable: DEVICEADM_MONGO_USERNAME
+
+# mongo_username: user
+
+# Mongodb password
+# Overwrites password set in connection string.
+# Defaults to: none
+# Overwrite with environment variable: DEVICEADM_MONGO_PASSWORD
+
+# mongo_password: secret
+
+# Device AUTH service address
+# Defaults to: http://mender-device-auth:8080
+# Overwrite with environment variable: DEVICEADM_DEVAUTHURL
+
+# devauthurl: http://mender-device-auth:8080
