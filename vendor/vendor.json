@@ -65,70 +65,70 @@
 			"revision": "23b847ebbbdaada7234bf4b3da1e50e601fbf63b"
 		},
 		{
-			"checksumSHA1": "JRGHsodU6lgiNHRodtyIO34hRF4=",
+			"checksumSHA1": "/mOvduy+/BeHzjEY07waXBpEE/k=",
 			"path": "github.com/mendersoftware/go-lib-micro/accesslog",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "IMuxXx5YYD4vyZKNsN0izSvE+/g=",
+			"checksumSHA1": "+II8QC3LTt7majKgB3t0FVNXTus=",
 			"path": "github.com/mendersoftware/go-lib-micro/context",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "5PDgQnNLCVPQR537rMBdiAPm5aM=",
+			"checksumSHA1": "Jfc8ahIou9KAgtZPcofhbbg8WZM=",
 			"path": "github.com/mendersoftware/go-lib-micro/customheader",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "K6B6i0WLq7hsjmaUyjSyyr2klq8=",
+			"checksumSHA1": "UGSi9+StrrwmJJSlmhXyOWjuwmA=",
 			"path": "github.com/mendersoftware/go-lib-micro/identity",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "JcLlWuDsZQ7QtUEW811PPS30NyE=",
+			"checksumSHA1": "sjZTcLtNqYZXDjy1vjzUW69Fu14=",
 			"path": "github.com/mendersoftware/go-lib-micro/log",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "Dng/qbc1obqad8/9fFEi/VPpepg=",
+			"checksumSHA1": "1+jIjx1TOHJjNfKUV3RSFvJxZo0=",
 			"path": "github.com/mendersoftware/go-lib-micro/log/testing",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "dg7MolFkWlFs9YoLQx7GlWcQCN0=",
+			"checksumSHA1": "ex0LIULKWhIa45dlm88d6gMq+rM=",
 			"path": "github.com/mendersoftware/go-lib-micro/mongo/migrate",
-			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
-			"revisionTime": "2017-07-31T11:52:04Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "aFpMSIKd5L05oFey4tkL1UEBtnE=",
+			"checksumSHA1": "uUX0ZZ289IPV3dSr94A+G3GUh1Y=",
 			"path": "github.com/mendersoftware/go-lib-micro/mongo/testing",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "70zTx2u1SXKjVGvH/3RGIyDYh4o=",
+			"checksumSHA1": "rbMSpi0sV6UXtl3GWLnaEHq/pmQ=",
 			"path": "github.com/mendersoftware/go-lib-micro/requestid",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "XYdz+3uujydvDBIeQ1DaEB0VKCg=",
+			"checksumSHA1": "nBBAp74ovN/vJlNUW+e/Tp5NBsk=",
 			"path": "github.com/mendersoftware/go-lib-micro/requestlog",
-			"revision": "afdbc098a3c89b6107481a6bc986fd2e15dac218",
-			"revisionTime": "2017-05-18T09:54:14Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
-			"checksumSHA1": "OPmEYY7BmPzu7cLZvMrJR2UmgZo=",
+			"checksumSHA1": "hej0lNMVBkxsD1gP+YW/OJuI7RQ=",
 			"path": "github.com/mendersoftware/go-lib-micro/store",
-			"revision": "6fb2a5796a5784a972f04828a9adc67741388ee5",
-			"revisionTime": "2017-07-31T11:52:04Z"
+			"revision": "2db4d4057f33f95097fa8c879dda9c0180296c98",
+			"revisionTime": "2017-09-22T11:24:39Z"
 		},
 		{
 			"checksumSHA1": "FLmqfKOP+8V5+LJm1568MwJf4gk=",
