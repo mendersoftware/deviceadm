@@ -20,6 +20,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 	ctx_store "github.com/mendersoftware/go-lib-micro/store"
@@ -264,7 +265,14 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	for _, d := range dbs {
-		l.Infof("migrating %s", d)
+		// if not in multi tenant, then tenant will be "" and identity
+		// will be the same as default
+		tenant := ctx_store.TenantFromDbName(d, DbName)
+
+		tenantCtx := identity.WithContext(ctx, &identity.Identity{
+			Tenant: tenant,
+		})
+
 		m := migrate.SimpleMigrator{
 			Session:     db.session,
 			Db:          d,
@@ -279,11 +287,11 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 		migrations := []migrate.Migration{
 			&migration_1_1_0{
 				ms:  db,
-				ctx: ctx,
+				ctx: tenantCtx,
 			},
 		}
 
-		err = m.Apply(ctx, *ver, migrations)
+		err = m.Apply(tenantCtx, *ver, migrations)
 		if err != nil {
 			return errors.Wrap(err, "failed to apply migrations")
 		}
