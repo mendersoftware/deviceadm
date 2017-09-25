@@ -509,6 +509,18 @@ func TestMigrate(t *testing.T) {
 						// the last migration should match what we want
 						v, _ := migrate.NewVersion(tc.version)
 						assert.Equal(t, *v, out[len(out)-1].Version)
+
+						// verify index exists
+						c := db.session.DB(d).C(DbDevicesColl)
+						indexes, err := c.Indexes()
+						assert.NoError(t, err)
+						haveIdx := false
+						for _, i := range indexes {
+							if i.Name == dbDeviceIdIndexName {
+								haveIdx = true
+							}
+						}
+						assert.True(t, haveIdx)
 					}
 				}
 
