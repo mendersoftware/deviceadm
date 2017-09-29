@@ -2,8 +2,8 @@ FROM alpine:3.4
 
 EXPOSE 8080
 
-COPY ./deviceadm /usr/bin/
+COPY ./deviceadm-test /usr/bin/
 COPY ./config.yaml /usr/bin/
 STOPSIGNAL SIGINT
 
-ENTRYPOINT ["/usr/bin/deviceadm", "-test.coverprofile=/testing/coverage-acceptance.txt", "-acceptance-tests", "-test.run=TestRunMain", "-cli-args=server --automigrate"]
+ENTRYPOINT ["/usr/bin/deviceadm-test", "-test.coverprofile=/testing/coverage-acceptance.txt", "-acceptance-tests", "-test.run=TestRunMain", "-cli-args=server --automigrate"]
