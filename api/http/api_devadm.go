@@ -14,14 +14,12 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/requestid"
-	"github.com/mendersoftware/go-lib-micro/requestlog"
 	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/deviceadm/devadm"
@@ -344,12 +342,4 @@ func restErrWithLogMsg(w rest.ResponseWriter, r *rest.Request, l *log.Logger, e 
 		panic(err)
 	}
 	l.F(log.Ctx{}).Error(errors.Wrap(e, msg).Error())
-}
-
-// unpack contextual request data into context.Context
-func restToContext(r *rest.Request) context.Context {
-	ctx := r.Context()
-	ctx = log.WithContext(ctx, requestlog.GetRequestLogger(r.Env))
-	ctx = requestid.WithContext(ctx, requestid.GetReqId(r))
-	return ctx
 }

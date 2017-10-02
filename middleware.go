@@ -36,14 +36,16 @@ const (
 )
 
 var (
-	DefaultDevStack = []rest.Middleware{
+	commonLoggingAccessStack = []rest.Middleware{
 
 		// logging
 		&requestlog.RequestLogMiddleware{},
-		&requestid.RequestIdMiddleware{},
 		&accesslog.AccessLogMiddleware{Format: accesslog.SimpleLogFormat},
 		&rest.TimerMiddleware{},
 		&rest.RecorderMiddleware{},
+	}
+
+	defaultDevStack = []rest.Middleware{
 
 		// catches the panic errors that occur with stack trace
 		&rest.RecoverMiddleware{
@@ -52,37 +54,79 @@ var (
 
 		// json pretty print
 		&rest.JsonIndentMiddleware{},
-
-		// verifies the request Content-Type header
-		// The expected Content-Type is 'application/json'
-		// if the content is non-null
-		&rest.ContentTypeCheckerMiddleware{},
 	}
 
-	DefaultProdStack = []rest.Middleware{
-
-		// logging
-		&requestlog.RequestLogMiddleware{},
-		&requestid.RequestIdMiddleware{},
-		&accesslog.AccessLogMiddleware{Format: accesslog.SimpleLogFormat},
-		&rest.TimerMiddleware{},
-		&rest.RecorderMiddleware{},
-
+	defaultProdStack = []rest.Middleware{
 		// catches the panic errors
 		&rest.RecoverMiddleware{},
 
 		// response compression
 		&rest.GzipMiddleware{},
+	}
+
+	commonStack = []rest.Middleware{
+		// CORS
+		&rest.CorsMiddleware{
+			RejectNonCorsRequests: false,
+
+			// Should be tested with some list
+			OriginValidator: func(origin string, request *rest.Request) bool {
+				// Accept all requests
+				return true
+			},
+
+			// Preflight request cache length
+			AccessControlMaxAge: 60,
+
+			// Allow authentication requests
+			AccessControlAllowCredentials: true,
+
+			// Allowed headers
+			AllowedMethods: []string{
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodDelete,
+				http.MethodOptions,
+			},
+
+			// Allowed headers
+			AllowedHeaders: []string{
+				"Accept",
+				"Allow",
+				"Content-Type",
+				"Origin",
+				"Authorization",
+				"Accept-Encoding",
+				"Access-Control-Request-Headers",
+				"Header-Access-Control-Request",
+			},
+
+			// Headers that can be exposed to JS
+			AccessControlExposeHeaders: []string{
+				"Location",
+				"Link",
+			},
+		},
 
 		// verifies the request Content-Type header
 		// The expected Content-Type is 'application/json'
 		// if the content is non-null
 		&rest.ContentTypeCheckerMiddleware{},
+		&requestid.RequestIdMiddleware{},
+		&mctx.UpdateContextMiddleware{
+			Updates: []mctx.UpdateContextFunc{
+				preserveHeaders,
+			},
+		},
+		&identity.IdentityMiddleware{
+			UpdateLogger: true,
+		},
 	}
 
 	middlewareMap = map[string][]rest.Middleware{
-		EnvProd: DefaultProdStack,
-		EnvDev:  DefaultDevStack,
+		EnvProd: defaultProdStack,
+		EnvDev:  defaultDevStack,
 	}
 )
 
@@ -97,6 +141,8 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 
 	l.Infof("setting up %s middleware", mwtype)
 
+	api.Use(commonLoggingAccessStack...)
+
 	mwstack, ok := middlewareMap[mwtype]
 	if ok != true {
 		return fmt.Errorf("incorrect middleware type: %s", mwtype)
@@ -104,57 +150,7 @@ func SetupMiddleware(api *rest.Api, mwtype string) error {
 
 	api.Use(mwstack...)
 
-	api.Use(&rest.CorsMiddleware{
-		RejectNonCorsRequests: false,
-
-		// Should be tested with some list
-		OriginValidator: func(origin string, request *rest.Request) bool {
-			// Accept all requests
-			return true
-		},
-
-		// Preflight request cache length
-		AccessControlMaxAge: 60,
-
-		// Allow authentication requests
-		AccessControlAllowCredentials: true,
-
-		// Allowed headers
-		AllowedMethods: []string{
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodDelete,
-			http.MethodOptions,
-		},
-
-		// Allowed headers
-		AllowedHeaders: []string{
-			"Accept",
-			"Allow",
-			"Content-Type",
-			"Origin",
-			"Authorization",
-			"Accept-Encoding",
-			"Access-Control-Request-Headers",
-			"Header-Access-Control-Request",
-		},
-
-		// Headers that can be exposed to JS
-		AccessControlExposeHeaders: []string{
-			"Location",
-			"Link",
-		},
-	})
-
-	api.Use(&mctx.UpdateContextMiddleware{
-		Updates: []mctx.UpdateContextFunc{
-			mctx.RepackLoggerToContext,
-			mctx.RepackRequestIdToContext,
-			preserveHeaders,
-		}})
-
-	api.Use(&identity.IdentityMiddleware{})
+	api.Use(commonStack...)
 
 	return nil
 }
