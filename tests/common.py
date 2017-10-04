@@ -25,6 +25,8 @@ from tenantadm import fake_tenantadm
 
 from pymongo import MongoClient
 
+from client import CliClient
+
 
 apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
          pytest.config.getoption("devauth_host")
@@ -120,4 +122,10 @@ def clean_db(mongo):
     mongo_cleanup(mongo)
     yield
     mongo_cleanup(mongo)
+
+
+@pytest.fixture(scope="session")
+def cli():
+    return CliClient()
+
 

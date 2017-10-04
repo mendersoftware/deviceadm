@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 
 import pytest
 import json
@@ -89,3 +90,17 @@ class ManagementClientSimple(ManagementClient):
 
     def __init__(self):
         self.setup_swagger()
+
+
+class CliClient:
+    cmd = '/testing/deviceadm'
+
+    def migrate(self, tenant_id=None):
+        args = [
+            self.cmd,
+            'migrate']
+
+        if tenant_id:
+            args += ['--tenant', tenant_id]
+
+        subprocess.run(args, check=True)
