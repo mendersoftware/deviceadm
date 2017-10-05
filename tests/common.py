@@ -23,6 +23,10 @@ from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA256
 from tenantadm import fake_tenantadm
 
+from pymongo import MongoClient
+
+from client import CliClient
+
 
 apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
          pytest.config.getoption("devauth_host")
@@ -99,3 +103,29 @@ def do_create_devices(tenant_id, count):
         r = requests.post(apiURL, headers=headers, data=authReqJson, verify=False)
 
         assert r.status_code == 401
+
+
+@pytest.fixture(scope="session")
+def mongo():
+    return MongoClient('mender-mongo-device-adm:27017')
+
+
+def mongo_cleanup(mongo):
+    dbs = mongo.database_names()
+    dbs = [d for d in dbs if d not in ['local', 'admin']]
+    for d in dbs:
+        mongo.drop_database(d)
+
+
+@pytest.yield_fixture(scope='function')
+def clean_db(mongo):
+    mongo_cleanup(mongo)
+    yield
+    mongo_cleanup(mongo)
+
+
+@pytest.fixture(scope="session")
+def cli():
+    return CliClient()
+
+

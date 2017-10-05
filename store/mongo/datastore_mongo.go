@@ -245,6 +245,36 @@ func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAu
 	return nil
 }
 
+func (db *DataStoreMongo) MigrateTenant(ctx context.Context, version string, tenant string) error {
+	ver, err := migrate.NewVersion(version)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse service version")
+	}
+
+	tenantCtx := identity.WithContext(ctx, &identity.Identity{
+		Tenant: tenant,
+	})
+
+	m := migrate.SimpleMigrator{
+		Session:     db.session,
+		Db:          ctx_store.DbFromContext(tenantCtx, DbName),
+		Automigrate: db.automigrate,
+	}
+
+	migrations := []migrate.Migration{
+		&migration_1_1_0{
+			ms:  db,
+			ctx: tenantCtx,
+		},
+	}
+
+	err = m.Apply(tenantCtx, *ver, migrations)
+	if err != nil {
+		return errors.Wrap(err, "failed to apply migrations")
+	}
+	return nil
+}
+
 func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 
 	l := log.FromContext(ctx)
@@ -265,35 +295,14 @@ func (db *DataStoreMongo) Migrate(ctx context.Context, version string) error {
 	}
 
 	for _, d := range dbs {
+		l.Infof("migrating %s", d)
+
 		// if not in multi tenant, then tenant will be "" and identity
 		// will be the same as default
 		tenant := ctx_store.TenantFromDbName(d, DbName)
 
-		tenantCtx := identity.WithContext(ctx, &identity.Identity{
-			Tenant: tenant,
-		})
-
-		m := migrate.SimpleMigrator{
-			Session:     db.session,
-			Db:          d,
-			Automigrate: db.automigrate,
-		}
-
-		ver, err := migrate.NewVersion(version)
-		if err != nil {
-			return errors.Wrap(err, "failed to parse service version")
-		}
-
-		migrations := []migrate.Migration{
-			&migration_1_1_0{
-				ms:  db,
-				ctx: tenantCtx,
-			},
-		}
-
-		err = m.Apply(tenantCtx, *ver, migrations)
-		if err != nil {
-			return errors.Wrap(err, "failed to apply migrations")
+		if err := db.MigrateTenant(ctx, version, tenant); err != nil {
+			return err
 		}
 	}
 
