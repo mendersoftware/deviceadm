@@ -23,6 +23,7 @@ import (
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 // helper for obtaining API clients
@@ -107,9 +108,12 @@ func (d *DevAdm) propagateDeviceAuthUpdate(ctx context.Context, dev *model.Devic
 		Status:   dev.Status,
 	})
 	if err != nil {
-		// no good if we cannot propagate device update
-		// further
-		return errors.Wrap(err, "failed to propagate device status update")
+		if utils.IsUsageError(err) {
+			return err
+		} else {
+
+			return errors.Wrap(err, "failed to propagate device status update")
+		}
 	}
 	return nil
 }
