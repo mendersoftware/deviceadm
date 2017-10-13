@@ -137,7 +137,7 @@ func cmdServer(args *cli.Context) error {
 	}
 
 	if args.Bool("automigrate") {
-		db = db.WithAutomigrate()
+		db = db.WithAutomigrate().(*mongo.DataStoreMongo)
 	}
 
 	ctx := context.Background()
@@ -182,7 +182,7 @@ func cmdMigrate(args *cli.Context) error {
 	}
 
 	// we want to apply migrations
-	db.WithAutomigrate()
+	db = db.WithAutomigrate().(*mongo.DataStoreMongo)
 
 	ctx := context.Background()
 
