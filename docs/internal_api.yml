@@ -6,7 +6,7 @@ info:
   description: |
     An API for device admission handling. Intended for internal use.
 
-basePath: '/api/0.1.0/'
+basePath: '/api/internal/v1/admission'
 host: 'mender-device-adm:8080'
 
 schemes:
