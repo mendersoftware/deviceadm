@@ -92,6 +92,11 @@ class ManagementClientSimple(ManagementClient):
     def __init__(self):
         self.setup_swagger()
 
+class InternalClientSimple(InternalClient):
+    log = logging.getLogger('client.InternalClientSimple')
+
+    def __init__(self):
+        self.setup_swagger()
 
 class CliClient:
     cmd = '/testing/deviceadm'
