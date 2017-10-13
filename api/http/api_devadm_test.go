@@ -351,6 +351,16 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 			nil,
 			errors.New("internal error"),
 		},
+		"abovelimit": {
+			&model.DeviceAuth{
+				ID:             "foo",
+				DeviceId:       "bar",
+				Key:            "foobar",
+				Status:         "accepted",
+				DeviceIdentity: "deadcafe",
+			},
+			&utils.UsageError{UserMsg: "max dev count limit reached"},
+		},
 	}
 
 	mockaction := func(_ context.Context, id model.AuthID) error {
@@ -423,6 +433,13 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 				rejstatus),
 			code: 200,
 			body: ToJson(rejstatus),
+		},
+		{
+			req: test.MakeSimpleRequest("PUT",
+				"http://1.2.3.4/api/0.1.0/devices/abovelimit/status",
+				accstatus),
+			code: 422,
+			body: RestError("max dev count limit reached"),
 		},
 	}
 

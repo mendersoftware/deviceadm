@@ -22,9 +22,11 @@ import (
 	"time"
 
 	"github.com/mendersoftware/go-lib-micro/log"
+	"github.com/mendersoftware/go-lib-micro/rest_utils"
 	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/deviceadm/client"
+	"github.com/mendersoftware/deviceadm/utils"
 )
 
 const (
@@ -32,6 +34,8 @@ const (
 	defaultDevAuthDevicesUri = "/api/management/v1/devauth/devices/{id}/auth/{aid}/status"
 	// default request timeout, 10s?
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
+
+	errMaxDevsReached = "maximum number of accepted devices reached"
 )
 
 type Config struct {
@@ -88,11 +92,20 @@ func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
 	}
 	defer rsp.Body.Close()
 
-	if rsp.StatusCode != http.StatusNoContent {
+	switch rsp.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	case http.StatusUnprocessableEntity:
+		err := rest_utils.ParseApiError(rsp.Body)
+		if rest_utils.IsApiError(err) {
+			return utils.NewUsageError(err.Error())
+		} else {
+			return errors.Wrap(err, "device status update request failed")
+		}
+	default:
 		return errors.Errorf("device status update request failed with status %v",
 			rsp.Status)
 	}
-	return nil
 }
 
 func NewClient(c Config, client client.HttpRunner) *Client {

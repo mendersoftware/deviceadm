@@ -275,7 +275,9 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 		err = d.DevAdm.RejectDeviceAuth(ctx, model.AuthID(authid))
 	}
 	if err != nil {
-		if err == store.ErrNotFound {
+		if utils.IsUsageError(err) {
+			restErrWithLog(w, r, l, err, http.StatusUnprocessableEntity)
+		} else if err == store.ErrNotFound {
 			restErrWithLog(w, r, l, err, http.StatusNotFound)
 		} else {
 			restErrWithLogInternal(w, r, l,

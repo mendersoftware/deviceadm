@@ -15,12 +15,16 @@ package deviceauth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mendersoftware/deviceadm/utils"
+	"github.com/mendersoftware/go-lib-micro/rest_utils"
 )
 
 func TestDevAuthClientUrl(t *testing.T) {
@@ -36,16 +40,21 @@ func TestDevAuthClientUrl(t *testing.T) {
 	assert.Equal(t, "http://devauth:9999/api/management/v1/devauth/devices/1234/auth/1/status", s)
 }
 
-// return mock http server returning status code 'status'
-func newMockServer(status int) *httptest.Server {
+// return mock http server returning status code 'status' and optionally a canned response
+func newMockServer(t *testing.T, status int, res interface{}) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
+		if res != nil {
+			body, err := json.Marshal(res)
+			assert.NoError(t, err)
+			w.Write(body)
+		}
 	}))
 
 }
 
 func TestDevAuthClientReqSuccess(t *testing.T) {
-	s := newMockServer(http.StatusNoContent)
+	s := newMockServer(t, http.StatusNoContent, nil)
 	defer s.Close()
 
 	c := NewClient(Config{
@@ -60,7 +69,7 @@ func TestDevAuthClientReqSuccess(t *testing.T) {
 }
 
 func TestDevAuthClientReqFail(t *testing.T) {
-	s := newMockServer(http.StatusBadRequest)
+	s := newMockServer(t, http.StatusBadRequest, nil)
 	defer s.Close()
 
 	c := NewClient(Config{
@@ -73,6 +82,28 @@ func TestDevAuthClientReqFail(t *testing.T) {
 			DeviceId: "1",
 		})
 	assert.Error(t, err, "expected an error")
+}
+
+func TestDevAuthClientReqFailUnprocessable(t *testing.T) {
+	s := newMockServer(t,
+		http.StatusUnprocessableEntity,
+		&rest_utils.ApiError{Err: "max dev limit reached"})
+	defer s.Close()
+
+	c := NewClient(Config{
+		DevauthUrl: s.URL,
+	}, &http.Client{})
+
+	err := c.UpdateDevice(context.Background(),
+		StatusReq{
+			AuthId:   "123",
+			DeviceId: "1",
+		})
+
+	assert.Error(t, err, "max dev limit reached")
+	ue, ok := err.(*utils.UsageError)
+	assert.True(t, ok)
+	assert.Equal(t, ue.UserMsg, "max dev limit reached")
 }
 
 func TestDevAuthClientReqUrl(t *testing.T) {
