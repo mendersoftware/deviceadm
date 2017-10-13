@@ -36,6 +36,8 @@ const (
 	//internal api
 	uriDevicesInternal = "/api/internal/v1/admission/devices"
 	uriDeviceInternal  = "/api/internal/v1/admission/devices/:id"
+
+	uriTenants = "/api/internal/v1/admission/tenants"
 )
 
 // model of device status response at /devices/:id/status endpoint,
@@ -67,6 +69,8 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 
 		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
 		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
+
+		rest.Post(uriTenants, d.ProvisionTenantHandler),
 	}
 
 	routes = append(routes)
@@ -320,6 +324,27 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (d *DevAdmHandlers) ProvisionTenantHandler(w rest.ResponseWriter, r *rest.Request) {
+	ctx := r.Context()
+	l := log.FromContext(ctx)
+
+	defer r.Body.Close()
+
+	tenant, err := model.ParseNewTenant(r.Body)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
+	err = d.DevAdm.ProvisionTenant(ctx, tenant.TenantId)
+	if err != nil {
+		restErrWithLogInternal(w, r, l, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 // return selected http code + error message directly taken from error
