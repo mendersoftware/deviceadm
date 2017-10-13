@@ -55,6 +55,11 @@ class InternalClient(SwaggerApiClient):
         jwt = common.make_id_jwt(user, tenant)
         return {"Authorization" : "Bearer " + jwt}
 
+    def create_tenant(self, tenant_id):
+        return self.client.tenants.post_tenants(tenant={
+                    "tenant_id": tenant_id}).result()
+
+
 class ManagementClient(SwaggerApiClient):
     log = logging.getLogger('client.ManagementClient')
 
