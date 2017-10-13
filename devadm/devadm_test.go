@@ -265,6 +265,48 @@ func TestDevAdmRejectDevice(t *testing.T) {
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
 
+func TestDevAdmProvisionTenant(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		datastoreError error
+		outError       error
+	}{
+		"ok": {
+			datastoreError: nil,
+			outError:       nil,
+		},
+		"generic error": {
+			datastoreError: errors.New("failed to provision tenant"),
+			outError:       errors.New("failed to provision tenant"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			ctx := context.Background()
+
+			db := &mstore.DataStore{}
+			db.On("MigrateTenant", ctx,
+				"1.1.0",
+				mock.AnythingOfType("string"),
+			).Return(tc.datastoreError)
+			db.On("WithAutomigrate").Return(db)
+			i := devadmForTest(db)
+
+			err := i.ProvisionTenant(ctx, "foo")
+
+			if tc.outError != nil {
+				if assert.Error(t, err) {
+					assert.EqualError(t, err, tc.outError.Error())
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestNewDevAdm(t *testing.T) {
 	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{})
 

@@ -23,6 +23,7 @@ import (
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
+	"github.com/mendersoftware/deviceadm/store/mongo"
 	"github.com/mendersoftware/deviceadm/utils"
 )
 
@@ -43,6 +44,8 @@ type App interface {
 	DeleteDeviceAuth(ctx context.Context, id model.AuthID) error
 
 	DeleteDeviceData(ctx context.Context, id model.DeviceID) error
+
+	ProvisionTenant(ctx context.Context, tenant_id string) error
 }
 
 func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
@@ -154,4 +157,8 @@ func (d *DevAdm) RejectDeviceAuth(ctx context.Context, id model.AuthID) error {
 
 func (d *DevAdm) DeleteDeviceData(ctx context.Context, devid model.DeviceID) error {
 	return d.db.DeleteDeviceAuthByDevice(ctx, devid)
+}
+
+func (d *DevAdm) ProvisionTenant(ctx context.Context, tenant_id string) error {
+	return d.db.WithAutomigrate().MigrateTenant(ctx, mongo.DbVersion, tenant_id)
 }
