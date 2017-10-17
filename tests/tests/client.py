@@ -33,8 +33,7 @@ class SwaggerApiClient:
                                               config=self.config,
                                               http_client=self.http_client)
 
-        self.client.swagger_spec.api_url = "http://{}/api/{}/".format(pytest.config.getoption("host"),
-                                                                      pytest.config.getoption("api"))
+        self.client.swagger_spec.api_url = "http://{}/api/{}/v1/admission".format(pytest.config.getoption("host"), self.api_type)
 
     def make_api_url(self, path):
         return os.path.join(self.client.swagger_spec.api_url,
@@ -44,6 +43,7 @@ class InternalClient(SwaggerApiClient):
     log = logging.getLogger('client.InternalClient')
 
     spec_option = 'internal_spec'
+    api_type = "internal"
 
     def setup(self):
         self.setup_swagger()
@@ -59,6 +59,7 @@ class ManagementClient(SwaggerApiClient):
     log = logging.getLogger('client.ManagementClient')
 
     spec_option = 'management_spec'
+    api_type = "management"
 
     # default user auth - single user, single tenant
     uauth = {"Authorization": "Bearer foobarbaz"}

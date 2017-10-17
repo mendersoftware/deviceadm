@@ -109,7 +109,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			limit:       6,
 			listDevices: mockListDeviceAuths(5),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=4&per_page=5", nil),
 			code: 200,
 			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
@@ -125,7 +125,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			limit:       6,
 			listDevices: mockListDeviceAuths(9),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=4&per_page=5", nil),
 			code: 200,
 			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
@@ -138,21 +138,21 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		{
 			//invalid pagination - format
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=foo&per_page=5", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=foo&per_page=5", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmInvalid("page")),
 		},
 		{
 			//invalid pagination - format
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=1&per_page=foo", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=1&per_page=foo", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmInvalid("per_page")),
 		},
 		{
 			//invalid pagination - bounds
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=0&per_page=5", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=0&per_page=5", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmLimit("page")),
 		},
@@ -163,7 +163,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			filter:      store.Filter{Status: "accepted"},
 			listDevices: mockListDeviceAuths(6),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5&status=accepted", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=4&per_page=5&status=accepted", nil),
 			code: 200,
 			body: ToJson(mockListDeviceAuths(5)),
 			hdrs: []string{
@@ -176,7 +176,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 		{
 			//invalid status
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=1&per_page=5&status=foo", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=1&per_page=5&status=foo", nil),
 			code: 400,
 			body: RestError(utils.MsgQueryParmOneOf("status", utils.DevStatuses)),
 		},
@@ -186,7 +186,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			limit:          6,
 			listDevicesErr: errors.New("devadm error"),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?page=4&per_page=5", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?page=4&per_page=5", nil),
 			code: 500,
 			body: RestError("internal error"),
 		},
@@ -195,7 +195,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			filter:      store.Filter{DeviceID: "foo"},
 			listDevices: mockListDeviceAuths(2),
 			req: test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices?device_id=foo", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices?device_id=foo", nil),
 			code: 200,
 			body: ToJson(mockListDeviceAuths(2)),
 		},
@@ -294,13 +294,13 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 	}{
 		{
 			test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices/foo", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices/foo", nil),
 			200,
 			ToJson(devs["foo"].dev),
 		},
 		{
 			test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices/foo/status", nil),
 			200,
 			ToJson(struct {
 				Status string `json:"status"`
@@ -310,18 +310,18 @@ func TestApiDevAdmGetDevice(t *testing.T) {
 		},
 		{
 			test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices/bar", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices/bar", nil),
 			500,
 			RestError(devs["bar"].err.Error()),
 		},
 		{
 			test.MakeSimpleRequest("GET",
-				"http://1.2.3.4/api/0.1.0/devices/baz", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices/baz", nil),
 			404,
 			RestError(store.ErrNotFound.Error()),
 		},
 		{
-			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/0.1.0/devices/baz/status", nil),
+			test.MakeSimpleRequest("GET", "http://1.2.3.4/api/management/v1/admission/devices/baz/status", nil),
 			404,
 			RestError(store.ErrNotFound.Error()),
 		},
@@ -395,48 +395,48 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 	}{
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/foo/status", nil),
+				"http://1.2.3.4/api/management/v1/admission/devices/foo/status", nil),
 			code: 400,
 			body: RestError("failed to decode status data: JSON payload is empty"),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/foo/status",
 				DevAdmApiStatus{"foo"}),
 			code: 400,
 			body: RestError("incorrect device status"),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/foo/status",
 				accstatus),
 			code: 200,
 			body: ToJson(accstatus),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/bar/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/bar/status",
 				accstatus),
 			code: 500,
 			body: RestError(devs["bar"].err.Error()),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/baz/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/baz/status",
 				accstatus),
 			code: 404,
 			body: RestError(store.ErrNotFound.Error()),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/foo/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/foo/status",
 				rejstatus),
 			code: 200,
 			body: ToJson(rejstatus),
 		},
 		{
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/abovelimit/status",
+				"http://1.2.3.4/api/management/v1/admission/devices/abovelimit/status",
 				accstatus),
 			code: 422,
 			body: RestError("max dev count limit reached"),
@@ -480,7 +480,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 	}{
 		"empty body": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				nil),
 			id:       "id-0001",
 			respCode: 400,
@@ -488,7 +488,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"garbled body": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				"foo bar"),
 			id:       "id-0001",
 			respCode: 400,
@@ -496,7 +496,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, all fields present": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"key":       "key-0001",
 					"device_id": "123",
@@ -511,7 +511,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, 'key' missing": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"device_id": "123",
 					"device_identity": makeJson(t,
@@ -526,7 +526,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, identity missing": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"device_id": "123",
 					"key":       "key-0001",
@@ -538,7 +538,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, identity garbled": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"device_id":       "123",
 					"key":             "key-0001",
@@ -551,7 +551,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, identity empty": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"device_id":       "123",
 					"key":             "key-0001",
@@ -564,7 +564,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, devadm error": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"device_id": "123",
 					"key":       "key-0001",
@@ -581,7 +581,7 @@ func TestApiDevAdmSubmitDevice(t *testing.T) {
 		},
 		"body formatted ok, missing device_id": {
 			req: test.MakeSimpleRequest("PUT",
-				"http://1.2.3.4/api/0.1.0/devices/id-0001",
+				"http://1.2.3.4/api/management/v1/admission/devices/id-0001",
 				map[string]string{
 					"key": "key-0001",
 					"device_identity": makeJson(t,
@@ -631,7 +631,7 @@ func TestApiDeleteDevice(t *testing.T) {
 		body string
 	}{
 		"success": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/2", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices/2", nil),
 
 			devadmErr: nil,
 			id:        "2",
@@ -640,7 +640,7 @@ func TestApiDeleteDevice(t *testing.T) {
 			body: "",
 		},
 		"error: no device": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/1", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices/1", nil),
 
 			devadmErr: store.ErrNotFound,
 			id:        "1",
@@ -648,7 +648,7 @@ func TestApiDeleteDevice(t *testing.T) {
 			code: http.StatusNoContent,
 		},
 		"error: generic": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices/3", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices/3", nil),
 
 			devadmErr: errors.New("some internal error"),
 			id:        "3",
@@ -686,7 +686,7 @@ func TestApiDeleteDeviceData(t *testing.T) {
 		body string
 	}{
 		"success": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=2", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices?device_id=2", nil),
 
 			devadmErr: nil,
 			devid:     "2",
@@ -695,7 +695,7 @@ func TestApiDeleteDeviceData(t *testing.T) {
 			body: "",
 		},
 		"error: no device": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=1", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices?device_id=1", nil),
 
 			devadmErr: store.ErrNotFound,
 			devid:     "1",
@@ -703,7 +703,7 @@ func TestApiDeleteDeviceData(t *testing.T) {
 			code: http.StatusNoContent,
 		},
 		"error: generic": {
-			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/0.1.0/devices?device_id=3", nil),
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/internal/v1/admission/devices?device_id=3", nil),
 
 			devadmErr: errors.New("some internal error"),
 			devid:     "3",

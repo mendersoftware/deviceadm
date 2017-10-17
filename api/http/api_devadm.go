@@ -29,9 +29,13 @@ import (
 )
 
 const (
-	uriDevices      = "/api/0.1.0/devices"
-	uriDevice       = "/api/0.1.0/devices/:id"
-	uriDeviceStatus = "/api/0.1.0/devices/:id/status"
+	uriDevices      = "/api/management/v1/admission/devices"
+	uriDevice       = "/api/management/v1/admission/devices/:id"
+	uriDeviceStatus = "/api/management/v1/admission/devices/:id/status"
+
+	//internal api
+	uriDevicesInternal = "/api/internal/v1/admission/devices"
+	uriDeviceInternal  = "/api/internal/v1/admission/devices/:id"
 )
 
 // model of device status response at /devices/:id/status endpoint,
@@ -55,11 +59,11 @@ func NewDevAdmApiHandlers(devadm devadm.App) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
-		rest.Delete(uriDevices, d.DeleteDevicesHandler),
+		rest.Delete(uriDevicesInternal, d.DeleteDevicesHandler),
 
 		rest.Put(uriDevice, d.SubmitDeviceHandler),
 		rest.Get(uriDevice, d.GetDeviceHandler),
-		rest.Delete(uriDevice, d.DeleteDeviceHandler),
+		rest.Delete(uriDeviceInternal, d.DeleteDeviceHandler),
 
 		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
 		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),

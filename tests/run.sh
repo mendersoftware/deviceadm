@@ -14,7 +14,7 @@ DEVICEAUTH_HOST=${DEVICEAUTH_HOST="mender-device-auth:8080"}
     sleep 10
 }
 
-py.test-3 -s --tb=short --api=0.1.0  --host $HOST \
+py.test-3 -s --tb=short --host $HOST \
           --devauth-host $DEVICEAUTH_HOST \
           --devices 101 \
           --management-spec $DIR/management_api.yml \
