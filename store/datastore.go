@@ -49,4 +49,7 @@ type DataStore interface {
 
 	// remove auth sets owned by device
 	DeleteDeviceAuthByDevice(ctx context.Context, id model.DeviceID) error
+
+	MigrateTenant(ctx context.Context, version string, tenant string) error
+	WithAutomigrate() DataStore
 }

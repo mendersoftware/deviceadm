@@ -42,7 +42,7 @@ func getDb() *DataStoreMongo {
 func getMigratedDb(t *testing.T, ctx context.Context) *DataStoreMongo {
 	ds := getDb()
 
-	ds = ds.WithAutomigrate()
+	ds = ds.WithAutomigrate().(*DataStoreMongo)
 	err := ds.Migrate(ctx, DbVersion)
 	assert.NoError(t, err)
 
@@ -476,7 +476,7 @@ func TestMigrate(t *testing.T) {
 
 			// set up automigration
 			if tc.automigrate {
-				db = db.WithAutomigrate()
+				db = db.WithAutomigrate().(*DataStoreMongo)
 			}
 
 			// set up multitenancy/tenant dbs

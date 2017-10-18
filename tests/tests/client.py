@@ -55,6 +55,11 @@ class InternalClient(SwaggerApiClient):
         jwt = common.make_id_jwt(user, tenant)
         return {"Authorization" : "Bearer " + jwt}
 
+    def create_tenant(self, tenant_id):
+        return self.client.tenants.post_tenants(tenant={
+                    "tenant_id": tenant_id}).result()
+
+
 class ManagementClient(SwaggerApiClient):
     log = logging.getLogger('client.ManagementClient')
 
@@ -92,6 +97,11 @@ class ManagementClientSimple(ManagementClient):
     def __init__(self):
         self.setup_swagger()
 
+class InternalClientSimple(InternalClient):
+    log = logging.getLogger('client.InternalClientSimple')
+
+    def __init__(self):
+        self.setup_swagger()
 
 class CliClient:
     cmd = '/testing/deviceadm'

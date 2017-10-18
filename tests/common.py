@@ -25,7 +25,7 @@ from tenantadm import fake_tenantadm
 
 from pymongo import MongoClient
 
-from client import CliClient
+from client import CliClient, InternalClientSimple
 
 
 apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
@@ -120,7 +120,7 @@ def mongo_cleanup(mongo):
 @pytest.yield_fixture(scope='function')
 def clean_db(mongo):
     mongo_cleanup(mongo)
-    yield
+    yield mongo
     mongo_cleanup(mongo)
 
 
@@ -128,4 +128,7 @@ def clean_db(mongo):
 def cli():
     return CliClient()
 
+@pytest.fixture(scope="session")
+def api_client_int():
+    return InternalClientSimple()
 
