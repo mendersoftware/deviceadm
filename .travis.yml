@@ -87,7 +87,7 @@ before_script:
     - gocyclo -over 15 `find . -iname '*.go' | grep -v /vendor/ | grep -v '_test.go'`
 
    # Verify that the Swagger docs are valid
-    - swagger validate docs/*.yml
+    - swagger-cli validate docs/*.yml
 
    # Verify that the Swagger docs follow the autodeployment requirements
     - python2.7 verify_docs.py `find docs -name "*.yml"`
@@ -146,7 +146,7 @@ before_deploy:
         docker login --email=$DOCKER_HUB_EMAIL --username=$DOCKER_HUB_USERNAME --password=$DOCKER_HUB_PASSWORD ;
         docker push $DOCKER_REPOSITORY:$IMAGE_TAG;
 
-        if [ "$TRAVIS_BRANCH" = master ]; then 
+        if [ "$TRAVIS_BRANCH" = master ]; then
             export COMMIT_TAG="$TRAVIS_BRANCH"_"$TRAVIS_COMMIT";
             docker tag $DOCKER_REPOSITORY:pr $DOCKER_REPOSITORY:$COMMIT_TAG;
             docker push $DOCKER_REPOSITORY:$COMMIT_TAG;
@@ -173,14 +173,14 @@ deploy:
     # Force before_deploy for branches
     -
         provider: script
-        script: /bin/true 
+        script: /bin/true
         on:
             all_branches: true
 
     # Force before_deploy for tags
     -
         provider: script
-        script: /bin/true 
+        script: /bin/true
         on:
             tags: true
             all_branches: true
