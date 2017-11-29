@@ -15,7 +15,7 @@ schemes:
 paths:
   /devices:
     get:
-      summary: List known device  data sets
+      summary: List known device data sets
       description: |
         Returns a paged collection of device authentication data sets registered
         for admission, and optionally filters by device admission status.
@@ -211,6 +211,28 @@ paths:
           description: Internal server error.
           schema:
             $ref: "#/definitions/Error"
+    delete:
+      summary: Remove device authentication data set
+      description: Removes all device authentication data set data.
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
+        - name: id
+          in: path
+          description: device authentication data set identifier
+          required: true
+          type: string
+      responses:
+        204:
+          description: The device authentication data set was removed.
+        500:
+          description: Internal server error.
+          schema:
+           $ref: "#/definitions/Error"
   /devices/{id}/status:
     get:
       summary: Check the admission status of a selected device authentication data set
