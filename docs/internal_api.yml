@@ -58,6 +58,51 @@ paths:
           description: Internal server error.
           schema:
            $ref: "#/definitions/Error"
+  /devices/{id}/status:
+    put:
+      summary: Update the admission status of a selected device
+      description: |
+        Changes the given device's admission status.
+        The only possible status transition using this endpoint is from 'preauthorized' to 'accepted'.
+        Valid state transitions:
+        - 'preauthorized' -> 'accepted'
+      parameters:
+        - name: id
+          in: path
+          description: Device authentication data set identifier.
+          required: true
+          type: string
+        - name: status
+          in: body
+          description: New status
+          required: true
+          schema:
+            $ref: '#/definitions/Status'
+      responses:
+        200:
+          description: The status of the device authentication data set was successfully updated.
+          schema:
+            $ref: "#/definitions/Status"
+          examples:
+            application/json:
+              status: "accepted"
+        400:
+          description: |
+              The request body is malformed or the new status is different then 'accepted'.
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: The device authentication data set was not found.
+          schema:
+            $ref: "#/definitions/Error"
+        409:
+          description: Current device authentication data set status is different then 'preauthorized'.
+          schema:
+            $ref: "#/definitions/Error"
+        500:
+          description: Internal server error.
+          schema:
+            $ref: "#/definitions/Error"
 
   /tenants:
     post:
@@ -106,3 +151,16 @@ definitions:
       application/json:
           error: "device not found"
           request_id: "f7881e82-0492-49fb-b459-795654e7188a"
+  Status:
+    description: Admission status of device authentication data set.
+    type: object
+    properties:
+      status:
+        type: string
+        enum:
+          - accepted
+    required:
+      - status
+    example:
+      application/json:
+          status: "accepted"
