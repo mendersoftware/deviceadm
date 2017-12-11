@@ -33,6 +33,12 @@
 			"revision": "3a807d6d8d36e0f9175d6c292030fce09bcbb2db"
 		},
 		{
+			"checksumSHA1": "4pqVzk2qBe3ms8VSlDHA+81LlSE=",
+			"path": "github.com/asaskevich/govalidator",
+			"revision": "852d82c746b23d9b357b210ea470d99f4e023b72",
+			"revisionTime": "2017-11-28T15:35:14Z"
+		},
+		{
 			"checksumSHA1": "5rPfda8jFccr3A6heL+JAmi9K9g=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
