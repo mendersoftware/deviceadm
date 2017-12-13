@@ -52,6 +52,8 @@ type App interface {
 	DeleteDeviceData(ctx context.Context, id model.DeviceID) error
 
 	ProvisionTenant(ctx context.Context, tenant_id string) error
+
+	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error
 }
 
 func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
@@ -120,7 +122,7 @@ func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 		return errors.Wrap(err, "failed to fetch auth set")
 	}
 
-	if dev.Status != model.DevStatusPreauth {
+	if dev.Status != model.DevStatusPreauthorized {
 		return ErrNotPreauthorized
 	}
 
@@ -194,4 +196,13 @@ func (d *DevAdm) DeleteDeviceData(ctx context.Context, devid model.DeviceID) err
 
 func (d *DevAdm) ProvisionTenant(ctx context.Context, tenant_id string) error {
 	return d.db.WithAutomigrate().MigrateTenant(ctx, mongo.DbVersion, tenant_id)
+}
+
+func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error {
+	dev := &model.DeviceAuth{}
+	dev.DeviceIdentity = authSet.DeviceId
+	dev.Status = model.DevStatusPreauthorized
+	dev.Attributes = authSet.Attributes
+
+	return d.db.InsertDeviceAuth(ctx, dev)
 }

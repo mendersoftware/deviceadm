@@ -269,6 +269,14 @@ func (db *DataStoreMongo) UpdateDeviceAuth(ctx context.Context, dev *model.Devic
 	}
 }
 
+func (db *DataStoreMongo) InsertDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+
+	dev.ID = model.AuthID(bson.NewObjectId().Hex())
+	dev.DeviceId = model.DeviceID(bson.NewObjectId().Hex())
+
+	return db.PutDeviceAuth(ctx, dev)
+}
+
 func (db *DataStoreMongo) MigrateTenant(ctx context.Context, version string, tenant string) error {
 	ver, err := migrate.NewVersion(version)
 	if err != nil {

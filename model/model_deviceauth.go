@@ -24,10 +24,10 @@ type AuthID string
 type DeviceAuthAttributes map[string]string
 
 const (
-	DevStatusAccepted = "accepted"
-	DevStatusRejected = "rejected"
-	DevStatusPending  = "pending"
-	DevStatusPreauth  = "preauthorized"
+	DevStatusAccepted      = "accepted"
+	DevStatusRejected      = "rejected"
+	DevStatusPending       = "pending"
+	DevStatusPreauthorized = "preauthorized"
 )
 
 // Device authentication data set wrapper

@@ -97,6 +97,20 @@ func (_m *DataStore) GetDeviceAuths(ctx context.Context, skip int, limit int, fi
 	return r0, r1
 }
 
+// InsertDeviceAuth provides a mock function with given fields: ctx, dev
+func (_m *DataStore) InsertDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+	ret := _m.Called(ctx, dev)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeviceAuth) error); ok {
+		r0 = rf(ctx, dev)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // MigrateTenant provides a mock function with given fields: ctx, version, tenant
 func (_m *DataStore) MigrateTenant(ctx context.Context, version string, tenant string) error {
 	ret := _m.Called(ctx, version, tenant)

@@ -327,7 +327,7 @@ func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
 				DeviceId:       model.DeviceID("1"),
 				DeviceIdentity: "foo-1",
 				Key:            "key1",
-				Status:         model.DevStatusPreauth,
+				Status:         model.DevStatusPreauthorized,
 			},
 		},
 		"error: not found": {
@@ -365,7 +365,7 @@ func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
 				DeviceId:       model.DeviceID("1"),
 				DeviceIdentity: "foo-1",
 				Key:            "key1",
-				Status:         model.DevStatusPreauth,
+				Status:         model.DevStatusPreauthorized,
 			},
 
 			storeUpdateErr: errors.New("db error"),

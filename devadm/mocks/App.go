@@ -126,6 +126,20 @@ func (_m *App) ListDeviceAuths(ctx context.Context, skip int, limit int, filter 
 	return r0, r1
 }
 
+// PreauthorizeDevice provides a mock function with given fields: ctx, authSet
+func (_m *App) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error {
+	ret := _m.Called(ctx, authSet)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthSet) error); ok {
+		r0 = rf(ctx, authSet)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ProvisionTenant provides a mock function with given fields: ctx, tenant_id
 func (_m *App) ProvisionTenant(ctx context.Context, tenant_id string) error {
 	ret := _m.Called(ctx, tenant_id)

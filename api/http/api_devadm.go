@@ -62,6 +62,7 @@ func NewDevAdmApiHandlers(devadm devadm.App) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
+		rest.Post(uriDevices, d.PostDevicesHandler),
 		rest.Delete(uriDevicesInternal, d.DeleteDevicesHandler),
 
 		rest.Put(uriDevice, d.SubmitDeviceHandler),
@@ -138,6 +139,26 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	w.WriteJson(devs[:len])
 }
 
+func (d *DevAdmHandlers) PostDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
+	ctx := r.Context()
+	l := log.FromContext(ctx)
+
+	defer r.Body.Close()
+	authSet, err := parseAuthSet(r)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
+	err = d.DevAdm.PreauthorizeDevice(ctx, *authSet)
+	if err != nil {
+		restErrWithLogInternal(w, r, l, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
 	ctx := r.Context()
 	l := log.FromContext(ctx)
@@ -169,7 +190,7 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	}
 
 	//save device in pending state
-	dev.Status = "pending"
+	dev.Status = model.DevStatusPending
 	err = d.DevAdm.SubmitDeviceAuth(ctx, *dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)
@@ -219,6 +240,24 @@ func parseDevice(r *rest.Request) (*model.DeviceAuth, error) {
 		return nil, errors.New("no attributes provided")
 	}
 	return &dev, nil
+}
+
+func parseAuthSet(r *rest.Request) (*model.AuthSet, error) {
+	authSet, err := model.ParseAuthSet(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(authSet.DeviceId), &(authSet.Attributes))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode attributes data")
+	}
+
+	if len(authSet.Attributes) == 0 {
+		return nil, errors.New("no attributes provided")
+	}
+
+	return authSet, nil
 }
 
 // Helper for find a device of ID passed as path param ('id') in
