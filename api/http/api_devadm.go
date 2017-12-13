@@ -152,6 +152,10 @@ func (d *DevAdmHandlers) PostDevicesHandler(w rest.ResponseWriter, r *rest.Reque
 
 	err = d.DevAdm.PreauthorizeDevice(ctx, *authSet)
 	if err != nil {
+		if err == devadm.AuthSetConflictError {
+			restErrWithLog(w, r, l, err, http.StatusConflict)
+			return
+		}
 		restErrWithLogInternal(w, r, l, err)
 		return
 	}

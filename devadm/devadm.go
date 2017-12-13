@@ -56,6 +56,8 @@ type App interface {
 	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error
 }
 
+var AuthSetConflictError = errors.New("AuthSetConflictError")
+
 func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
 	return &DevAdm{
 		db:             d,
@@ -199,6 +201,17 @@ func (d *DevAdm) ProvisionTenant(ctx context.Context, tenant_id string) error {
 }
 
 func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error {
+
+	deviceAuths, err := d.db.GetDeviceAuthsByIdentityData(ctx, authSet.DeviceId)
+
+	if err != nil {
+		return err
+	}
+
+	if len(deviceAuths) > 0 {
+		return AuthSetConflictError
+	}
+
 	dev := &model.DeviceAuth{}
 	dev.DeviceIdentity = authSet.DeviceId
 	dev.Status = model.DevStatusPreauthorized

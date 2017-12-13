@@ -360,3 +360,16 @@ func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) err
 		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
 
 }
+
+func (db *DataStoreMongo) GetDeviceAuthsByIdentityData(ctx context.Context, idata string) ([]model.DeviceAuth, error) {
+	s := db.session.Copy()
+	defer s.Close()
+
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
+
+	filter := bson.M{"id_data": idata}
+	res := []model.DeviceAuth{}
+
+	err := c.Find(filter).All(&res)
+	return res, errors.Wrap(err, "failed to fetch device")
+}
