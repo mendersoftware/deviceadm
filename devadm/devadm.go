@@ -56,7 +56,7 @@ type App interface {
 	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error
 }
 
-var AuthSetConflictError = errors.New("AuthSetConflictError")
+var AuthSetConflictError = errors.New("Identity data already submitted")
 
 func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
 	return &DevAdm{
