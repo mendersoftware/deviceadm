@@ -125,6 +125,20 @@ func (_m *DataStore) PutDeviceAuth(ctx context.Context, dev *model.DeviceAuth) e
 	return r0
 }
 
+// UpdateDeviceAuth provides a mock function with given fields: ctx, dev
+func (_m *DataStore) UpdateDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+	ret := _m.Called(ctx, dev)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeviceAuth) error); ok {
+		r0 = rf(ctx, dev)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // WithAutomigrate provides a mock function with given fields:
 func (_m *DataStore) WithAutomigrate() store.DataStore {
 	ret := _m.Called()
