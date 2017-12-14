@@ -126,13 +126,13 @@ func (_m *App) ListDeviceAuths(ctx context.Context, skip int, limit int, filter 
 	return r0, r1
 }
 
-// PreauthorizeDevice provides a mock function with given fields: ctx, authSet
-func (_m *App) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error {
-	ret := _m.Called(ctx, authSet)
+// PreauthorizeDevice provides a mock function with given fields: ctx, authSet, authorizationHeader
+func (_m *App) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error {
+	ret := _m.Called(ctx, authSet, authorizationHeader)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.AuthSet) error); ok {
-		r0 = rf(ctx, authSet)
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthSet, string) error); ok {
+		r0 = rf(ctx, authSet, authorizationHeader)
 	} else {
 		r0 = ret.Error(0)
 	}

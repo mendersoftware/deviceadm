@@ -32,18 +32,15 @@ import (
 const (
 	// default device ID endpoint
 	defaultDevAuthDevicesUri = "/api/management/v1/devauth/devices/{id}/auth/{aid}/status"
+	// default preauthorize device endpoint
+	defaultPreauthorizeDeviceUri = "/api/management/v1/devauth/devices"
 	// default request timeout, 10s?
 	defaultDevAuthReqTimeout = time.Duration(10) * time.Second
-
-	errMaxDevsReached = "maximum number of accepted devices reached"
 )
 
 type Config struct {
 	// root devauth address
 	DevauthUrl string
-	// template of update URL, string '{id}' will be replaced with
-	// device ID
-	UpdateUrl string
 	// request timeout
 	Timeout time.Duration
 }
@@ -58,6 +55,13 @@ type StatusReq struct {
 	DeviceId string `json:"-"`
 	AuthId   string `json:"-"`
 	Status   string `json:"status"`
+}
+
+type PreAuthReq struct {
+	DeviceId  string `json:"device_id" valid:"required" bson:"device_id"`
+	AuthSetId string `json:"auth_set_id" valid:"required" bson:"auth_set_id"`
+	IdData    string `json:"id_data" valid:"required" bson:"id_data"`
+	PubKey    string `json:"pubkey" valid:"required" bson:"pubkey"`
 }
 
 // TODO rename this and calling funcs to UpdateDeviceStatus etc.
@@ -108,8 +112,44 @@ func (d *Client) UpdateDevice(ctx context.Context, sreq StatusReq) error {
 	}
 }
 
+func (d *Client) PreauthorizeDevice(
+	ctx context.Context, preAuthReq *PreAuthReq, authorizationHeader string) error {
+	url := d.conf.DevauthUrl + defaultPreauthorizeDeviceUri
+
+	preAuthReqJSON, err := json.Marshal(preAuthReq)
+	if err != nil {
+		return errors.Wrapf(err, "failed to prepare dev auth request")
+	}
+
+	reader := bytes.NewReader(preAuthReqJSON)
+
+	req, err := http.NewRequest(http.MethodPost, url, reader)
+	if err != nil {
+		return errors.Wrapf(err, "failed to prepare dev auth POST request")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", authorizationHeader)
+
+	// set request timeout and setup cancellation
+	ctx, cancel := context.WithTimeout(ctx, d.conf.Timeout)
+	defer cancel()
+	rsp, err := d.client.Do(req.WithContext(ctx))
+	if err != nil {
+		return errors.Wrapf(err, "failed to preauthorize device")
+	}
+	defer rsp.Body.Close()
+
+	switch rsp.StatusCode {
+	case http.StatusCreated:
+		return nil
+	default:
+		return errors.Errorf("device preauthorize request failed with status %v",
+			rsp.Status)
+	}
+}
+
 func NewClient(c Config, client client.HttpRunner) *Client {
-	c.UpdateUrl = c.DevauthUrl + defaultDevAuthDevicesUri
 
 	// use default timeout if none was provided
 	if c.Timeout == 0 {
@@ -125,5 +165,5 @@ func (d *Client) buildDevAuthUpdateUrl(req StatusReq) string {
 	repl := strings.NewReplacer("{id}", req.DeviceId,
 		"{aid}", req.AuthId)
 
-	return repl.Replace(d.conf.UpdateUrl)
+	return repl.Replace(d.conf.DevauthUrl + defaultDevAuthDevicesUri)
 }

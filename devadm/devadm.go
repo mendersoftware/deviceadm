@@ -53,7 +53,7 @@ type App interface {
 
 	ProvisionTenant(ctx context.Context, tenant_id string) error
 
-	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error
+	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error
 }
 
 var AuthSetConflictError = errors.New("AuthSetConflictError")
@@ -200,7 +200,7 @@ func (d *DevAdm) ProvisionTenant(ctx context.Context, tenant_id string) error {
 	return d.db.WithAutomigrate().MigrateTenant(ctx, mongo.DbVersion, tenant_id)
 }
 
-func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) error {
+func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error {
 
 	deviceAuths, err := d.db.GetDeviceAuthsByIdentityData(ctx, authSet.DeviceId)
 
@@ -217,5 +217,30 @@ func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet) 
 	dev.Status = model.DevStatusPreauthorized
 	dev.Attributes = authSet.Attributes
 
-	return d.db.InsertDeviceAuth(ctx, dev)
+	err = d.db.InsertDeviceAuth(ctx, dev)
+	if err != nil {
+		return err
+	}
+
+	return d.propagatePreauthorizeDevice(ctx, dev, authorizationHeader)
+}
+
+func (d *DevAdm) propagatePreauthorizeDevice(ctx context.Context, dev *model.DeviceAuth, authorizationHeader string) error {
+	// forward device preauthorization to auth service
+	cl := deviceauth.NewClient(d.authclientconf, d.clientGetter())
+	err := cl.PreauthorizeDevice(ctx, &deviceauth.PreAuthReq{
+		DeviceId:  string(dev.DeviceId),
+		AuthSetId: string(dev.ID),
+		IdData:    dev.DeviceIdentity,
+		PubKey:    dev.Key,
+	}, authorizationHeader)
+	if err != nil {
+		if utils.IsUsageError(err) {
+			return err
+		} else {
+
+			return errors.Wrap(err, "failed to propagate device status update")
+		}
+	}
+	return nil
 }
