@@ -67,6 +67,12 @@ paths:
         Valid state transitions:
         - 'preauthorized' -> 'accepted'
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          type: string
+          format: Bearer [token]
+          description: Contains the JWT token issued by the User Administration and Authentication Service.
         - name: id
           in: path
           description: Device authentication data set identifier.
