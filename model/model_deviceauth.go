@@ -27,6 +27,7 @@ const (
 	DevStatusAccepted = "accepted"
 	DevStatusRejected = "rejected"
 	DevStatusPending  = "pending"
+	DevStatusPreauth  = "preauthorized"
 )
 
 // Device authentication data set wrapper

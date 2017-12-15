@@ -38,6 +38,20 @@ func (_m *App) AcceptDeviceAuth(ctx context.Context, id model.AuthID) error {
 	return r0
 }
 
+// AcceptDevicePreAuth provides a mock function with given fields: ctx, id
+func (_m *App) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteDeviceAuth provides a mock function with given fields: ctx, id
 func (_m *App) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
 	ret := _m.Called(ctx, id)
