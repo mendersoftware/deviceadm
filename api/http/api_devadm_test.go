@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/mendersoftware/deviceadm/devadm"
 	mdevadm "github.com/mendersoftware/deviceadm/devadm/mocks"
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
@@ -447,6 +448,79 @@ func TestApiDevAdmUpdateStatusDevice(t *testing.T) {
 		runTestRequest(t, apih, tc.req, tc.code, tc.body)
 	}
 
+}
+
+func TestApiDevAdmAcceptPreauthorized(t *testing.T) {
+	testCases := map[string]struct {
+		id        string
+		body      interface{}
+		devAdmErr error
+		respCode  int
+		respBody  string
+	}{
+		"ok": {
+			id:       "1",
+			body:     DevAdmApiStatus{"accepted"},
+			respCode: 200,
+			respBody: ToJson(DevAdmApiStatus{"accepted"}),
+		},
+		"error: bad request": {
+			id:       "1",
+			body:     DevAdmApiStatus{"unknown"},
+			respCode: 400,
+			respBody: RestError("incorrect device status"),
+		},
+		"error: bad request 2": {
+			id:       "1",
+			body:     DevAdmApiStatus{"rejected"},
+			respCode: 400,
+			respBody: RestError("incorrect device status"),
+		},
+		"error: not found": {
+			id:   "2",
+			body: DevAdmApiStatus{"accepted"},
+
+			devAdmErr: devadm.ErrAuthNotFound,
+			respCode:  404,
+			respBody:  RestError("device auth set not found"),
+		},
+		"error: conflict": {
+			id:   "3",
+			body: DevAdmApiStatus{"accepted"},
+
+			devAdmErr: devadm.ErrNotPreauthorized,
+			respCode:  409,
+			respBody:  RestError("auth set must be in 'preauthorized' state"),
+		},
+		"error: generic": {
+			id:   "3",
+			body: DevAdmApiStatus{"accepted"},
+
+			devAdmErr: errors.New("some error"),
+			respCode:  500,
+			respBody:  RestError("internal error"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			devadm := &mdevadm.App{}
+
+			devadm.On("AcceptDevicePreAuth",
+				mock.MatchedBy(func(c context.Context) bool { return true }),
+				model.AuthID(tc.id)).Return(tc.devAdmErr)
+
+			apih := makeMockApiHandler(t, devadm)
+
+			rest.ErrorFieldName = "error"
+
+			req := test.MakeSimpleRequest("PUT",
+				fmt.Sprintf("http://1.2.3.4/api/internal/v1/admission/devices/%s/status", tc.id),
+				tc.body)
+
+			runTestRequest(t, apih, req, tc.respCode, tc.respBody)
+		})
+	}
 }
 
 func TestNewDevAdmApiHandlers(t *testing.T) {

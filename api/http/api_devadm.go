@@ -34,8 +34,9 @@ const (
 	uriDeviceStatus = "/api/management/v1/admission/devices/:id/status"
 
 	//internal api
-	uriDevicesInternal = "/api/internal/v1/admission/devices"
-	uriDeviceInternal  = "/api/internal/v1/admission/devices/:id"
+	uriDevicesInternal      = "/api/internal/v1/admission/devices"
+	uriDeviceInternal       = "/api/internal/v1/admission/devices/:id"
+	uriDeviceStatusInternal = "/api/internal/v1/admission/devices/:id/status"
 
 	uriTenants = "/api/internal/v1/admission/tenants"
 )
@@ -69,6 +70,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 
 		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
 		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
+		rest.Put(uriDeviceStatusInternal, d.AcceptPreauthorizedHandler),
 
 		rest.Post(uriTenants, d.ProvisionTenantHandler),
 	}
@@ -296,6 +298,41 @@ func (d *DevAdmHandlers) UpdateDeviceStatusHandler(w rest.ResponseWriter, r *res
 	}
 
 	w.WriteJson(&status)
+}
+
+func (d *DevAdmHandlers) AcceptPreauthorizedHandler(w rest.ResponseWriter, r *rest.Request) {
+	ctx := r.Context()
+	l := log.FromContext(ctx)
+
+	authid := r.PathParam("id")
+
+	var status DevAdmApiStatus
+	err := r.DecodeJsonPayload(&status)
+	if err != nil {
+		restErrWithLog(w, r, l,
+			errors.Wrap(err, "failed to decode status data"),
+			http.StatusBadRequest)
+		return
+	}
+
+	if status.Status != model.DevStatusAccepted {
+		restErrWithLog(w, r, l,
+			errors.New("incorrect device status"),
+			http.StatusBadRequest)
+		return
+	}
+
+	err = d.DevAdm.AcceptDevicePreAuth(ctx, model.AuthID(authid))
+	switch err {
+	case nil:
+		w.WriteJson(&status)
+	case devadm.ErrNotPreauthorized:
+		restErrWithLog(w, r, l, err, http.StatusConflict)
+	case devadm.ErrAuthNotFound:
+		restErrWithLog(w, r, l, err, http.StatusNotFound)
+	default:
+		restErrWithLogInternal(w, r, l, err)
+	}
 }
 
 func (d *DevAdmHandlers) GetDeviceStatusHandler(w rest.ResponseWriter, r *rest.Request) {
