@@ -367,7 +367,7 @@ func (db *DataStoreMongo) GetDeviceAuthsByIdentityData(ctx context.Context, idat
 
 	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
-	filter := bson.M{"id_data": idata}
+	filter := bson.M{"deviceidentity": idata}
 	res := []model.DeviceAuth{}
 
 	err := c.Find(filter).All(&res)
