@@ -28,7 +28,8 @@ import (
 )
 
 var (
-	ErrAuthNotFound = errors.New("device auth set not found")
+	ErrAuthNotFound     = errors.New("device auth set not found")
+	ErrNotPreauthorized = errors.New("auth set must be in 'preauthorized' state")
 )
 
 // helper for obtaining API clients
@@ -120,7 +121,7 @@ func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 	}
 
 	if dev.Status != model.DevStatusPreauth {
-		return utils.NewUsageError("auth set must be in 'preauthorized' state")
+		return ErrNotPreauthorized
 	}
 
 	err = d.db.UpdateDeviceAuth(ctx, &model.DeviceAuth{
@@ -128,7 +129,7 @@ func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 		Status: model.DevStatusAccepted,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to update auth set")
 	}
 
 	return nil

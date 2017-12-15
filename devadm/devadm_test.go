@@ -307,6 +307,101 @@ func TestDevAdmProvisionTenant(t *testing.T) {
 	}
 }
 
+func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		id model.AuthID
+
+		storeAuth      *model.DeviceAuth
+		storeGetErr    error
+		storeUpdateErr error
+
+		err error
+	}{
+		"ok": {
+			id: model.AuthID("1"),
+
+			storeAuth: &model.DeviceAuth{
+				ID:             "11",
+				DeviceId:       model.DeviceID("1"),
+				DeviceIdentity: "foo-1",
+				Key:            "key1",
+				Status:         model.DevStatusPreauth,
+			},
+		},
+		"error: not found": {
+			id: model.AuthID("1"),
+
+			storeGetErr: store.ErrNotFound,
+
+			err: ErrAuthNotFound,
+		},
+		"error: not preauthorzed": {
+			id: model.AuthID("1"),
+
+			storeAuth: &model.DeviceAuth{
+				ID:             "11",
+				DeviceId:       model.DeviceID("1"),
+				DeviceIdentity: "foo-1",
+				Key:            "key1",
+				Status:         model.DevStatusPending,
+			},
+
+			err: errors.New("auth set must be in 'preauthorized' state"),
+		},
+		"error: generic on get": {
+			id: model.AuthID("1"),
+
+			storeGetErr: errors.New("db error"),
+
+			err: errors.New("failed to fetch auth set: db error"),
+		},
+		"error: generic on update": {
+			id: model.AuthID("1"),
+
+			storeAuth: &model.DeviceAuth{
+				ID:             "11",
+				DeviceId:       model.DeviceID("1"),
+				DeviceIdentity: "foo-1",
+				Key:            "key1",
+				Status:         model.DevStatusPreauth,
+			},
+
+			storeUpdateErr: errors.New("db error"),
+
+			err: errors.New("failed to update auth set: db error"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			ctx := context.Background()
+
+			db := &mstore.DataStore{}
+			db.On("GetDeviceAuth",
+				ctx,
+				tc.id,
+			).Return(tc.storeAuth, tc.storeGetErr)
+
+			db.On("UpdateDeviceAuth",
+				ctx,
+				mock.AnythingOfType("*model.DeviceAuth"),
+			).Return(tc.storeUpdateErr)
+
+			d := devadmForTest(db)
+
+			err := d.AcceptDevicePreAuth(ctx, tc.id)
+
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestNewDevAdm(t *testing.T) {
 	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{})
 
