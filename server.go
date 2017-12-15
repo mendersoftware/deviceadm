@@ -24,6 +24,7 @@ import (
 	"github.com/mendersoftware/deviceadm/client/deviceauth"
 	"github.com/mendersoftware/deviceadm/config"
 	"github.com/mendersoftware/deviceadm/devadm"
+	"github.com/mendersoftware/deviceadm/utils/clock"
 )
 
 func SetupAPI(stacktype string) (*rest.Api, error) {
@@ -52,7 +53,7 @@ func RunServer(c config.Reader) error {
 
 	devadm := devadm.NewDevAdm(d, deviceauth.Config{
 		DevauthUrl: c.GetString(SettingDevAuthUrl),
-	})
+	}, clock.NewClock())
 
 	api, err := SetupAPI(c.GetString(SettingMiddleware))
 	if err != nil {

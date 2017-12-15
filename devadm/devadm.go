@@ -25,6 +25,7 @@ import (
 	"github.com/mendersoftware/deviceadm/store"
 	"github.com/mendersoftware/deviceadm/store/mongo"
 	"github.com/mendersoftware/deviceadm/utils"
+	"github.com/mendersoftware/deviceadm/utils/clock"
 )
 
 var (
@@ -58,11 +59,12 @@ type App interface {
 
 var AuthSetConflictError = errors.New("Identity data already submitted")
 
-func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
+func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config, clock clock.Clock) App {
 	return &DevAdm{
 		db:             d,
 		authclientconf: authclientconf,
 		clientGetter:   simpleApiClientGetter,
+		clock:          clock,
 	}
 }
 
@@ -70,6 +72,7 @@ type DevAdm struct {
 	db             store.DataStore
 	authclientconf deviceauth.Config
 	clientGetter   ApiClientGetter
+	clock          clock.Clock
 }
 
 func (d *DevAdm) ListDeviceAuths(ctx context.Context, skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
@@ -216,6 +219,9 @@ func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, 
 	dev.DeviceIdentity = authSet.DeviceId
 	dev.Status = model.DevStatusPreauthorized
 	dev.Attributes = authSet.Attributes
+	dev.Key = authSet.Key
+	now := d.clock.Now()
+	dev.RequestTime = &now
 
 	err = d.db.InsertDeviceAuth(ctx, dev)
 	if err != nil {
