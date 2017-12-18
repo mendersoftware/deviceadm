@@ -385,6 +385,147 @@ func TestMongoPutDevice(t *testing.T) {
 
 }
 
+func TestMongoUpdateDeviceAuth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoUpdateDeviceAuth in short mode.")
+	}
+
+	inDevs := []model.DeviceAuth{
+		{
+			ID:             "11",
+			DeviceId:       model.DeviceID("1"),
+			DeviceIdentity: "foo-1",
+			Key:            "key1",
+			Status:         model.DevStatusPending,
+		},
+		{
+			ID:             "12",
+			DeviceId:       model.DeviceID("1"),
+			DeviceIdentity: "foo-1",
+			Key:            "key1",
+			Status:         model.DevStatusPending,
+		},
+	}
+
+	testCases := map[string]struct {
+		tenant string
+
+		update *model.DeviceAuth
+
+		out []model.DeviceAuth
+		err error
+	}{
+		"ok": {
+			update: &model.DeviceAuth{
+				ID:     "11",
+				Status: model.DevStatusAccepted,
+			},
+
+			out: []model.DeviceAuth{
+				{
+					ID:             "11",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusAccepted,
+				},
+				{
+					ID:             "12",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusPending,
+				},
+			},
+		},
+		"ok, tenant": {
+			tenant: "tenant",
+			update: &model.DeviceAuth{
+				ID:     "11",
+				Status: model.DevStatusAccepted,
+			},
+
+			out: []model.DeviceAuth{
+				{
+					ID:             "11",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusAccepted,
+				},
+				{
+					ID:             "12",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusPending,
+				},
+			},
+		},
+		"error: not found": {
+			update: &model.DeviceAuth{
+				ID:     "13",
+				Status: model.DevStatusAccepted,
+			},
+
+			out: []model.DeviceAuth{
+				{
+					ID:             "11",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusPending,
+				},
+				{
+					ID:             "12",
+					DeviceId:       model.DeviceID("1"),
+					DeviceIdentity: "foo-1",
+					Key:            "key1",
+					Status:         model.DevStatusPending,
+				},
+			},
+
+			err: store.ErrNotFound,
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(fmt.Sprintf("tc: %v", idx), func(t *testing.T) {
+			ctx := context.Background()
+
+			//setup
+			d := getMigratedDb(t, ctx)
+			defer d.session.Close()
+
+			if tc.tenant != "" {
+				ctx = identity.WithContext(ctx, &identity.Identity{
+					Subject: "foo",
+					Tenant:  tc.tenant,
+				})
+			}
+
+			err := setUp(ctx, d, inDevs)
+			assert.NoError(t, err, "failed to setup input data")
+
+			//test
+			err = d.UpdateDeviceAuth(ctx, tc.update)
+			if tc.err != nil {
+				assert.EqualError(t, err, tc.err.Error())
+			} else {
+				assert.NoError(t, err)
+
+				var outDevs []model.DeviceAuth
+
+				err = d.session.DB(ctx_store.DbFromContext(ctx, DbName)).
+					C(DbDevicesColl).Find(nil).All(&outDevs)
+				assert.NoError(t, err)
+				assert.Equal(t, tc.out, outDevs)
+			}
+		})
+	}
+}
+
 func TestMongoPutDeviceTime(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestMongoPutDeviceTime in short mode.")

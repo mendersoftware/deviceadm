@@ -50,6 +50,9 @@ type DataStore interface {
 	// remove auth sets owned by device
 	DeleteDeviceAuthByDevice(ctx context.Context, id model.DeviceID) error
 
+	// UpdateDeviceAuth updates the auth set (strict update, no upserts).
+	UpdateDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error
+
 	MigrateTenant(ctx context.Context, version string, tenant string) error
 	WithAutomigrate() DataStore
 }

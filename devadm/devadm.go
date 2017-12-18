@@ -27,6 +27,11 @@ import (
 	"github.com/mendersoftware/deviceadm/utils"
 )
 
+var (
+	ErrAuthNotFound     = errors.New("device auth set not found")
+	ErrNotPreauthorized = errors.New("auth set must be in 'preauthorized' state")
+)
+
 // helper for obtaining API clients
 type ApiClientGetter func() client.HttpRunner
 
@@ -42,6 +47,7 @@ type App interface {
 	AcceptDeviceAuth(ctx context.Context, id model.AuthID) error
 	RejectDeviceAuth(ctx context.Context, id model.AuthID) error
 	DeleteDeviceAuth(ctx context.Context, id model.AuthID) error
+	AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 
 	DeleteDeviceData(ctx context.Context, id model.DeviceID) error
 
@@ -100,6 +106,33 @@ func (d *DevAdm) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
 	default:
 		return errors.Wrap(err, "failed to delete device")
 	}
+}
+
+func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error {
+	dev, err := d.db.GetDeviceAuth(ctx, id)
+
+	switch err {
+	case nil:
+		break
+	case store.ErrNotFound:
+		return ErrAuthNotFound
+	default:
+		return errors.Wrap(err, "failed to fetch auth set")
+	}
+
+	if dev.Status != model.DevStatusPreauth {
+		return ErrNotPreauthorized
+	}
+
+	err = d.db.UpdateDeviceAuth(ctx, &model.DeviceAuth{
+		ID:     dev.ID,
+		Status: model.DevStatusAccepted,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to update auth set")
+	}
+
+	return nil
 }
 
 func (d *DevAdm) propagateDeviceAuthUpdate(ctx context.Context, dev *model.DeviceAuth) error {

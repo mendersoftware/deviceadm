@@ -245,6 +245,30 @@ func (db *DataStoreMongo) PutDeviceAuth(ctx context.Context, dev *model.DeviceAu
 	return nil
 }
 
+func (db *DataStoreMongo) UpdateDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+	s := db.session.Copy()
+	defer s.Close()
+
+	if err := db.EnsureIndexes(ctx, s); err != nil {
+		return err
+	}
+
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
+
+	data := bson.M{"$set": genDeviceAuthUpdate(dev)}
+	filter := bson.M{"id": dev.ID}
+
+	err := c.Update(filter, data)
+	switch err {
+	case nil:
+		return nil
+	case mgo.ErrNotFound:
+		return store.ErrNotFound
+	default:
+		return errors.Wrap(err, "failed to update auth set")
+	}
+}
+
 func (db *DataStoreMongo) MigrateTenant(ctx context.Context, version string, tenant string) error {
 	ver, err := migrate.NewVersion(version)
 	if err != nil {
