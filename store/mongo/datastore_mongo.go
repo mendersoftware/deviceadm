@@ -274,7 +274,20 @@ func (db *DataStoreMongo) InsertDeviceAuth(ctx context.Context, dev *model.Devic
 	dev.ID = model.AuthID(bson.NewObjectId().Hex())
 	dev.DeviceId = model.DeviceID(bson.NewObjectId().Hex())
 
-	return db.PutDeviceAuth(ctx, dev)
+	s := db.session.Copy()
+	defer s.Close()
+
+	if err := db.EnsureIndexes(ctx, s); err != nil {
+		return err
+	}
+
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
+
+	err := c.Insert(dev)
+	if err != nil {
+		return errors.Wrap(err, "failed to insert device")
+	}
+	return nil
 }
 
 func (db *DataStoreMongo) MigrateTenant(ctx context.Context, version string, tenant string) error {
@@ -367,7 +380,9 @@ func (db *DataStoreMongo) GetDeviceAuthsByIdentityData(ctx context.Context, idat
 
 	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
 
-	filter := bson.M{"deviceidentity": idata}
+	filter := &model.DeviceAuth{
+		DeviceIdentity: idata,
+	}
 	res := []model.DeviceAuth{}
 
 	err := c.Find(filter).All(&res)

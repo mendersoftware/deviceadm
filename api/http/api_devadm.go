@@ -144,23 +144,22 @@ func (d *DevAdmHandlers) PostDevicesHandler(w rest.ResponseWriter, r *rest.Reque
 	l := log.FromContext(ctx)
 
 	defer r.Body.Close()
-	authSet, err := parseAuthSet(r)
+	authSet, err := model.ParseAuthSet(r.Body)
 	if err != nil {
 		restErrWithLog(w, r, l, err, http.StatusBadRequest)
 		return
 	}
 
 	err = d.DevAdm.PreauthorizeDevice(ctx, *authSet, r.Header.Get("Authorization"))
-	if err != nil {
-		if err == devadm.AuthSetConflictError {
-			restErrWithLog(w, r, l, err, http.StatusConflict)
-			return
-		}
-		restErrWithLogInternal(w, r, l, err)
-		return
-	}
 
-	w.WriteHeader(http.StatusCreated)
+	switch err {
+	case nil:
+		w.WriteHeader(http.StatusCreated)
+	case devadm.AuthSetConflictError:
+		restErrWithLog(w, r, l, err, http.StatusConflict)
+	default:
+		restErrWithLogInternal(w, r, l, err)
+	}
 }
 
 func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
@@ -244,24 +243,6 @@ func parseDevice(r *rest.Request) (*model.DeviceAuth, error) {
 		return nil, errors.New("no attributes provided")
 	}
 	return &dev, nil
-}
-
-func parseAuthSet(r *rest.Request) (*model.AuthSet, error) {
-	authSet, err := model.ParseAuthSet(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal([]byte(authSet.DeviceId), &(authSet.Attributes))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode attributes data")
-	}
-
-	if len(authSet.Attributes) == 0 {
-		return nil, errors.New("no attributes provided")
-	}
-
-	return authSet, nil
 }
 
 // Helper for find a device of ID passed as path param ('id') in

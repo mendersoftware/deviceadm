@@ -892,14 +892,20 @@ func TestMongoInsertAndGetDeviceAuthsByIdentityData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(authSets))
 
-	dev := model.DeviceAuth{DeviceIdentity: "{'foo': 'bar'}"}
+	now := time.Now()
 
+	dev := model.DeviceAuth{DeviceIdentity: "{'foo': 'bar'}"}
 	dev.Status = model.DevStatusPreauthorized
 	dev.Key = "foo-key"
-	now := time.Now()
 	dev.RequestTime = &now
-
 	err = dbstore.InsertDeviceAuth(tenCtx, &dev)
+	assert.NoError(t, err)
+
+	dev2 := model.DeviceAuth{DeviceIdentity: "{'foo': 'barbara'}"}
+	dev2.Status = model.DevStatusPreauthorized
+	dev2.Key = "foo-key"
+	dev2.RequestTime = &now
+	err = dbstore.InsertDeviceAuth(tenCtx, &dev2)
 	assert.NoError(t, err)
 
 	authSets, err = dbstore.GetDeviceAuthsByIdentityData(tenCtx, "{'foo': 'bar'}")

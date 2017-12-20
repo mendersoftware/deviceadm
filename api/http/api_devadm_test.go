@@ -906,7 +906,7 @@ func TestApiDevAdmPostDeviceAuth(t *testing.T) {
 					"mac": "00:00:00:01",
 				})}, devAdmErr: devadm.AuthSetConflictError,
 			respCode: 409,
-			respBody: RestError("Identity data already submitted"),
+			respBody: RestError("device already exists"),
 		},
 	}
 

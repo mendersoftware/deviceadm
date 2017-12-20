@@ -18,6 +18,7 @@ import (
 	"io"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/pkg/errors"
 )
 
 type AuthSet struct {
@@ -38,6 +39,15 @@ func ParseAuthSet(source io.Reader) (*AuthSet, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, err
+	}
+
+	err := json.Unmarshal([]byte(req.DeviceId), &(req.Attributes))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode attributes data")
+	}
+
+	if len(req.Attributes) == 0 {
+		return nil, errors.New("no attributes provided")
 	}
 
 	return &req, nil
