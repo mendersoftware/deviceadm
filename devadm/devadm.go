@@ -240,13 +240,5 @@ func (d *DevAdm) propagatePreauthorizeDevice(ctx context.Context, dev *model.Dev
 		IdData:    dev.DeviceIdentity,
 		PubKey:    dev.Key,
 	}, authorizationHeader)
-	if err != nil {
-		if utils.IsUsageError(err) {
-			return err
-		} else {
-
-			return errors.Wrap(err, "failed to propagate device status update")
-		}
-	}
-	return nil
+	return errors.Wrap(err, "failed to propagate device status update")
 }
