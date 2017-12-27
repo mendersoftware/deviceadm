@@ -418,6 +418,7 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 		datastoreInsertError error
 		outError             error
 		clientStautusCode    int
+		foundAuthSets        []model.DeviceAuth
 	}{
 		"ok": {
 			datastoreGetError:    nil,
@@ -443,6 +444,13 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 			clientStautusCode:    409,
 			outError:             errors.New("failed to propagate device status update: device preauthorize request failed with status 409 Conflict"),
 		},
+		"conflict error": {
+			datastoreGetError:    nil,
+			datastoreInsertError: nil,
+			clientStautusCode:    201,
+			outError:             AuthSetConflictError,
+			foundAuthSets:        []model.DeviceAuth{model.DeviceAuth{}},
+		},
 	}
 
 	for desc, tc := range testCases {
@@ -458,9 +466,10 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 
 			db := &mstore.DataStore{}
 
-			db.On("GetDeviceAuthsByIdentityData", ctx, authSet.DeviceId).Return(nil, tc.datastoreGetError)
+			db.On("GetDeviceAuthsByIdentityData", ctx, authSet.DeviceId).
+				Return(tc.foundAuthSets, tc.datastoreGetError)
 			d := &model.DeviceAuth{ID: "", DeviceId: "", DeviceIdentity: "foo-id", Key: "foo-key", Status: "preauthorized", Attributes: model.DeviceAuthAttributes(map[string]string{"foo": "bar"}), RequestTime: &exampleTime}
-			if tc.datastoreGetError == nil {
+			if tc.datastoreGetError == nil && len(tc.foundAuthSets) == 0 {
 				db.On("InsertDeviceAuth", ctx, d).Return(tc.datastoreInsertError)
 			}
 			i := &DevAdm{

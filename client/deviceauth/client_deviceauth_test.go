@@ -233,7 +233,7 @@ func TestDevAuthClientPreauthorizeDeviceReqSuccess(t *testing.T) {
 
 }
 
-func TestDevAuthClientPreauthorizeDeviceReqFail(t *testing.T) {
+func TestDevAuthClientPreauthorizeDeviceReqFailStatus(t *testing.T) {
 	s := newMockServer(t, http.StatusBadRequest, nil)
 	defer s.Close()
 
@@ -244,4 +244,25 @@ func TestDevAuthClientPreauthorizeDeviceReqFail(t *testing.T) {
 	err := c.PreauthorizeDevice(context.Background(),
 		&PreAuthReq{}, "Bearer: foo-token")
 	assert.Error(t, err, "expected an error")
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqFailParseURL(t *testing.T) {
+
+	c := NewClient(Config{
+		DevauthUrl: ":bad url",
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(), nil, "Bearer: foo-token")
+	assert.EqualError(t, err, "failed to prepare dev auth POST request: parse :bad url/api/management/v1/devauth/devices: missing protocol scheme")
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqFailBadProtocol(t *testing.T) {
+
+	c := NewClient(Config{
+		DevauthUrl: "bad url",
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(), nil, "Bearer: foo-token")
+	assert.EqualError(t, err, "failed to preauthorize device: Post bad%20url/api/management/v1/devauth/devices: "+
+		"unsupported protocol scheme \"\"")
 }
