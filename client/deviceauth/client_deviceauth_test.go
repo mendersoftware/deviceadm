@@ -25,6 +25,8 @@ import (
 
 	"github.com/mendersoftware/deviceadm/utils"
 	"github.com/mendersoftware/go-lib-micro/rest_utils"
+	"io/ioutil"
+	"strings"
 )
 
 func TestDevAuthClientUrl(t *testing.T) {
@@ -186,4 +188,81 @@ func TestDevAuthClientTImeout(t *testing.T) {
 		time.Duration(0.2*float64(defaultDevAuthReqTimeout))
 
 	assert.WithinDuration(t, t2, t1, maxdur, "timeout took too long")
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqSuccess(t *testing.T) {
+
+	var req *http.Request
+	var resultBody string
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		req = r
+		resultBody = string(bodyBytes)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{
+		DevauthUrl: s.URL,
+	}, &http.Client{})
+
+	input := &PreAuthReq{
+		DeviceId:  "device_id_foo",
+		PubKey:    "foo-key",
+		IdData:    "bar-data",
+		AuthSetId: "foo-bar-auth-set-id",
+	}
+	err := c.PreauthorizeDevice(context.Background(),
+		input, "Bearer: foo-token123")
+	assert.NoError(t, err, "expected no errors")
+	assert.Equal(t, "Bearer: foo-token123", req.Header.Get("Authorization"))
+
+	result := PreAuthReq{}
+	json.NewDecoder(strings.NewReader(resultBody)).Decode(&result)
+
+	assert.Equal(t, input.DeviceId, result.DeviceId)
+	assert.Equal(t, input.AuthSetId, result.AuthSetId)
+	assert.Equal(t, input.IdData, result.IdData)
+	assert.Equal(t, input.PubKey, result.PubKey)
+
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqFailStatus(t *testing.T) {
+	s := newMockServer(t, http.StatusBadRequest, nil)
+	defer s.Close()
+
+	c := NewClient(Config{
+		DevauthUrl: s.URL,
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(),
+		&PreAuthReq{}, "Bearer: foo-token")
+	assert.Error(t, err, "expected an error")
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqFailParseURL(t *testing.T) {
+
+	c := NewClient(Config{
+		DevauthUrl: ":bad url",
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(), nil, "Bearer: foo-token")
+	assert.EqualError(t, err, "failed to prepare dev auth POST request: parse :bad url/api/management/v1/devauth/devices: missing protocol scheme")
+}
+
+func TestDevAuthClientPreauthorizeDeviceReqFailBadProtocol(t *testing.T) {
+
+	c := NewClient(Config{
+		DevauthUrl: "bad url",
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(), nil, "Bearer: foo-token")
+	assert.EqualError(t, err, "failed to preauthorize device: Post bad%20url/api/management/v1/devauth/devices: "+
+		"unsupported protocol scheme \"\"")
 }

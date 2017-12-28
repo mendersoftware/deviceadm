@@ -97,6 +97,43 @@ func (_m *DataStore) GetDeviceAuths(ctx context.Context, skip int, limit int, fi
 	return r0, r1
 }
 
+// GetDeviceAuthsByIdentityData provides a mock function with given fields: ctx, idata
+func (_m *DataStore) GetDeviceAuthsByIdentityData(ctx context.Context, idata string) ([]model.DeviceAuth, error) {
+	ret := _m.Called(ctx, idata)
+
+	var r0 []model.DeviceAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) []model.DeviceAuth); ok {
+		r0 = rf(ctx, idata)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.DeviceAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, idata)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// InsertDeviceAuth provides a mock function with given fields: ctx, dev
+func (_m *DataStore) InsertDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+	ret := _m.Called(ctx, dev)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeviceAuth) error); ok {
+		r0 = rf(ctx, dev)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // MigrateTenant provides a mock function with given fields: ctx, version, tenant
 func (_m *DataStore) MigrateTenant(ctx context.Context, version string, tenant string) error {
 	ret := _m.Called(ctx, version, tenant)

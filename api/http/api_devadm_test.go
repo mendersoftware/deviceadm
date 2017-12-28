@@ -856,3 +856,85 @@ func TestApiDevAdmPostTenants(t *testing.T) {
 		runTestRequest(t, apih, tc.req, tc.respCode, tc.respBody)
 	}
 }
+
+func TestApiDevAdmPostDeviceAuth(t *testing.T) {
+	testCases := map[string]struct {
+		input     interface{}
+		devAdmErr error
+		respCode  int
+		respBody  string
+	}{
+		"ok": {
+			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
+				map[string]string{
+					"mac": "00:00:00:01",
+				})},
+			respCode: 201,
+			respBody: "",
+		},
+		"error: empty request": {
+			input:    nil,
+			respCode: 400,
+			respBody: RestError("EOF"),
+		},
+
+		"error: generic": {
+			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
+				map[string]string{
+					"mac": "00:00:00:01",
+				})},
+			devAdmErr: errors.New("can't provision tenant"),
+			respCode:  500,
+			respBody:  RestError("internal error"),
+		},
+		"error: no key": {
+			input: model.AuthSet{Key: "", DeviceId: makeJson(t,
+				map[string]string{
+					"mac": "00:00:00:01",
+				})},
+			respCode: 400,
+			respBody: RestError("key: non zero value required"),
+		},
+		"error: no identity data": {
+			input:    model.AuthSet{Key: "foo-key"},
+			respCode: 400,
+			respBody: RestError("device_identity: non zero value required"),
+		},
+		"error: conflict": {
+			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
+				map[string]string{
+					"mac": "00:00:00:01",
+				})}, devAdmErr: devadm.AuthSetConflictError,
+			respCode: 409,
+			respBody: RestError("device already exists"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Logf("test case: %s", name)
+		devadm := &mdevadm.App{}
+
+		if tc.respCode != 400 {
+			devadm.On("PreauthorizeDevice",
+				mock.MatchedBy(func(c context.Context) bool { return true }),
+				mock.MatchedBy(
+					func(d model.AuthSet) bool {
+						return assert.NotEmpty(t, d.Attributes) &&
+							assert.NotEmpty(t, d.DeviceId) &&
+							assert.NotEmpty(t, d.Key)
+					}),
+				"Bearer: foo-token",
+			).Return(tc.devAdmErr)
+		}
+		apih := makeMockApiHandler(t, devadm)
+
+		rest.ErrorFieldName = "error"
+
+		req := test.MakeSimpleRequest("POST",
+			"http://1.2.3.4/api/management/v1/admission/devices",
+			tc.input)
+		req.Header.Add("Authorization", "Bearer: foo-token")
+		runTestRequest(t, apih, req, tc.respCode, tc.respBody)
+		devadm.AssertExpectations(t)
+	}
+}

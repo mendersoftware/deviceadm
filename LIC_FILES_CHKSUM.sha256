@@ -32,6 +32,7 @@ fde7d610b9b95fc5a6304055c4dae951025b630aaa42a24e95ebf76675ae832c  vendor/github.
 3525392c6db3b804af76980b2c560ee9ec1abdadd907d76a26091df7c78f3a25  vendor/github.com/davecgh/go-spew/LICENSE
 d5ecab1f944eb45c5c89dbd749819af7b8a74a018065695baf535c962ded39f0  vendor/github.com/satori/go.uuid/LICENSE
 da277af11b85227490377fbcac6afccc68be560c4fff36ac05ca62de55345fd7  vendor/github.com/urfave/cli/LICENSE
+012d0f6caf604aedba723982c0d8a28f664ecd957de5131bc22c87a0d36b7115  vendor/github.com/asaskevich/govalidator/LICENSE
 #
 # Basically MIT (but with a "colorful" language!)
 7637386b5f81e8a719ca336233149005e5fa28b5e6054ea7b67de49355b0ad40  vendor/github.com/BurntSushi/toml/COPYING

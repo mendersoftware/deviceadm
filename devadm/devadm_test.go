@@ -29,6 +29,8 @@ import (
 	"github.com/mendersoftware/deviceadm/model"
 	"github.com/mendersoftware/deviceadm/store"
 	mstore "github.com/mendersoftware/deviceadm/store/mocks"
+	mclock "github.com/mendersoftware/deviceadm/utils/clock/mocks"
+	"time"
 )
 
 type FakeApiRequester struct {
@@ -327,7 +329,7 @@ func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
 				DeviceId:       model.DeviceID("1"),
 				DeviceIdentity: "foo-1",
 				Key:            "key1",
-				Status:         model.DevStatusPreauth,
+				Status:         model.DevStatusPreauthorized,
 			},
 		},
 		"error: not found": {
@@ -365,7 +367,7 @@ func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
 				DeviceId:       model.DeviceID("1"),
 				DeviceIdentity: "foo-1",
 				Key:            "key1",
-				Status:         model.DevStatusPreauth,
+				Status:         model.DevStatusPreauthorized,
 			},
 
 			storeUpdateErr: errors.New("db error"),
@@ -403,7 +405,91 @@ func TestDevAdmAcceptDevicePreAuth(t *testing.T) {
 }
 
 func TestNewDevAdm(t *testing.T) {
-	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{})
+
+	d := NewDevAdm(&mstore.DataStore{}, deviceauth.Config{}, nil)
 
 	assert.NotNil(t, d)
+}
+
+func TestDevAdmPreauthorizeDevice(t *testing.T) {
+
+	testCases := map[string]struct {
+		datastoreGetError    error
+		datastoreInsertError error
+		outError             error
+		clientStautusCode    int
+		foundAuthSets        []model.DeviceAuth
+	}{
+		"ok": {
+			datastoreGetError:    nil,
+			datastoreInsertError: nil,
+			clientStautusCode:    201,
+			outError:             nil,
+		},
+		"store get error": {
+			datastoreGetError:    errors.New("foo error"),
+			datastoreInsertError: nil,
+			clientStautusCode:    201,
+			outError:             errors.New("foo error"),
+		},
+		"store insert error": {
+			datastoreGetError:    nil,
+			datastoreInsertError: errors.New("bar error"),
+			clientStautusCode:    201,
+			outError:             errors.New("bar error"),
+		},
+		"calling devauth error": {
+			datastoreGetError:    nil,
+			datastoreInsertError: nil,
+			clientStautusCode:    409,
+			outError:             errors.New("failed to propagate device status update: device preauthorize request failed with status 409 Conflict"),
+		},
+		"conflict error": {
+			datastoreGetError:    nil,
+			datastoreInsertError: nil,
+			clientStautusCode:    201,
+			outError:             AuthSetConflictError,
+			foundAuthSets:        []model.DeviceAuth{model.DeviceAuth{}},
+		},
+	}
+
+	for desc, tc := range testCases {
+		t.Run(desc, func(t *testing.T) {
+
+			ctx := context.Background()
+			authSet := model.AuthSet{DeviceId: "foo-id", Key: "foo-key",
+				Attributes: map[string]string{"foo": "bar"}}
+
+			exampleTime := time.Now()
+			clock := &mclock.Clock{}
+			clock.On("Now").Return(exampleTime)
+
+			db := &mstore.DataStore{}
+
+			db.On("GetDeviceAuthsByIdentityData", ctx, authSet.DeviceId).
+				Return(tc.foundAuthSets, tc.datastoreGetError)
+			d := &model.DeviceAuth{ID: "", DeviceId: "", DeviceIdentity: "foo-id", Key: "foo-key", Status: "preauthorized", Attributes: model.DeviceAuthAttributes(map[string]string{"foo": "bar"}), RequestTime: &exampleTime}
+			if tc.datastoreGetError == nil && len(tc.foundAuthSets) == 0 {
+				db.On("InsertDeviceAuth", ctx, d).Return(tc.datastoreInsertError)
+			}
+			i := &DevAdm{
+				db: db,
+				clientGetter: func() client.HttpRunner {
+					return FakeApiRequester{tc.clientStautusCode}
+				},
+				clock: clock,
+			}
+
+			// When
+			err := i.PreauthorizeDevice(ctx, authSet, "123")
+
+			// Then
+			if tc.outError != nil {
+				assert.EqualError(t, err, tc.outError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			db.AssertExpectations(t)
+		})
+	}
 }

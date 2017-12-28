@@ -25,6 +25,7 @@ import (
 	"github.com/mendersoftware/deviceadm/store"
 	"github.com/mendersoftware/deviceadm/store/mongo"
 	"github.com/mendersoftware/deviceadm/utils"
+	"github.com/mendersoftware/deviceadm/utils/clock"
 )
 
 var (
@@ -52,13 +53,18 @@ type App interface {
 	DeleteDeviceData(ctx context.Context, id model.DeviceID) error
 
 	ProvisionTenant(ctx context.Context, tenant_id string) error
+
+	PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error
 }
 
-func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config) App {
+var AuthSetConflictError = errors.New("device already exists")
+
+func NewDevAdm(d store.DataStore, authclientconf deviceauth.Config, clock clock.Clock) App {
 	return &DevAdm{
 		db:             d,
 		authclientconf: authclientconf,
 		clientGetter:   simpleApiClientGetter,
+		clock:          clock,
 	}
 }
 
@@ -66,6 +72,7 @@ type DevAdm struct {
 	db             store.DataStore
 	authclientconf deviceauth.Config
 	clientGetter   ApiClientGetter
+	clock          clock.Clock
 }
 
 func (d *DevAdm) ListDeviceAuths(ctx context.Context, skip int, limit int, filter store.Filter) ([]model.DeviceAuth, error) {
@@ -120,7 +127,7 @@ func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 		return errors.Wrap(err, "failed to fetch auth set")
 	}
 
-	if dev.Status != model.DevStatusPreauth {
+	if dev.Status != model.DevStatusPreauthorized {
 		return ErrNotPreauthorized
 	}
 
@@ -194,4 +201,44 @@ func (d *DevAdm) DeleteDeviceData(ctx context.Context, devid model.DeviceID) err
 
 func (d *DevAdm) ProvisionTenant(ctx context.Context, tenant_id string) error {
 	return d.db.WithAutomigrate().MigrateTenant(ctx, mongo.DbVersion, tenant_id)
+}
+
+func (d *DevAdm) PreauthorizeDevice(ctx context.Context, authSet model.AuthSet, authorizationHeader string) error {
+
+	deviceAuths, err := d.db.GetDeviceAuthsByIdentityData(ctx, authSet.DeviceId)
+
+	if err != nil {
+		return err
+	}
+
+	if len(deviceAuths) > 0 {
+		return AuthSetConflictError
+	}
+
+	dev := &model.DeviceAuth{}
+	dev.DeviceIdentity = authSet.DeviceId
+	dev.Status = model.DevStatusPreauthorized
+	dev.Attributes = authSet.Attributes
+	dev.Key = authSet.Key
+	now := d.clock.Now()
+	dev.RequestTime = &now
+
+	err = d.db.InsertDeviceAuth(ctx, dev)
+	if err != nil {
+		return err
+	}
+
+	return d.propagatePreauthorizeDevice(ctx, dev, authorizationHeader)
+}
+
+func (d *DevAdm) propagatePreauthorizeDevice(ctx context.Context, dev *model.DeviceAuth, authorizationHeader string) error {
+	// forward device preauthorization to auth service
+	cl := deviceauth.NewClient(d.authclientconf, d.clientGetter())
+	err := cl.PreauthorizeDevice(ctx, &deviceauth.PreAuthReq{
+		DeviceId:  string(dev.DeviceId),
+		AuthSetId: string(dev.ID),
+		IdData:    dev.DeviceIdentity,
+		PubKey:    dev.Key,
+	}, authorizationHeader)
+	return errors.Wrap(err, "failed to propagate device status update")
 }

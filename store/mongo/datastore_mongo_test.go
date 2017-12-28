@@ -869,3 +869,47 @@ func TestMongoDeleteDeviceAuthsByDevice(t *testing.T) {
 	err = dbstore.DeleteDeviceAuthByDevice(ctx, "0004")
 	assert.EqualError(t, err, store.ErrNotFound.Error())
 }
+
+func TestMongoInsertAndGetDeviceAuthsByIdentityData(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestMongoGetDevices in short mode.")
+	}
+
+	db.Wipe()
+	session := db.Session()
+	defer session.Close()
+
+	ctx := context.Background()
+	tenCtx := identity.WithContext(ctx, &identity.Identity{
+		Subject: "foo",
+		Tenant:  "bar",
+	})
+
+	dbstore := NewDataStoreMongoWithSession(session)
+
+	authSets, err := dbstore.GetDeviceAuthsByIdentityData(tenCtx, "{'foo': 'bar'}")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(authSets))
+
+	now := time.Now()
+
+	dev := model.DeviceAuth{DeviceIdentity: "{'foo': 'bar'}"}
+	dev.Status = model.DevStatusPreauthorized
+	dev.Key = "foo-key"
+	dev.RequestTime = &now
+	err = dbstore.InsertDeviceAuth(tenCtx, &dev)
+	assert.NoError(t, err)
+
+	dev2 := model.DeviceAuth{DeviceIdentity: "{'foo': 'barbara'}"}
+	dev2.Status = model.DevStatusPreauthorized
+	dev2.Key = "foo-key"
+	dev2.RequestTime = &now
+	err = dbstore.InsertDeviceAuth(tenCtx, &dev2)
+	assert.NoError(t, err)
+
+	authSets, err = dbstore.GetDeviceAuthsByIdentityData(tenCtx, "{'foo': 'bar'}")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(authSets))
+}

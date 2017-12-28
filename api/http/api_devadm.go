@@ -62,6 +62,7 @@ func NewDevAdmApiHandlers(devadm devadm.App) ApiHandler {
 func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 	routes := []*rest.Route{
 		rest.Get(uriDevices, d.GetDevicesHandler),
+		rest.Post(uriDevices, d.PostDevicesHandler),
 		rest.Delete(uriDevicesInternal, d.DeleteDevicesHandler),
 
 		rest.Put(uriDevice, d.SubmitDeviceHandler),
@@ -138,6 +139,29 @@ func (d *DevAdmHandlers) GetDevicesHandler(w rest.ResponseWriter, r *rest.Reques
 	w.WriteJson(devs[:len])
 }
 
+func (d *DevAdmHandlers) PostDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
+	ctx := r.Context()
+	l := log.FromContext(ctx)
+
+	defer r.Body.Close()
+	authSet, err := model.ParseAuthSet(r.Body)
+	if err != nil {
+		restErrWithLog(w, r, l, err, http.StatusBadRequest)
+		return
+	}
+
+	err = d.DevAdm.PreauthorizeDevice(ctx, *authSet, r.Header.Get("Authorization"))
+
+	switch err {
+	case nil:
+		w.WriteHeader(http.StatusCreated)
+	case devadm.AuthSetConflictError:
+		restErrWithLog(w, r, l, err, http.StatusConflict)
+	default:
+		restErrWithLogInternal(w, r, l, err)
+	}
+}
+
 func (d *DevAdmHandlers) DeleteDevicesHandler(w rest.ResponseWriter, r *rest.Request) {
 	ctx := r.Context()
 	l := log.FromContext(ctx)
@@ -169,7 +193,7 @@ func (d *DevAdmHandlers) SubmitDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	}
 
 	//save device in pending state
-	dev.Status = "pending"
+	dev.Status = model.DevStatusPending
 	err = d.DevAdm.SubmitDeviceAuth(ctx, *dev)
 	if err != nil {
 		restErrWithLogInternal(w, r, l, err)

@@ -55,4 +55,8 @@ type DataStore interface {
 
 	MigrateTenant(ctx context.Context, version string, tenant string) error
 	WithAutomigrate() DataStore
+
+	InsertDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error
+
+	GetDeviceAuthsByIdentityData(ctx context.Context, idata string) ([]model.DeviceAuth, error)
 }

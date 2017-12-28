@@ -115,6 +115,10 @@ func makeDataStoreConfig() mongo.DataStoreMongoConfig {
 
 }
 
+func newDataStoreMongo() (*mongo.DataStoreMongo, error) {
+	return mongo.NewDataStoreMongo(makeDataStoreConfig())
+}
+
 func cmdServer(args *cli.Context) error {
 	devSetup := args.GlobalBool("dev")
 
@@ -128,7 +132,7 @@ func cmdServer(args *cli.Context) error {
 	l.Printf("Device Admission Service, version %s starting up",
 		CreateVersionString())
 
-	db, err := mongo.NewDataStoreMongo(makeDataStoreConfig())
+	db, err := newDataStoreMongo()
 
 	if err != nil {
 		return cli.NewExitError(
@@ -173,7 +177,7 @@ func cmdMigrate(args *cli.Context) error {
 		l.Printf("migrating default tenant")
 	}
 
-	db, err := mongo.NewDataStoreMongo(makeDataStoreConfig())
+	db, err := newDataStoreMongo()
 
 	if err != nil {
 		return cli.NewExitError(

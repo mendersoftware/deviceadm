@@ -269,6 +269,27 @@ func (db *DataStoreMongo) UpdateDeviceAuth(ctx context.Context, dev *model.Devic
 	}
 }
 
+func (db *DataStoreMongo) InsertDeviceAuth(ctx context.Context, dev *model.DeviceAuth) error {
+
+	dev.ID = model.AuthID(bson.NewObjectId().Hex())
+	dev.DeviceId = model.DeviceID(bson.NewObjectId().Hex())
+
+	s := db.session.Copy()
+	defer s.Close()
+
+	if err := db.EnsureIndexes(ctx, s); err != nil {
+		return err
+	}
+
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
+
+	err := c.Insert(dev)
+	if err != nil {
+		return errors.Wrap(err, "failed to insert device")
+	}
+	return nil
+}
+
 func (db *DataStoreMongo) MigrateTenant(ctx context.Context, version string, tenant string) error {
 	ver, err := migrate.NewVersion(version)
 	if err != nil {
@@ -351,4 +372,19 @@ func (db *DataStoreMongo) EnsureIndexes(ctx context.Context, s *mgo.Session) err
 	return s.DB(ctx_store.DbFromContext(ctx, DbName)).
 		C(DbDevicesColl).EnsureIndex(uniqueDevIdIdx)
 
+}
+
+func (db *DataStoreMongo) GetDeviceAuthsByIdentityData(ctx context.Context, idata string) ([]model.DeviceAuth, error) {
+	s := db.session.Copy()
+	defer s.Close()
+
+	c := s.DB(ctx_store.DbFromContext(ctx, DbName)).C(DbDevicesColl)
+
+	filter := &model.DeviceAuth{
+		DeviceIdentity: idata,
+	}
+	res := []model.DeviceAuth{}
+
+	err := c.Find(filter).All(&res)
+	return res, errors.Wrap(err, "failed to fetch device")
 }
