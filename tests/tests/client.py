@@ -83,6 +83,27 @@ class ManagementClient(SwaggerApiClient):
         else:
             return r
 
+    def change_status(authset_id, status, auth=None):
+        if auth is None:
+            auth = self.uauth
+
+        s = Status(status=status)
+
+        self.client.devices.put_devices_id_status(id=authset_id, status=s, _request_options={"headers": auth}).result()
+
+    def preauthorize(authset_id, auth):
+        """
+            Add a preauthorized device.
+        """
+        if auth is None:
+            auth = self.uauth
+
+        authset = AuthSet(
+                device_identity='identity',
+                key='key')
+
+        self.client.devices.post_devices(auth_set=authset, _request_options={"headers": auth}).result()
+
     def make_user_auth(self, user_id, tenant_id=None):
         """
             Prepare an almost-valid JWT auth header, suitable for consumption by deviceadm.
