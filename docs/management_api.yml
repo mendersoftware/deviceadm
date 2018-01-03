@@ -36,6 +36,7 @@ paths:
             - pending
             - accepted
             - rejected
+            - preauthorized
         - name: page
           in: query
           description: Starting page.
@@ -400,6 +401,7 @@ definitions:
           - pending
           - accepted
           - rejected
+          - preauthorized
       attributes:
           $ref: "#/definitions/Attributes"
       request_time:
