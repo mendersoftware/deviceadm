@@ -70,19 +70,52 @@ def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
     return devs
 
 
-class TestInternalApiPutDeviceStatus:
-    def test_ok(self, api_client_int, api_client_mgmt, init_authsets):
+class TestInternalApiPutDeviceStatusBase:
+    def _do_test_ok(self, api_client_int, api_client_mgmt, init_authsets, auth=None):
+        """
+            Tests the happy path.
+        """
+
         # find the preauthorized device and accept
         preauth = [d for d in init_authsets if d.status == 'preauthorized']
         assert len(preauth) == 1
         preauth = preauth[0]
 
-        api_client_int.change_status(preauth.id, 'accepted')
+        api_client_int.change_status(preauth.id, 'accepted', auth)
 
         # assert that the preauth device is now accepted
-        devs = api_client_mgmt.get_all_devices()
+        devs = api_client_mgmt.get_all_devices(auth=auth)
         accepted = [d for d in devs if d.id == preauth.id and d.status == 'accepted']
         assert len(accepted) == 1
+
+    def _do_test_invalid_init_status(self, status, api_client_int, api_client_mgmt, init_authsets, auth=None):
+        """
+            Tests an invalid transition, i.e. 'not preauthorized' -> 'accepted'.
+        """
+        existing = [d for d in init_authsets if d.status == status]
+        existing = existing[0]
+
+        try:
+            api_client_int.change_status(existing.id, 'accepted', auth)
+        except bravado.exception.HTTPError as e:
+            assert e.response.status_code == 409
+
+    def _do_test_invalid_dest_status(self, dest_status, api_client_int, api_client_mgmt, init_authsets, auth=None):
+        """
+            Tests an invalid destination status, i.e. 'not accepted'.
+        """
+        preauth = [d for d in init_authsets if d.status == 'preauthorized']
+        preauth = preauth[0]
+
+        try:
+            api_client_int.change_status(preauth.id, dest_status, auth)
+        except bravado.exception.HTTPError as e:
+            assert e.response.status_code == 400
+
+
+class TestInternalApiPutDeviceStatus(TestInternalApiPutDeviceStatusBase):
+    def test_ok(self, api_client_int, api_client_mgmt, init_authsets):
+        self._do_test_ok(api_client_int, api_client_mgmt, init_authsets)
 
     def test_invalid_init_status_pending(self, api_client_int, api_client_mgmt, init_authsets):
         self._do_test_invalid_init_status('pending', api_client_int, api_client_mgmt, init_authsets)
@@ -104,27 +137,3 @@ class TestInternalApiPutDeviceStatus:
 
     def test_invalid_dest_status_bogus(self, api_client_int, api_client_mgmt, init_authsets):
         self._do_test_invalid_dest_status('bogus', api_client_int, api_client_mgmt, init_authsets)
-
-    def _do_test_invalid_init_status(self, status, api_client_int, api_client_mgmt, init_authsets):
-        """
-            Tests an invalid transition, i.e. 'not preauthorized' -> 'accepted'.
-        """
-        existing = [d for d in init_authsets if d.status == status]
-        existing = existing[0]
-
-        try:
-            api_client_int.change_status(existing.id, 'accepted')
-        except bravado.exception.HTTPError as e:
-            assert e.response.status_code == 409
-
-    def _do_test_invalid_dest_status(self, dest_status, api_client_int, api_client_mgmt, init_authsets):
-        """
-            Tests an invalid destination status, i.e. 'not accepted'.
-        """
-        preauth = [d for d in init_authsets if d.status == 'preauthorized']
-        preauth = preauth[0]
-
-        try:
-            api_client_int.change_status(preauth.id, dest_status)
-        except bravado.exception.HTTPError as e:
-            assert e.response.status_code == 400
