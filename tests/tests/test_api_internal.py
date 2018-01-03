@@ -51,24 +51,44 @@ def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
         The fixture is specific to testing internal PUT /devices/{id}/status.
         Some common funcs are reused, but existing common fixtures don't fit the bill.
     """
+    return do_init_authsets(api_client_mgmt)
+
+TENANTS = ['tenant1', 'tenant2']
+@pytest.fixture(scope="function")
+def init_authsets_mt(clean_db, clean_db_devauth, api_client_mgmt):
+    """
+        Create a couple auth sets in various states, including 'preauthorized', in a MT context (2 tenants).
+        The fixture is specific to testing internal PUT /devices/{id}/status.
+    """
+    tenant_authsets = {}
+    with tenantadm.fake_tenantadm():
+        for t in TENANTS:
+            tenant_authsets[t] = do_init_authsets(api_client_mgmt, t)
+
+    return tenant_authsets
+
+def do_init_authsets(api_client_mgmt, tenant_id=None):
+    auth=None
+    if tenant_id is not None:
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+
     # create 5 auth sets in 'pending' state
     count = 5
-    do_create_devices(None, count)
-    devs = api_client_mgmt.get_all_devices()
+    do_create_devices(tenant_id, count)
+    devs = api_client_mgmt.get_all_devices(auth=auth)
     assert len(devs) == count
 
     # using deviceadm's api, change up some statuses
-    api_client_mgmt.change_status(devs[0].id, 'accepted')
-    api_client_mgmt.change_status(devs[3].id, 'rejected')
+    api_client_mgmt.change_status(devs[0].id, 'accepted', auth)
+    api_client_mgmt.change_status(devs[3].id, 'rejected', auth)
 
     # add a preauthorized device
     identity = json.dumps({"mac": "preauth-mac"})
-    api_client_mgmt.preauthorize(identity, 'preauth-key')
+    api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
 
-    devs = api_client_mgmt.get_all_devices()
+    devs = api_client_mgmt.get_all_devices(auth=auth)
     assert len(devs) == count + 1
     return devs
-
 
 class TestInternalApiPutDeviceStatusBase:
     def _do_test_ok(self, api_client_int, api_client_mgmt, init_authsets, auth=None):
@@ -137,3 +157,45 @@ class TestInternalApiPutDeviceStatus(TestInternalApiPutDeviceStatusBase):
 
     def test_invalid_dest_status_bogus(self, api_client_int, api_client_mgmt, init_authsets):
         self._do_test_invalid_dest_status('bogus', api_client_int, api_client_mgmt, init_authsets)
+
+
+class TestInternalApiPutDeviceStatusMultitenant(TestInternalApiPutDeviceStatusBase):
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_ok(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_ok(api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_init_status_pending(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_init_status('pending', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_init_status_accepted(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_init_status('accepted', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_init_status_rejected(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_init_status('rejected', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_dest_status_rejected(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_dest_status('rejected', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_dest_status_accepted(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_dest_status('accepted', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_dest_status_pending(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_dest_status('pending', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_dest_status_bogus(self, api_client_int, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._do_test_invalid_dest_status('bogus', api_client_int, api_client_mgmt, init_authsets_mt[tenant_id], auth)
