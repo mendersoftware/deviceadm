@@ -123,6 +123,13 @@ def clean_db(mongo):
     yield mongo
     mongo_cleanup(mongo)
 
+@pytest.fixture(scope="session")
+def mongo_devauth():
+    return MongoClient('mender-mongo-device-auth:27017')
+
+@pytest.fixture(scope='function')
+def clean_db_devauth(mongo_devauth):
+    mongo_cleanup(mongo_devauth)
 
 @pytest.fixture(scope="session")
 def cli():
