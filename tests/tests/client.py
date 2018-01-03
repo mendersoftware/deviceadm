@@ -45,6 +45,8 @@ class InternalClient(SwaggerApiClient):
     spec_option = 'internal_spec'
     api_type = "internal"
 
+    uauth = {"Authorization": "Bearer foobarbaz"}
+
     def setup(self):
         self.setup_swagger()
 
@@ -58,6 +60,15 @@ class InternalClient(SwaggerApiClient):
     def create_tenant(self, tenant_id):
         return self.client.tenants.post_tenants(tenant={
                     "tenant_id": tenant_id}).result()
+
+    def change_status(self, authset_id, status, auth=None):
+        if auth is None:
+            auth = self.uauth
+
+        Status = self.client.get_model('Status')
+        s = Status(status=status)
+
+        self.client.devices.put_devices_id_status(id=authset_id, status=s, _request_options={"headers": auth}).result()
 
 
 class ManagementClient(SwaggerApiClient):
@@ -83,24 +94,26 @@ class ManagementClient(SwaggerApiClient):
         else:
             return r
 
-    def change_status(authset_id, status, auth=None):
+    def change_status(self, authset_id, status, auth=None):
         if auth is None:
             auth = self.uauth
 
+        Status = self.client.get_model('Status')
         s = Status(status=status)
 
         self.client.devices.put_devices_id_status(id=authset_id, status=s, _request_options={"headers": auth}).result()
 
-    def preauthorize(authset_id, auth):
+    def preauthorize(self, identity, key, auth=None):
         """
             Add a preauthorized device.
         """
         if auth is None:
             auth = self.uauth
 
+        AuthSet = self.client.get_model('AuthSet')
         authset = AuthSet(
-                device_identity='identity',
-                key='key')
+                device_identity=identity,
+                key=key)
 
         self.client.devices.post_devices(auth_set=authset, _request_options={"headers": auth}).result()
 
