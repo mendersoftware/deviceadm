@@ -18,34 +18,63 @@ from common import api_client_mgmt, \
                    init_authsets, init_authsets_mt
 import bravado
 import json
+import pytest
 
-class TestMgmtApiPostDevices:
-    def test_ok(self, api_client_mgmt, init_authsets):
+class TestMgmtApiPostDevicesBase:
+    def _test_ok(self, api_client_mgmt, init_authsets, auth=None):
         identity = json.dumps({"mac": "new-preauth-mac"})
-        api_client_mgmt.preauthorize(identity, 'new-preauth-key')
+        api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
 
-        asets = api_client_mgmt.get_all_devices()
+        asets = api_client_mgmt.get_all_devices(auth=auth)
         assert len(asets) == len(init_authsets) + 1
 
         preauth = [a for a in asets if a.status == 'preauthorized' and a.device_identity==identity]
         assert len(preauth) == 1
 
-    def test_bad_req_iddata(self, api_client_mgmt, init_authsets):
+    def _test_bad_req_iddata(self, api_client_mgmt, init_authsets, auth=None):
         try:
-            api_client_mgmt.preauthorize('not-valid-json', 'new-preauth-key')
+            api_client_mgmt.preauthorize('not-valid-json', 'new-preauth-key', auth)
         except bravado.exception.HTTPError as e:
             assert e.response.status_code == 400
 
-        asets = api_client_mgmt.get_all_devices()
+        asets = api_client_mgmt.get_all_devices(auth=auth)
         assert len(asets) == len(init_authsets)
 
-    def test_conflict(self, api_client_mgmt, init_authsets):
+    def _test_conflict(self, api_client_mgmt, init_authsets, auth=None):
         for aset in init_authsets:
             try:
                 identity = aset.device_identity
-                api_client_mgmt.preauthorize(identity, 'new-preauth-key')
+                api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
             except bravado.exception.HTTPError as e:
                 assert e.response.status_code == 409
 
-        asets = api_client_mgmt.get_all_devices()
+        asets = api_client_mgmt.get_all_devices(auth=auth)
         assert len(asets) == len(init_authsets)
+
+
+class TestMgmtApiPostDevices(TestMgmtApiPostDevicesBase):
+    def test_ok(self, api_client_mgmt, init_authsets):
+        self._test_ok(api_client_mgmt, init_authsets)
+
+    def test_bad_req_iddata(self, api_client_mgmt, init_authsets):
+        self._test_bad_req_iddata(api_client_mgmt, init_authsets)
+
+    def test_conflict(self, api_client_mgmt, init_authsets):
+        self._test_conflict(api_client_mgmt, init_authsets)
+
+
+class TestMgmtApiPostDevicesMultitenant(TestMgmtApiPostDevicesBase):
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_ok(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_ok(api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_bad_req_iddata(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_bad_req_iddata(api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_conflict(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_conflict(api_client_mgmt, init_authsets_mt[tenant_id], auth)
