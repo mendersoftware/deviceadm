@@ -25,7 +25,7 @@ from tenantadm import fake_tenantadm
 
 from pymongo import MongoClient
 
-from client import CliClient, InternalClientSimple
+from client import CliClient, InternalClientSimple, ManagementClientSimple
 
 
 apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
@@ -123,6 +123,13 @@ def clean_db(mongo):
     yield mongo
     mongo_cleanup(mongo)
 
+@pytest.fixture(scope="session")
+def mongo_devauth():
+    return MongoClient('mender-mongo-device-auth:27017')
+
+@pytest.fixture(scope='function')
+def clean_db_devauth(mongo_devauth):
+    mongo_cleanup(mongo_devauth)
 
 @pytest.fixture(scope="session")
 def cli():
@@ -132,3 +139,6 @@ def cli():
 def api_client_int():
     return InternalClientSimple()
 
+@pytest.fixture(scope="session")
+def api_client_mgmt():
+    return ManagementClientSimple()
