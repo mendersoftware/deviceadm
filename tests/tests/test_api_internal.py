@@ -13,9 +13,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 from common import api_client_int, api_client_mgmt, \
-                   mongo, clean_db, \
-                   mongo_devauth, clean_db_devauth, \
-                   do_create_devices
+                   clean_db, clean_db_devauth, \
+                   mongo, mongo_devauth, \
+                   init_authsets, init_authsets_mt
 import bravado
 import pytest
 import json
@@ -43,52 +43,6 @@ class TestInternalApiTenantCreate:
         except bravado.exception.HTTPError as e:
             assert e.response.status_code == 400
 
-
-@pytest.fixture(scope="function")
-def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
-    """
-        Create a couple auth sets in various states, including 'preauthorized'.
-        The fixture is specific to testing internal PUT /devices/{id}/status.
-        Some common funcs are reused, but existing common fixtures don't fit the bill.
-    """
-    return do_init_authsets(api_client_mgmt)
-
-TENANTS = ['tenant1', 'tenant2']
-@pytest.fixture(scope="function")
-def init_authsets_mt(clean_db, clean_db_devauth, api_client_mgmt):
-    """
-        Create a couple auth sets in various states, including 'preauthorized', in a MT context (2 tenants).
-        The fixture is specific to testing internal PUT /devices/{id}/status.
-    """
-    tenant_authsets = {}
-    with tenantadm.fake_tenantadm():
-        for t in TENANTS:
-            tenant_authsets[t] = do_init_authsets(api_client_mgmt, t)
-
-    return tenant_authsets
-
-def do_init_authsets(api_client_mgmt, tenant_id=None):
-    auth=None
-    if tenant_id is not None:
-        auth = api_client_mgmt.make_user_auth("user", tenant_id)
-
-    # create 5 auth sets in 'pending' state
-    count = 5
-    do_create_devices(tenant_id, count)
-    devs = api_client_mgmt.get_all_devices(auth=auth)
-    assert len(devs) == count
-
-    # using deviceadm's api, change up some statuses
-    api_client_mgmt.change_status(devs[0].id, 'accepted', auth)
-    api_client_mgmt.change_status(devs[3].id, 'rejected', auth)
-
-    # add a preauthorized device
-    identity = json.dumps({"mac": "preauth-mac"})
-    api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
-
-    devs = api_client_mgmt.get_all_devices(auth=auth)
-    assert len(devs) == count + 1
-    return devs
 
 class TestInternalApiPutDeviceStatusBase:
     def _do_test_ok(self, api_client_int, api_client_mgmt, init_authsets, auth=None):

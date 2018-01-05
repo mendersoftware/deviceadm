@@ -26,7 +26,7 @@ from tenantadm import fake_tenantadm
 from pymongo import MongoClient
 
 from client import CliClient, InternalClientSimple, ManagementClientSimple
-
+import tenantadm
 
 apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
          pytest.config.getoption("devauth_host")
@@ -142,3 +142,52 @@ def api_client_int():
 @pytest.fixture(scope="session")
 def api_client_mgmt():
     return ManagementClientSimple()
+
+# these fixtures are similar to create_devices..., but are 'new style',
+# i.e. function-scoped, with proper conventions wrt to db cleaning (no data sharing between tests)
+# also: init authsets have various states, including 'preauthorized'
+@pytest.fixture(scope="function")
+def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
+    """
+        Create a couple auth sets in various states, including 'preauthorized'.
+        The fixture is specific to testing internal PUT /devices/{id}/status.
+        Some common funcs are reused, but existing common fixtures don't fit the bill.
+    """
+    return do_init_authsets(api_client_mgmt)
+
+TENANTS = ['tenant1', 'tenant2']
+@pytest.fixture(scope="function")
+def init_authsets_mt(clean_db, clean_db_devauth, api_client_mgmt):
+    """
+        Create a couple auth sets in various states, including 'preauthorized', in a MT context (2 tenants).
+        The fixture is specific to testing internal PUT /devices/{id}/status.
+    """
+    tenant_authsets = {}
+    with tenantadm.fake_tenantadm():
+        for t in TENANTS:
+            tenant_authsets[t] = do_init_authsets(api_client_mgmt, t)
+
+    return tenant_authsets
+
+def do_init_authsets(api_client_mgmt, tenant_id=None):
+    auth=None
+    if tenant_id is not None:
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+
+    # create 5 auth sets in 'pending' state
+    count = 5
+    do_create_devices(tenant_id, count)
+    devs = api_client_mgmt.get_all_devices(auth=auth)
+    assert len(devs) == count
+
+    # using deviceadm's api, change up some statuses
+    api_client_mgmt.change_status(devs[0].id, 'accepted', auth)
+    api_client_mgmt.change_status(devs[3].id, 'rejected', auth)
+
+    # add a preauthorized device
+    identity = json.dumps({"mac": "preauth-mac"})
+    api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
+
+    devs = api_client_mgmt.get_all_devices(auth=auth)
+    assert len(devs) == count + 1
+    return devs
