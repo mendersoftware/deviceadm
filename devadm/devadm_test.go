@@ -493,3 +493,93 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 		})
 	}
 }
+
+func TestDevAdmDeleteDevicePropagate(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		datastoreDeleteDeviceAuthError error
+		datastoreGetDeviceAuthError    error
+		clientStatusCode               int
+		storeAuth                      *model.DeviceAuth
+		outError                       error
+	}{
+		"ok": {
+			datastoreDeleteDeviceAuthError: nil,
+			datastoreGetDeviceAuthError:    nil,
+			storeAuth: &model.DeviceAuth{
+				ID:       "1",
+				DeviceId: model.DeviceID("1"),
+			},
+			clientStatusCode: http.StatusNoContent,
+			outError:         nil,
+		},
+		"delete device: no device": {
+			storeAuth: &model.DeviceAuth{
+				ID:       "1",
+				DeviceId: model.DeviceID("1"),
+			},
+			datastoreDeleteDeviceAuthError: store.ErrNotFound,
+			clientStatusCode:               http.StatusNoContent,
+			outError:                       store.ErrNotFound,
+		},
+		"get device: no device": {
+			datastoreGetDeviceAuthError: store.ErrNotFound,
+			outError:                    store.ErrNotFound,
+		},
+		"delete device: datastore error": {
+			storeAuth: &model.DeviceAuth{
+				ID:       "1",
+				DeviceId: model.DeviceID("1"),
+			},
+			datastoreDeleteDeviceAuthError: errors.New("db connection failed"),
+			clientStatusCode:               http.StatusNoContent,
+			outError:                       errors.New("failed to delete device authentication set: db connection failed"),
+		},
+		"get device: datastore error": {
+			datastoreGetDeviceAuthError: errors.New("db connection failed"),
+			outError:                    errors.New("failed to get device authentication set: db connection failed"),
+		},
+		"get device: no error, no authentication set": {
+			outError: errors.New("failed to get device authentication set"),
+		},
+		"client error": {
+			clientStatusCode: http.StatusInternalServerError,
+			storeAuth: &model.DeviceAuth{
+				ID:       "1",
+				DeviceId: model.DeviceID("1"),
+			},
+			outError: errors.New("failed to propagate device authentication set deletion: delete device authentication set request failed with status 500 Internal Server Error"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			ctx := context.Background()
+
+			db := &mstore.DataStore{}
+			db.On("DeleteDeviceAuth", ctx,
+				mock.AnythingOfType("model.AuthID"),
+			).Return(tc.datastoreDeleteDeviceAuthError)
+			db.On("GetDeviceAuth", ctx,
+				mock.AnythingOfType("model.AuthID"),
+			).Return(tc.storeAuth, tc.datastoreGetDeviceAuthError)
+			i := &DevAdm{
+				db: db,
+				clientGetter: func() client.HttpRunner {
+					return FakeApiRequester{tc.clientStatusCode}
+				},
+			}
+
+			err := i.DeleteDeviceAuthPropagate(ctx, "foo", "bar")
+
+			if tc.outError != nil {
+				if assert.Error(t, err) {
+					assert.EqualError(t, err, tc.outError.Error())
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

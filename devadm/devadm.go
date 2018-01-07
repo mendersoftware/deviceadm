@@ -48,6 +48,7 @@ type App interface {
 	AcceptDeviceAuth(ctx context.Context, id model.AuthID) error
 	RejectDeviceAuth(ctx context.Context, id model.AuthID) error
 	DeleteDeviceAuth(ctx context.Context, id model.AuthID) error
+	DeleteDeviceAuthPropagate(ctx context.Context, id model.AuthID, authorizationHeader string) error
 	AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error
 
 	DeleteDeviceData(ctx context.Context, id model.DeviceID) error
@@ -115,6 +116,23 @@ func (d *DevAdm) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
 	}
 }
 
+func (d *DevAdm) DeleteDeviceAuthPropagate(ctx context.Context, id model.AuthID, authorizationHeader string) error {
+	err := d.propagateDeviceAuthDeletion(ctx, id, authorizationHeader)
+	if err != nil {
+		return err
+	}
+
+	err = d.db.DeleteDeviceAuth(ctx, id)
+	switch err {
+	case nil:
+		return nil
+	case store.ErrNotFound:
+		return err
+	default:
+		return errors.Wrap(err, "failed to delete device authentication set")
+	}
+}
+
 func (d *DevAdm) AcceptDevicePreAuth(ctx context.Context, id model.AuthID) error {
 	dev, err := d.db.GetDeviceAuth(ctx, id)
 
@@ -156,6 +174,33 @@ func (d *DevAdm) propagateDeviceAuthUpdate(ctx context.Context, dev *model.Devic
 		} else {
 
 			return errors.Wrap(err, "failed to propagate device status update")
+		}
+	}
+	return nil
+}
+
+func (d *DevAdm) propagateDeviceAuthDeletion(
+	ctx context.Context, authId model.AuthID, authorizationHeader string) error {
+	devAuth, err := d.db.GetDeviceAuth(ctx, authId)
+	if err != nil {
+		if err == store.ErrNotFound {
+			return err
+		} else {
+			return errors.Wrap(err, "failed to get device authentication set")
+		}
+	}
+	if devAuth == nil {
+		return errors.New("failed to get device authentication set")
+	}
+
+	// forward device authentication set deletion to auth service
+	cl := deviceauth.NewClient(d.authclientconf, d.clientGetter())
+	err = cl.DeleteDeviceAuthSet(ctx, devAuth.DeviceId.String(), devAuth.ID.String(), authorizationHeader)
+	if err != nil {
+		if utils.IsUsageError(err) {
+			return err
+		} else {
+			return errors.Wrap(err, "failed to propagate device authentication set deletion")
 		}
 	}
 	return nil
