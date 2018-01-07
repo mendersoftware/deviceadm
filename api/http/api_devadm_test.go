@@ -801,6 +801,61 @@ func TestApiDeleteDeviceData(t *testing.T) {
 	}
 }
 
+func TestApiDeleteDeviceManagement(t *testing.T) {
+	t.Parallel()
+	rest.ErrorFieldName = "error"
+
+	tcases := map[string]struct {
+		req *http.Request
+
+		devadmErr error
+		id        model.AuthID
+
+		code int
+		body string
+	}{
+		"success": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/management/v1/admission/devices/2", nil),
+
+			devadmErr: nil,
+			id:        "2",
+
+			code: http.StatusNoContent,
+			body: "",
+		},
+		"error: no device": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/management/v1/admission/devices/1", nil),
+
+			devadmErr: store.ErrNotFound,
+			id:        "1",
+
+			code: http.StatusNoContent,
+		},
+		"error: generic": {
+			req: test.MakeSimpleRequest("DELETE", "http://1.2.3.4/api/management/v1/admission/devices/3", nil),
+
+			devadmErr: errors.New("some internal error"),
+			id:        "3",
+
+			code: http.StatusInternalServerError,
+			body: RestError("internal error"),
+		},
+	}
+
+	for name, tc := range tcases {
+		t.Run(fmt.Sprintf("test case: %s", name), func(t *testing.T) {
+			devadm := &mdevadm.App{}
+			devadm.On("DeleteDeviceAuthPropagate",
+				mock.MatchedBy(func(c context.Context) bool { return true }),
+				tc.id, mock.AnythingOfType("string")).Return(tc.devadmErr)
+
+			apih := makeMockApiHandler(t, devadm)
+
+			runTestRequest(t, apih, tc.req, tc.code, tc.body)
+		})
+	}
+}
+
 func TestApiDevAdmPostTenants(t *testing.T) {
 	testCases := map[string]struct {
 		req       *http.Request

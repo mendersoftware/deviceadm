@@ -68,6 +68,7 @@ func (d *DevAdmHandlers) GetApp() (rest.App, error) {
 		rest.Put(uriDevice, d.SubmitDeviceHandler),
 		rest.Get(uriDevice, d.GetDeviceHandler),
 		rest.Delete(uriDeviceInternal, d.DeleteDeviceHandler),
+		rest.Delete(uriDevice, d.DeleteDeviceManagementHandler),
 
 		rest.Get(uriDeviceStatus, d.GetDeviceStatusHandler),
 		rest.Put(uriDeviceStatus, d.UpdateDeviceStatusHandler),
@@ -378,6 +379,22 @@ func (d *DevAdmHandlers) DeleteDeviceHandler(w rest.ResponseWriter, r *rest.Requ
 	devid := r.PathParam("id")
 
 	err := d.DevAdm.DeleteDeviceAuth(ctx, model.AuthID(devid))
+
+	if err != nil && err != store.ErrNotFound {
+		restErrWithLogInternal(w, r, l, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (d *DevAdmHandlers) DeleteDeviceManagementHandler(w rest.ResponseWriter, r *rest.Request) {
+	ctx := r.Context()
+	l := log.FromContext(ctx)
+
+	devid := r.PathParam("id")
+
+	err := d.DevAdm.DeleteDeviceAuthPropagate(ctx, model.AuthID(devid), r.Header.Get("Authorization"))
 
 	if err != nil && err != store.ErrNotFound {
 		restErrWithLogInternal(w, r, l, err)
