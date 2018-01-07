@@ -32,6 +32,8 @@ import (
 const (
 	// default device ID endpoint
 	defaultDevAuthDevicesUri = "/api/management/v1/devauth/devices/{id}/auth/{aid}/status"
+	// default device authentication set endpoint
+	defaultDevAuthUri = "/api/management/v1/devauth/devices/{id}/auth/{aid}"
 	// default preauthorize device endpoint
 	defaultPreauthorizeDeviceUri = "/api/management/v1/devauth/devices"
 	// default request timeout, 10s?
@@ -145,6 +147,37 @@ func (d *Client) PreauthorizeDevice(
 		return nil
 	default:
 		return errors.Errorf("device preauthorize request failed with status %v",
+			rsp.Status)
+	}
+}
+
+func (d *Client) DeleteDeviceAuthSet(
+	ctx context.Context, deviceId, authId string, authorizationHeader string) error {
+	url := d.conf.DevauthUrl + defaultDevAuthUri
+	repl := strings.NewReplacer(":id", deviceId, ":aid", authId)
+	url = repl.Replace(url)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to prepare dev auth DELETE request")
+	}
+
+	req.Header.Set("Authorization", authorizationHeader)
+
+	// set request timeout and setup cancellation
+	ctx, cancel := context.WithTimeout(ctx, d.conf.Timeout)
+	defer cancel()
+	rsp, err := d.client.Do(req.WithContext(ctx))
+	if err != nil {
+		return errors.Wrapf(err, "failed to preauthorize device")
+	}
+	defer rsp.Body.Close()
+
+	switch rsp.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	default:
+		return errors.Errorf("delete device authentication set request failed with status %v",
 			rsp.Status)
 	}
 }
