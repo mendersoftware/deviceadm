@@ -417,37 +417,37 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 		datastoreGetError    error
 		datastoreInsertError error
 		outError             error
-		clientStautusCode    int
+		clientStatusCode     int
 		foundAuthSets        []model.DeviceAuth
 	}{
 		"ok": {
 			datastoreGetError:    nil,
 			datastoreInsertError: nil,
-			clientStautusCode:    201,
+			clientStatusCode:     201,
 			outError:             nil,
 		},
 		"store get error": {
 			datastoreGetError:    errors.New("foo error"),
 			datastoreInsertError: nil,
-			clientStautusCode:    201,
+			clientStatusCode:     201,
 			outError:             errors.New("foo error"),
 		},
 		"store insert error": {
 			datastoreGetError:    nil,
 			datastoreInsertError: errors.New("bar error"),
-			clientStautusCode:    201,
+			clientStatusCode:     201,
 			outError:             errors.New("bar error"),
 		},
 		"calling devauth error": {
 			datastoreGetError:    nil,
 			datastoreInsertError: nil,
-			clientStautusCode:    409,
+			clientStatusCode:     409,
 			outError:             errors.New("failed to propagate device status update: device preauthorize request failed with status 409 Conflict"),
 		},
 		"conflict error": {
 			datastoreGetError:    nil,
 			datastoreInsertError: nil,
-			clientStautusCode:    201,
+			clientStatusCode:     201,
 			outError:             AuthSetConflictError,
 			foundAuthSets:        []model.DeviceAuth{model.DeviceAuth{}},
 		},
@@ -475,7 +475,7 @@ func TestDevAdmPreauthorizeDevice(t *testing.T) {
 			i := &DevAdm{
 				db: db,
 				clientGetter: func() client.HttpRunner {
-					return FakeApiRequester{tc.clientStautusCode}
+					return FakeApiRequester{tc.clientStatusCode}
 				},
 				clock: clock,
 			}
