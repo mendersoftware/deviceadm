@@ -66,6 +66,20 @@ func (_m *App) DeleteDeviceAuth(ctx context.Context, id model.AuthID) error {
 	return r0
 }
 
+// DeleteDeviceAuthPropagate provides a mock function with given fields: ctx, id, authorizationHeader
+func (_m *App) DeleteDeviceAuthPropagate(ctx context.Context, id model.AuthID, authorizationHeader string) error {
+	ret := _m.Called(ctx, id, authorizationHeader)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.AuthID, string) error); ok {
+		r0 = rf(ctx, id, authorizationHeader)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteDeviceData provides a mock function with given fields: ctx, id
 func (_m *App) DeleteDeviceData(ctx context.Context, id model.DeviceID) error {
 	ret := _m.Called(ctx, id)

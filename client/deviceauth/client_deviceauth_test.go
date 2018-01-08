@@ -266,3 +266,35 @@ func TestDevAuthClientPreauthorizeDeviceReqFailBadProtocol(t *testing.T) {
 	assert.EqualError(t, err, "failed to preauthorize device: Post bad%20url/api/management/v1/devauth/devices: "+
 		"unsupported protocol scheme \"\"")
 }
+
+func TestDeleteDeviceAuthsetReqSuccess(t *testing.T) {
+
+	var req *http.Request
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		req = r
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer s.Close()
+
+	c := NewClient(Config{
+		DevauthUrl: s.URL,
+	}, &http.Client{})
+
+	err := c.DeleteDeviceAuthSet(context.Background(),
+		"foo", "bar", "Bearer: foo-token123")
+	assert.NoError(t, err, "expected no errors")
+	assert.Equal(t, "Bearer: foo-token123", req.Header.Get("Authorization"))
+}
+
+func TestDeleteDeviceAuthsetReqFailStatus(t *testing.T) {
+	s := newMockServer(t, http.StatusInternalServerError, nil)
+	defer s.Close()
+
+	c := NewClient(Config{
+		DevauthUrl: s.URL,
+	}, &http.Client{})
+
+	err := c.PreauthorizeDevice(context.Background(),
+		&PreAuthReq{}, "Bearer: foo-token")
+	assert.Error(t, err, "expected an error")
+}
