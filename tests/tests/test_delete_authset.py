@@ -22,24 +22,45 @@ import pytest
 import json
 import tenantadm
 
-class TestMgmtApiDeleteDevice:
-    def test_ok(self, api_client_mgmt, init_authsets):
+
+class TestMgmtApiDeleteDeviceBase:
+    def _test_ok(self, api_client_mgmt, init_authsets, auth=None):
         id = init_authsets[0].id
 
-        rsp = api_client_mgmt.delete_device_mgmt(id)
+        rsp = api_client_mgmt.delete_device_mgmt(id, auth)
         assert rsp.status_code == 204
 
-        devs = api_client_mgmt.get_all_devices()
+        devs = api_client_mgmt.get_all_devices(auth=auth)
         assert len(devs) == len(init_authsets) - 1
 
         deleted = [a for a in devs if a.id == id]
         assert len(deleted) == 0
 
-    def test_ok_nonexistent(self, api_client_mgmt, init_authsets):
+    def _test_ok_nonexistent(self, api_client_mgmt, init_authsets, auth=None):
         id = "nonexistent"
 
-        rsp = api_client_mgmt.delete_device_mgmt(id)
+        rsp = api_client_mgmt.delete_device_mgmt(id, auth)
         assert rsp.status_code == 204
 
-        devs = api_client_mgmt.get_all_devices()
+        devs = api_client_mgmt.get_all_devices(auth=auth)
         assert len(devs) == len(init_authsets)
+
+
+class TestMgmtApiDeleteDevice(TestMgmtApiDeleteDeviceBase):
+    def test_ok(self, api_client_mgmt, init_authsets):
+        self._test_ok(api_client_mgmt, init_authsets)
+
+    def test_ok_nonexistent(self, api_client_mgmt, init_authsets):
+        self._test_ok_nonexistent(api_client_mgmt, init_authsets)
+
+
+class TestMgmtApiDeleteDeviceMultitenant(TestMgmtApiDeleteDeviceBase):
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_ok(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_ok(api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_ok_nonexistent(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_ok_nonexistent(api_client_mgmt, init_authsets_mt[tenant_id], auth)
