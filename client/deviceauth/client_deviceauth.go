@@ -154,7 +154,7 @@ func (d *Client) PreauthorizeDevice(
 func (d *Client) DeleteDeviceAuthSet(
 	ctx context.Context, deviceId, authId string, authorizationHeader string) error {
 	url := d.conf.DevauthUrl + defaultDevAuthUri
-	repl := strings.NewReplacer(":id", deviceId, ":aid", authId)
+	repl := strings.NewReplacer("{id}", deviceId, "{aid}", authId)
 	url = repl.Replace(url)
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
