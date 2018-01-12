@@ -117,6 +117,16 @@ class ManagementClient(SwaggerApiClient):
 
         self.client.devices.post_devices(auth_set=authset, _request_options={"headers": auth}).result()
 
+    def delete_device_mgmt(self, id, auth=None):
+        """
+           Remove device (auth set) via management API.
+        """
+        if auth is None:
+            auth = self.uauth
+
+        print(self.make_api_url('/devices/{}'.format(id)))
+        return requests.delete(self.make_api_url('/devices/{}'.format(id)), headers=auth)
+
     def make_user_auth(self, user_id, tenant_id=None):
         """
             Prepare an almost-valid JWT auth header, suitable for consumption by deviceadm.
