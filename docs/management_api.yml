@@ -65,17 +65,16 @@ paths:
             items:
               $ref: '#/definitions/Device'
             example:
-              application/json:
-                - id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
-                  device_id: "58be8208dd77460001fe0d78"
-                  device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
-                  key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
-                  status: "pending"
-                  attributes:
-                    mac: "00:01:02:03:04:05"
-                    sku: "My Device 1"
-                    sn:  "SN1234567890"
-                  request_time: "2016-10-03T16:58:51.639Z"
+              - id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+                device_id: "58be8208dd77460001fe0d78"
+                device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+                key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+                status: "pending"
+                attributes:
+                  mac: "00:01:02:03:04:05"
+                  sku: "My Device 1"
+                  sn:  "SN1234567890"
+                request_time: "2016-10-03T16:58:51.639Z"
           headers:
             Link:
               type: string
@@ -193,17 +192,16 @@ paths:
           schema:
             $ref: "#/definitions/Device"
           examples:
-            application/json:
-              id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
-              device_id: "58be8208dd77460001fe0d78"
-              device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
-              key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
-              status: "pending"
-              attributes:
-                mac: "00:01:02:03:04:05"
-                sku: "My Device 1"
-                sn:  "SN1234567890"
-              request_time: "2016-10-03T16:58:51.639Z"
+            id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+            device_id: "58be8208dd77460001fe0d78"
+            device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+            key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+            status: "pending"
+            attributes:
+              mac: "00:01:02:03:04:05"
+              sku: "My Device 1"
+              sn:  "SN1234567890"
+            request_time: "2016-10-03T16:58:51.639Z"
         404:
           description: The device authentication data set was not found.
           schema:
@@ -257,8 +255,7 @@ paths:
           schema:
             $ref: "#/definitions/Status"
           examples:
-            application/json:
-              status: "accepted"
+            status: "accepted"
         404:
           description: The device authentication data set was not found.
           schema:
@@ -300,8 +297,7 @@ paths:
           schema:
             $ref: "#/definitions/Status"
           examples:
-            application/json:
-              status: "accepted"
+            status: "accepted"
         400:
           description: |
               The request body is malformed or the state transition is invalid. See error for details.
@@ -327,9 +323,8 @@ definitions:
         description: Request ID (same as in X-MEN-RequestID header).
         type: string
     example:
-      application/json:
-          error: "failed to decode device group data: JSON payload is empty"
-          request_id: "f7881e82-0492-49fb-b459-795654e7188a"
+      error: "failed to decode device group data: JSON payload is empty"
+      request_id: "f7881e82-0492-49fb-b459-795654e7188a"
   NewDevice:
     description: New device authentication data set for admission process.
     type: object
@@ -348,11 +343,10 @@ definitions:
         description: System-assigned device ID.
         type: string
     example:
-      application/json:
-        id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
-        device_id: "58be8208dd77460001fe0d78"
-        device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
-        key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+      id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+      device_id: "58be8208dd77460001fe0d78"
+      device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+      key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
   AuthSet:
     description: New device authentication data set.
     type: object
@@ -367,9 +361,8 @@ definitions:
         description: Device public key.
         type: string
     example:
-      application/json:
-        device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
-        key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+      device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+      key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
   Device:
     description: Device authentication data set descriptor.
     type: object
@@ -409,17 +402,16 @@ definitions:
         format: datetime
         description: Server-side timestamp of the request reception.
     example:
-      application/json:
-        id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
-        device_id: "58be8208dd77460001fe0d78"
-        device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
-        key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
-        status: "pending"
-        attributes:
-          mac: "00:01:02:03:04:05"
-          sku: "My Device 1"
-          sn:  "SN1234567890"
-        request_time: "2016-10-03T16:58:51.639Z"
+      id: "291ae0e5956c69c2267489213df4459d19ed48a806603def19d417d004a4b67e"
+      device_id: "58be8208dd77460001fe0d78"
+      device_identity: "{\"mac\":\"00:01:02:03:04:05\", \"sku\":\"My Device 1\", \"sn\":\"SN1234567890\"}"
+      key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH\nVJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c\nyC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP\nokP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty\n1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0\niyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG\nUwIDAQAB\n-----END PUBLIC KEY-----\n"
+      status: "pending"
+      attributes:
+        mac: "00:01:02:03:04:05"
+        sku: "My Device 1"
+        sn:  "SN1234567890"
+      request_time: "2016-10-03T16:58:51.639Z"
 
   Status:
     description: Admission status of device authentication data set.
@@ -434,8 +426,7 @@ definitions:
     required:
       - status
     example:
-      application/json:
-          status: "accepted"
+      status: "accepted"
   Attributes:
     description: |
       Human readable attributes of the device, in the form of a JSON structure.
@@ -452,7 +443,6 @@ definitions:
         description: Serial number.
         type: string
     example:
-      application/json:
-        mac: "00:01:02:03:04:05"
-        sku: "My Device 1"
-        sn:  "SN1234567890"
+      mac: "00:01:02:03:04:05"
+      sku: "My Device 1"
+      sn:  "SN1234567890"
