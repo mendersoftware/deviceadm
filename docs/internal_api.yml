@@ -90,7 +90,8 @@ paths:
           schema:
             $ref: "#/definitions/Status"
           examples:
-            status: "accepted"
+            application/json:
+              status: "accepted"
         400:
           description: |
               The request body is malformed or the new status is different then 'accepted'.
@@ -139,7 +140,8 @@ definitions:
         description: New tenant's ID.
         type: string
     example:
-      tenant_id: "58be8208dd77460001fe0d78"
+      application/json:
+          tenant_id: "58be8208dd77460001fe0d78"
 
   Error:
     description: Error descriptor.
@@ -152,8 +154,9 @@ definitions:
         description: Request ID (same as in X-MEN-RequestID header).
         type: string
     example:
-      error: "device not found"
-      request_id: "f7881e82-0492-49fb-b459-795654e7188a"
+      application/json:
+          error: "device not found"
+          request_id: "f7881e82-0492-49fb-b459-795654e7188a"
   Status:
     description: Admission status of device authentication data set.
     type: object
@@ -165,4 +168,5 @@ definitions:
     required:
       - status
     example:
-      status: "accepted"
+      application/json:
+          status: "accepted"
