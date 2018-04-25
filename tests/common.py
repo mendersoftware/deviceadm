@@ -124,14 +124,6 @@ def clean_db(mongo):
     mongo_cleanup(mongo)
 
 @pytest.fixture(scope="session")
-def mongo_devauth():
-    return MongoClient('mender-mongo-device-auth:27017')
-
-@pytest.fixture(scope='function')
-def clean_db_devauth(mongo_devauth):
-    mongo_cleanup(mongo_devauth)
-
-@pytest.fixture(scope="session")
 def cli():
     return CliClient()
 
@@ -147,7 +139,7 @@ def api_client_mgmt():
 # i.e. function-scoped, with proper conventions wrt to db cleaning (no data sharing between tests)
 # also: init authsets have various states, including 'preauthorized'
 @pytest.fixture(scope="function")
-def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
+def init_authsets(clean_db, api_client_mgmt):
     """
         Create a couple auth sets in various states, including 'preauthorized'.
         The fixture is specific to testing internal PUT /devices/{id}/status.
@@ -157,7 +149,7 @@ def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
 
 TENANTS = ['tenant1', 'tenant2']
 @pytest.fixture(scope="function")
-def init_authsets_mt(clean_db, clean_db_devauth, api_client_mgmt):
+def init_authsets_mt(clean_db, api_client_mgmt):
     """
         Create a couple auth sets in various states, including 'preauthorized', in a MT context (2 tenants).
         The fixture is specific to testing internal PUT /devices/{id}/status.

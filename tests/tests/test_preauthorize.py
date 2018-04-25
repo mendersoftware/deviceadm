@@ -13,8 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 from common import api_client_mgmt, \
-                   clean_db, clean_db_devauth, \
-                   mongo, mongo_devauth, \
+                   clean_db, \
+                   mongo, \
                    init_authsets, init_authsets_mt
 import bravado
 import json
