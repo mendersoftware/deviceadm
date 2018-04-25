@@ -8,18 +8,15 @@ services:
             - "${TESTS_DIR}:/testing"
         depends_on:
             - mender-device-adm
-            - mender-device-auth
             - mender-inventory
         # run multi tenant tests only
         command: -k Multitenant
+        environment:
+            FAKE_DEVICEAUTH_ADDR: "0.0.0.0:9997"
     mender-device-adm:
             # built/tagged locally and only used for testing
             image: mendersoftware/deviceadm:prtest
             volumes:
                 - "${TESTS_DIR}:/testing"
-
-    mender-device-auth:
-        environment:
-            # acceptance container will be running fake tenantadm service,
-            # direct deviceauth there
-            DEVICEAUTH_TENANTADM_ADDR: "http://acceptance:5000"
+            environment:
+                DEVICEADM_DEVAUTHURL: "http://acceptance:9997"
