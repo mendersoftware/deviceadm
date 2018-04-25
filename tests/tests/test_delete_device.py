@@ -1,6 +1,7 @@
 from client import ManagementClientSimple, InternalClient
 from common import create_devices, create_devices_mt, api_client_mgmt
 import pytest
+import deviceauth
 
 @pytest.mark.usefixtures("create_devices")
 class TestDeleteDevice(InternalClient):
@@ -15,8 +16,9 @@ class TestDeleteDevice(InternalClient):
         existing = devs[0]
 
         #delete existing device set, verify it's gone
-        rsp = self.delete_device(existing.device_id, auth)
-        assert rsp.status_code == 204
+        with deviceauth.run_fake_delete_device(existing.device_id, existing.id, 204):
+            rsp = self.delete_device(existing.device_id, auth)
+            assert rsp.status_code == 204
 
         devs = mc.get_all_devices(auth=auth)
         num_devs = len(devs)
