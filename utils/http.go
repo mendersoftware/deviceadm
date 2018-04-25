@@ -47,9 +47,10 @@ const (
 	StatusPending  = "pending"
 	StatusRejected = "rejected"
 	StatusAccepted = "accepted"
+	StatusPreauth  = "preauthorized"
 )
 
-var DevStatuses = []string{StatusPending, StatusRejected, StatusAccepted}
+var DevStatuses = []string{StatusPending, StatusRejected, StatusAccepted, StatusPreauth}
 
 //error msgs
 func MsgQueryParmInvalid(name string) string {
