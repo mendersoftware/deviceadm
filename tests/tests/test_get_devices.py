@@ -34,13 +34,13 @@ class TestPrebootstrapMultitenant(TestPrebootstrap):
 class TestGetDevicesBase:
     def _test_get_devices(self, init_authsets, api_client_mgmt, auth=None):
         # get all authsets
-        authsets = api_client_mgmt.get_all_devices(auth=auth)
+        authsets = api_client_mgmt.get_devices(auth=auth)
         assert len(authsets) == len(init_authsets)
 
         # check authsets by status, verify for each known status
         for status in ['accepted', 'rejected', 'pending', 'preauthorized']:
             init_with_status = [a for a in init_authsets if a['status']==status]
-            current_with_status = api_client_mgmt.get_all_devices(status=status, auth=auth)
+            current_with_status = api_client_mgmt.get_devices(status=status, auth=auth)
 
             assert len(init_with_status) == len(current_with_status)
 

@@ -58,7 +58,7 @@ class TestInternalApiPutDeviceStatusBase:
         api_client_int.change_status(preauth.id, 'accepted', auth)
 
         # assert that the preauth device is now accepted
-        devs = api_client_mgmt.get_all_devices(auth=auth)
+        devs = api_client_mgmt.get_devices(auth=auth)
         accepted = [d for d in devs if d.id == preauth.id and d.status == 'accepted']
         assert len(accepted) == 1
 

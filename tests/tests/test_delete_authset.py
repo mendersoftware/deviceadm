@@ -33,7 +33,7 @@ class TestMgmtApiDeleteDeviceBase:
             rsp = api_client_mgmt.delete_device_mgmt(id, auth)
             assert rsp.status_code == 204
 
-        devs = api_client_mgmt.get_all_devices(auth=auth)
+        devs = api_client_mgmt.get_devices(auth=auth)
         assert len(devs) == len(init_authsets) - 1
 
         deleted = [a for a in devs if a.id == id]
@@ -45,7 +45,7 @@ class TestMgmtApiDeleteDeviceBase:
         rsp = api_client_mgmt.delete_device_mgmt(id, auth)
         assert rsp.status_code == 204
 
-        devs = api_client_mgmt.get_all_devices(auth=auth)
+        devs = api_client_mgmt.get_devices(auth=auth)
         assert len(devs) == len(init_authsets)
 
 

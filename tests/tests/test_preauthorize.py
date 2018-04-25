@@ -28,7 +28,7 @@ class TestMgmtApiPostDevicesBase:
         with deviceauth.run_fake_preauth(identity, 'new-preauth-key', 201):
             api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
 
-        asets = api_client_mgmt.get_all_devices(auth=auth)
+        asets = api_client_mgmt.get_devices(auth=auth)
         assert len(asets) == len(init_authsets) + 1
 
         preauth = [a for a in asets if a.status == 'preauthorized' and a.device_identity==identity]
@@ -40,7 +40,7 @@ class TestMgmtApiPostDevicesBase:
         except bravado.exception.HTTPError as e:
             assert e.response.status_code == 400
 
-        asets = api_client_mgmt.get_all_devices(auth=auth)
+        asets = api_client_mgmt.get_devices(auth=auth)
         assert len(asets) == len(init_authsets)
 
     def _test_conflict(self, api_client_mgmt, init_authsets, auth=None):
@@ -51,7 +51,7 @@ class TestMgmtApiPostDevicesBase:
             except bravado.exception.HTTPError as e:
                 assert e.response.status_code == 409
 
-        asets = api_client_mgmt.get_all_devices(auth=auth)
+        asets = api_client_mgmt.get_devices(auth=auth)
         assert len(asets) == len(init_authsets)
 
 
