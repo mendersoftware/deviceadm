@@ -21,14 +21,17 @@ import bravado
 import pytest
 import json
 import tenantadm
+import deviceauth
 
 
 class TestMgmtApiDeleteDeviceBase:
     def _test_ok(self, api_client_mgmt, init_authsets, auth=None):
         id = init_authsets[0].id
+        device_id = init_authsets[0].device_id
 
-        rsp = api_client_mgmt.delete_device_mgmt(id, auth)
-        assert rsp.status_code == 204
+        with deviceauth.run_fake_delete_device(device_id, id, 204):
+            rsp = api_client_mgmt.delete_device_mgmt(id, auth)
+            assert rsp.status_code == 204
 
         devs = api_client_mgmt.get_all_devices(auth=auth)
         assert len(devs) == len(init_authsets) - 1
