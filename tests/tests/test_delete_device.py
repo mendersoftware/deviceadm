@@ -1,5 +1,5 @@
 from client import ManagementClientSimple, InternalClient
-from common import create_devices, create_devices_mt
+from common import create_devices, create_devices_mt, api_client_mgmt
 import pytest
 
 @pytest.mark.usefixtures("create_devices")
