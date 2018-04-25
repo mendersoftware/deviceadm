@@ -55,3 +55,4 @@
 # Overwrite with environment variable: DEVICEADM_DEVAUTHURL
 
 # devauthurl: http://mender-device-auth:8080
+# just testing tests
