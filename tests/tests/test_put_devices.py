@@ -1,6 +1,6 @@
 from client import ManagementClient
 import bravado
-from common import create_devices, create_devices_mt
+from common import create_devices, create_devices_mt, api_client_mgmt
 from tenantadm import fake_tenantadm
 import pytest
 
