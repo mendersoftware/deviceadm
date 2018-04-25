@@ -117,6 +117,17 @@ class ManagementClient(SwaggerApiClient):
 
         self.client.devices.post_devices(auth_set=authset, _request_options={"headers": auth}).result()
 
+    def put_device(self, id, devid, key, device_identity, auth=None):
+        if auth is None:
+            auth = self.uauth
+
+        NewDevice = self.client.get_model('NewDevice')
+        new_device = NewDevice(
+                device_id=devid,
+                key=key,
+                device_identity=device_identity)
+        self.client.devices.put_devices_id(id=id, device=new_device, _request_options={"headers": auth}).result()
+
     def delete_device_mgmt(self, id, auth=None):
         """
            Remove device (auth set) via management API.
