@@ -13,17 +13,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 from common import api_client_mgmt, \
-                   clean_db, clean_db_devauth, \
-                   mongo, mongo_devauth, \
+                   clean_db, \
+                   mongo, \
                    init_authsets, init_authsets_mt
 import bravado
 import json
 import pytest
+import deviceauth
 
 class TestMgmtApiPostDevicesBase:
     def _test_ok(self, api_client_mgmt, init_authsets, auth=None):
         identity = json.dumps({"mac": "new-preauth-mac"})
-        api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
+
+        with deviceauth.run_fake_preauth(identity, 'new-preauth-key', 201):
+            api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
 
         asets = api_client_mgmt.get_all_devices(auth=auth)
         assert len(asets) == len(init_authsets) + 1

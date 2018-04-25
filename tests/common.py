@@ -27,9 +27,7 @@ from pymongo import MongoClient
 
 from client import CliClient, InternalClientSimple, ManagementClientSimple
 import tenantadm
-
-apiURL = "http://%s/api/devices/v1/authentication/auth_requests" % \
-         pytest.config.getoption("devauth_host")
+import deviceauth
 
 tenantIds = ['tenant1', 'tenant2']
 
@@ -70,40 +68,38 @@ def make_id_jwt(sub, tenant=None):
 # Create devices using the Device Authentication microservice
 # Assumes single-tenant, default db.
 @pytest.fixture(scope="class")
-def create_devices():
+def create_devices(api_client_mgmt):
     count = pytest.config.getoption("devices")
-    do_create_devices(None, count)
+    do_create_devices(None, count, api_client_mgmt)
 
 # Create devices using the Device Authentication microservice
 # Assumes multiple tenants (predefined).
 @pytest.fixture(scope="class")
-def create_devices_mt():
+def create_devices_mt(api_client_mgmt):
     count = pytest.config.getoption("devices")
 
     with fake_tenantadm():
         for tid in tenantIds:
-            do_create_devices(tid, count)
+            do_create_devices(tid, count, api_client_mgmt)
 
-def do_create_devices(tenant_id, count):
+def do_create_devices(tenant_id, count, api_client_mgmt):
     for i in range(int(count)):
-        privateKey, publicKey = get_keypair()
+        id = "".join(["{}".format(random.randint(0,9)) for i in range(6)])
+        device_id = "".join(["{}".format(random.randint(0,9)) for i in range(6)])
+
         mac = ":".join(["{:02x}".format(random.randint(0x00, 0xFF), 'x') for i in range(6)])
 
-        macJSON = json.dumps({"mac": mac})
-        authReq = {"id_data": macJSON, "pubkey": publicKey, "seq_no": 1}
+        identity_data = json.dumps({"mac": mac})
 
+        privateKey, publicKey = get_keypair()
+
+        mc = ManagementClientSimple()
+
+        auth=None
         if tenant_id is not None:
-            authReq["tenant_token"] = make_id_jwt("user", tenant_id)
+             auth = mc.make_user_auth("user", tenant_id)
 
-        authReqJson = json.dumps(authReq)
-
-        XMENSignature = sign_data(authReqJson, privateKey)
-        headers = {"Content-type": "application/json", "X-MEN-Signature": XMENSignature}
-
-        r = requests.post(apiURL, headers=headers, data=authReqJson, verify=False)
-
-        assert r.status_code == 401
-
+        mc.put_device(id, device_id, publicKey, identity_data, auth)
 
 @pytest.fixture(scope="session")
 def mongo():
@@ -124,14 +120,6 @@ def clean_db(mongo):
     mongo_cleanup(mongo)
 
 @pytest.fixture(scope="session")
-def mongo_devauth():
-    return MongoClient('mender-mongo-device-auth:27017')
-
-@pytest.fixture(scope='function')
-def clean_db_devauth(mongo_devauth):
-    mongo_cleanup(mongo_devauth)
-
-@pytest.fixture(scope="session")
 def cli():
     return CliClient()
 
@@ -147,7 +135,7 @@ def api_client_mgmt():
 # i.e. function-scoped, with proper conventions wrt to db cleaning (no data sharing between tests)
 # also: init authsets have various states, including 'preauthorized'
 @pytest.fixture(scope="function")
-def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
+def init_authsets(clean_db, api_client_mgmt):
     """
         Create a couple auth sets in various states, including 'preauthorized'.
         The fixture is specific to testing internal PUT /devices/{id}/status.
@@ -157,7 +145,7 @@ def init_authsets(clean_db, clean_db_devauth, api_client_mgmt):
 
 TENANTS = ['tenant1', 'tenant2']
 @pytest.fixture(scope="function")
-def init_authsets_mt(clean_db, clean_db_devauth, api_client_mgmt):
+def init_authsets_mt(clean_db, api_client_mgmt):
     """
         Create a couple auth sets in various states, including 'preauthorized', in a MT context (2 tenants).
         The fixture is specific to testing internal PUT /devices/{id}/status.
@@ -176,17 +164,22 @@ def do_init_authsets(api_client_mgmt, tenant_id=None):
 
     # create 5 auth sets in 'pending' state
     count = 5
-    do_create_devices(tenant_id, count)
+    do_create_devices(tenant_id, count, api_client_mgmt)
     devs = api_client_mgmt.get_all_devices(auth=auth)
     assert len(devs) == count
 
     # using deviceadm's api, change up some statuses
-    api_client_mgmt.change_status(devs[0].id, 'accepted', auth)
-    api_client_mgmt.change_status(devs[3].id, 'rejected', auth)
+    with deviceauth.run_fake_update_authset_status(devs[0].device_id, devs[0].id, 'accepted', 204):
+        api_client_mgmt.change_status(devs[0].id, 'accepted', auth)
+
+    with deviceauth.run_fake_update_authset_status(devs[3].device_id, devs[3].id, 'rejected', 204):
+        api_client_mgmt.change_status(devs[3].id, 'rejected', auth)
 
     # add a preauthorized device
     identity = json.dumps({"mac": "preauth-mac"})
-    api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
+
+    with deviceauth.run_fake_preauth(identity, 'preauth-key', 201):
+        api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
 
     devs = api_client_mgmt.get_all_devices(auth=auth)
     assert len(devs) == count + 1
