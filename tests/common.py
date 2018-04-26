@@ -165,7 +165,7 @@ def do_init_authsets(api_client_mgmt, tenant_id=None):
     # create 5 auth sets in 'pending' state
     count = 5
     do_create_devices(tenant_id, count, api_client_mgmt)
-    devs = api_client_mgmt.get_all_devices(auth=auth)
+    devs = api_client_mgmt.get_devices(auth=auth)
     assert len(devs) == count
 
     # using deviceadm's api, change up some statuses
@@ -181,6 +181,6 @@ def do_init_authsets(api_client_mgmt, tenant_id=None):
     with deviceauth.run_fake_preauth(identity, 'preauth-key', 201):
         api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
 
-    devs = api_client_mgmt.get_all_devices(auth=auth)
+    devs = api_client_mgmt.get_devices(auth=auth)
     assert len(devs) == count + 1
     return devs

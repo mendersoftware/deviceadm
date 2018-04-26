@@ -158,7 +158,7 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 			body: RestError(utils.MsgQueryParmLimit("page")),
 		},
 		{
-			//valid status
+			//valid status - accepted
 			skip:        15,
 			limit:       6,
 			filter:      store.Filter{Status: "accepted"},
@@ -172,6 +172,23 @@ func TestApiDevAdmGetDevices(t *testing.T) {
 					"page=3&per_page=5&status=accepted", "prev"),
 				fmt.Sprintf(utils.LinkTmpl, "devices",
 					"page=1&per_page=5&status=accepted", "first"),
+			},
+		},
+		{
+			//valid status - preauthorized
+			skip:        15,
+			limit:       6,
+			filter:      store.Filter{Status: "preauthorized"},
+			listDevices: mockListDeviceAuths(6),
+			req: test.MakeSimpleRequest("GET",
+				"http://1.2.3.4/api/management/v1/admission/devices?page=4&per_page=5&status=preauthorized", nil),
+			code: 200,
+			body: ToJson(mockListDeviceAuths(5)),
+			hdrs: []string{
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=3&per_page=5&status=preauthorized", "prev"),
+				fmt.Sprintf(utils.LinkTmpl, "devices",
+					"page=1&per_page=5&status=preauthorized", "first"),
 			},
 		},
 		{

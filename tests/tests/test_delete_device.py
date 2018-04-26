@@ -8,7 +8,7 @@ class TestDeleteDevice(InternalClient):
     def do_test_delete(self, auth=None):
         #first pull existing device sets to get some existing device_id
         mc = ManagementClientSimple()
-        devs = mc.get_all_devices(auth=auth)
+        devs = mc.get_devices(auth=auth)
         num_devs_base = len(devs)
 
         assert num_devs_base > 0
@@ -20,7 +20,7 @@ class TestDeleteDevice(InternalClient):
             rsp = self.delete_device(existing.device_id, auth)
             assert rsp.status_code == 204
 
-        devs = mc.get_all_devices(auth=auth)
+        devs = mc.get_devices(auth=auth)
         num_devs = len(devs)
         assert num_devs == num_devs_base - 1
 
@@ -31,7 +31,7 @@ class TestDeleteDevice(InternalClient):
         rsp = self.delete_device('foobar')
         assert rsp.status_code == 204
 
-        devs = mc.get_all_devices(auth=auth)
+        devs = mc.get_devices(auth=auth)
         assert len(devs) == num_devs
 
     def test_delete(self):
