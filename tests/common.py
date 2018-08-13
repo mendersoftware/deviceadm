@@ -103,7 +103,7 @@ def do_create_devices(tenant_id, count, api_client_mgmt):
 
 @pytest.fixture(scope="session")
 def mongo():
-    return MongoClient('mender-mongo-device-adm:27017')
+    return MongoClient('mender-mongo:27017')
 
 
 def mongo_cleanup(mongo):
