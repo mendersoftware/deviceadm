@@ -930,6 +930,17 @@ func TestApiDevAdmPostTenants(t *testing.T) {
 }
 
 func TestApiDevAdmPostDeviceAuth(t *testing.T) {
+	validKey := `
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzogVU7RGDilbsoUt/DdH
+VJvcepl0A5+xzGQ50cq1VE/Dyyy8Zp0jzRXCnnu9nu395mAFSZGotZVr+sWEpO3c
+yC3VmXdBZmXmQdZqbdD/GuixJOYfqta2ytbIUPRXFN7/I7sgzxnXWBYXYmObYvdP
+okP0mQanY+WKxp7Q16pt1RoqoAd0kmV39g13rFl35muSHbSBoAW3GBF3gO+mF5Ty
+1ddp/XcgLOsmvNNjY+2HOD5F/RX0fs07mWnbD7x+xz7KEKjF+H7ZpkqCwmwCXaf0
+iyYyh1852rti3Afw4mDxuVSD7sd9ggvYMc0QHIpQNkD4YWOhNiE1AB0zH57VbUYG
+UwIDAQAB
+-----END PUBLIC KEY-----`
+
 	testCases := map[string]struct {
 		input     interface{}
 		devAdmErr error
@@ -937,10 +948,12 @@ func TestApiDevAdmPostDeviceAuth(t *testing.T) {
 		respBody  string
 	}{
 		"ok": {
-			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
-				map[string]string{
-					"mac": "00:00:00:01",
-				})},
+			input: model.AuthSet{
+				Key: validKey,
+				DeviceId: makeJson(t,
+					map[string]string{
+						"mac": "00:00:00:01",
+					})},
 			respCode: 201,
 			respBody: "",
 		},
@@ -951,10 +964,12 @@ func TestApiDevAdmPostDeviceAuth(t *testing.T) {
 		},
 
 		"error: generic": {
-			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
-				map[string]string{
-					"mac": "00:00:00:01",
-				})},
+			input: model.AuthSet{
+				Key: validKey,
+				DeviceId: makeJson(t,
+					map[string]string{
+						"mac": "00:00:00:01",
+					})},
 			devAdmErr: errors.New("can't provision tenant"),
 			respCode:  500,
 			respBody:  RestError("internal error"),
@@ -973,10 +988,12 @@ func TestApiDevAdmPostDeviceAuth(t *testing.T) {
 			respBody: RestError("device_identity: non zero value required"),
 		},
 		"error: conflict": {
-			input: model.AuthSet{Key: "foo-key", DeviceId: makeJson(t,
-				map[string]string{
-					"mac": "00:00:00:01",
-				})}, devAdmErr: devadm.AuthSetConflictError,
+			input: model.AuthSet{
+				Key: validKey,
+				DeviceId: makeJson(t,
+					map[string]string{
+						"mac": "00:00:00:01",
+					})}, devAdmErr: devadm.AuthSetConflictError,
 			respCode: 409,
 			respBody: RestError("device already exists"),
 		},
