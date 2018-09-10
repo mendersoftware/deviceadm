@@ -58,6 +58,14 @@ class TestMgmtApiPostDevicesBase:
         asets = api_client_mgmt.get_devices(auth=auth)
         assert len(asets) == len(init_authsets)
 
+    def _test_invalid_key(self, api_client_mgmt, init_authsets, auth=None):
+        try:
+            identity = json.dumps({"mac": "new-preauth-mac"})
+            api_client_mgmt.preauthorize(identity, 'bogus', auth)
+        except bravado.exception.HTTPError as e:
+            assert e.response.status_code == 400
+            assert e.swagger_result.error == 'cannot decode public key'
+
 
 class TestMgmtApiPostDevices(TestMgmtApiPostDevicesBase):
     def test_ok(self, api_client_mgmt, init_authsets):
@@ -69,6 +77,8 @@ class TestMgmtApiPostDevices(TestMgmtApiPostDevicesBase):
     def test_conflict(self, api_client_mgmt, init_authsets):
         self._test_conflict(api_client_mgmt, init_authsets)
 
+    def test_invalid_key(self, api_client_mgmt, init_authsets):
+        self._test_invalid_key(api_client_mgmt, init_authsets)
 
 class TestMgmtApiPostDevicesMultitenant(TestMgmtApiPostDevicesBase):
     @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
@@ -85,3 +95,8 @@ class TestMgmtApiPostDevicesMultitenant(TestMgmtApiPostDevicesBase):
     def test_conflict(self, api_client_mgmt, init_authsets_mt, tenant_id):
         auth = api_client_mgmt.make_user_auth("user", tenant_id)
         self._test_conflict(api_client_mgmt, init_authsets_mt[tenant_id], auth)
+
+    @pytest.mark.parametrize("tenant_id", ["tenant1", "tenant2"])
+    def test_invalid_key(self, api_client_mgmt, init_authsets_mt, tenant_id):
+        auth = api_client_mgmt.make_user_auth("user", tenant_id)
+        self._test_invalid_key(api_client_mgmt, init_authsets_mt[tenant_id], auth)
