@@ -18,6 +18,7 @@ import logging
 import mockserver
 
 from contextlib import contextmanager
+from cryptutil import compare_keys
 
 def get_fake_deviceauth_addr():
     return os.environ.get('FAKE_DEVICEAUTH_ADDR', '0.0.0.0:9997')
@@ -43,7 +44,7 @@ def handler_preauth(id_data, pubkey, ret_status):
         assert req['device_id'] is not None
         assert req['auth_set_id'] is not None
         assert req['id_data'] == id_data
-        assert req['pubkey'] == pubkey
+        assert compare_keys(req['pubkey'], pubkey)
 
         return (ret_status, {}, '')
 

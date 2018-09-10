@@ -178,8 +178,9 @@ def do_init_authsets(api_client_mgmt, tenant_id=None):
     # add a preauthorized device
     identity = json.dumps({"mac": "preauth-mac"})
 
-    with deviceauth.run_fake_preauth(identity, 'preauth-key', 201):
-        api_client_mgmt.preauthorize(identity, 'preauth-key', auth)
+    priv, pub = get_keypair()
+    with deviceauth.run_fake_preauth(identity, pub, 201):
+        api_client_mgmt.preauthorize(identity, pub, auth)
 
     devs = api_client_mgmt.get_devices(auth=auth)
     assert len(devs) == count + 1

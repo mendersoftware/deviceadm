@@ -15,7 +15,8 @@
 from common import api_client_mgmt, \
                    clean_db, \
                    mongo, \
-                   init_authsets, init_authsets_mt
+                   init_authsets, init_authsets_mt, \
+                   get_keypair
 import bravado
 import json
 import pytest
@@ -24,9 +25,10 @@ import deviceauth
 class TestMgmtApiPostDevicesBase:
     def _test_ok(self, api_client_mgmt, init_authsets, auth=None):
         identity = json.dumps({"mac": "new-preauth-mac"})
+        _, pub =  get_keypair()
 
-        with deviceauth.run_fake_preauth(identity, 'new-preauth-key', 201):
-            api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
+        with deviceauth.run_fake_preauth(identity, pub, 201):
+            api_client_mgmt.preauthorize(identity, pub, auth)
 
         asets = api_client_mgmt.get_devices(auth=auth)
         assert len(asets) == len(init_authsets) + 1
@@ -36,7 +38,8 @@ class TestMgmtApiPostDevicesBase:
 
     def _test_bad_req_iddata(self, api_client_mgmt, init_authsets, auth=None):
         try:
-            api_client_mgmt.preauthorize('not-valid-json', 'new-preauth-key', auth)
+            _, pub =  get_keypair()
+            api_client_mgmt.preauthorize('not-valid-json', pub, auth)
         except bravado.exception.HTTPError as e:
             assert e.response.status_code == 400
 
@@ -46,8 +49,9 @@ class TestMgmtApiPostDevicesBase:
     def _test_conflict(self, api_client_mgmt, init_authsets, auth=None):
         for aset in init_authsets:
             try:
+                _, pub =  get_keypair()
                 identity = aset.device_identity
-                api_client_mgmt.preauthorize(identity, 'new-preauth-key', auth)
+                api_client_mgmt.preauthorize(identity, pub, auth)
             except bravado.exception.HTTPError as e:
                 assert e.response.status_code == 409
 
