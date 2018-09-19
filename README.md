@@ -3,6 +3,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/mendersoftware/deviceadm)](https://goreportcard.com/report/github.com/mendersoftware/deviceadm)
 [![Docker pulls](https://img.shields.io/docker/pulls/mendersoftware/deviceadm.svg?maxAge=3600)](https://hub.docker.com/r/mendersoftware/deviceadm/)
 
+# This repository is no longer maintained.
+
+New versions of mender backend will not contain Device Admission Service.
+[Device Authentication Service](https://github.com/mendersoftware/deviceauth) has assumed Device Admission Service responsibilities.
+Issue reports and pull requests will not be attended.
+
 Mender: Device Admission Service
 ==============================================
 
