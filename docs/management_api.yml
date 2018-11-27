@@ -5,6 +5,7 @@ info:
   title: Device admission
   description: |
     An API for device admission handling. Intended for use by the web GUI.
+    This API has been deprecated and will be removed in Mender 1.8 release.
 
 basePath: '/api/management/v1/admission'
 host: 'docker.mender.io'
