@@ -138,7 +138,7 @@ paths:
     put:
       summary: Submit a device authentication data set for admission
       description: |
-        Deprecated endpoint, will be removed in Mender 1.6
+        Deprecated endpoint, will be removed in a future version.
         Adds the device authentication data set to the database with a 'pending'
         admission status. If the device already exists, it changes the device's
         status to 'pending' and updates identity data. The user will be able to
