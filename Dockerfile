@@ -1,12 +1,15 @@
+FROM golang:1.11 as builder
+ENV GO111MODULE=on
+RUN mkdir -p /go/src/github.com/mendersoftware/deviceadm
+WORKDIR /go/src/github.com/mendersoftware/deviceadm
+ADD ./ .
+RUN go mod download
+RUN CGO_ENABLED=0 GOARCH=amd64 go build -o deviceadm .
+
 FROM alpine:3.4
-
 EXPOSE 8080
-
-COPY ./deviceadm /usr/bin/
-
 RUN mkdir /etc/deviceadm
-COPY ./config.yaml /etc/deviceadm/
-
 ENTRYPOINT ["/usr/bin/deviceadm", "--config", "/etc/deviceadm/config.yaml"]
-
+COPY ./config.yaml /etc/deviceadm/
+COPY --from=builder /go/src/github.com/mendersoftware/deviceadm/deviceadm /usr/bin/
 RUN apk add --update ca-certificates && update-ca-certificates
